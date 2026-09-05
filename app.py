@@ -1,4 +1,5 @@
-﻿import os
+﻿$code = @"
+import os
 import requests
 from flask import Flask, jsonify
 from supabase import create_client, Client
@@ -76,3 +77,6 @@ def send_report():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+"@
+Set-Content -Path "app.py" -Value $code -Encoding UTF8
+Write-Host "تم تحديث ملف app.py ليعرض التقرير المفصل حسب الحسابات بنجاح!" -ForegroundColor Green
