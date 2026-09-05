@@ -23,8 +23,8 @@ def home():
 @app.route("/send-report", methods=["POST"])
 def send_report():
     try:
-        # جلب فواتير أو بيانات اليوم من سوبابيس (تأكد من مطابقة اسم الجدول لديك)
-        response = supabase.table("invoices").select("*").execute()
+        # جلب البيانات من جدول stores في سوبابيس
+        response = supabase.table("stores").select("*").execute()
         data = response.data
         
         if not data:
