@@ -3,6 +3,7 @@ import requests
 from flask import Flask, jsonify
 from supabase import create_client, Client
 import traceback
+from collections import defaultdict
 
 app = Flask(__name__)
 
@@ -27,13 +28,14 @@ def send_report():
         if not data:
             return jsonify({"status": "error", "message": "No data found in Supabase"}), 404
 
-        accounts_totals = {}
+        accounts_totals = defaultdict(float)
         total_net = 0.0
 
         for row in data:
             amt = float(row.get("amount_afetr_dis1", 0.0) or 0.0)
             op_type = row.get("operation_type", 0)
             
+            # خصم فواتير الإرجاع (OperationType == 12)
             if op_type == 12:
                 val = -abs(amt)
             else:
@@ -42,10 +44,10 @@ def send_report():
             acc_info = row.get("accounts")
             acc_name = acc_info.get("name", "غير معروف") if acc_info else "غير معروف"
             
-            accounts_totals[acc_name] = accounts_totals.get(acc_name, 0.0) + val
+            accounts_totals[acc_name] += val
             total_net += val
 
-        report_lines = []
+        report_lines = ["📊 تقرير المبيعات اليومي المفصل:\n"]
         for acc_name, total_val in accounts_totals.items():
             report_lines.append(f"• {acc_name}: {total_val:,.2f} د.ل")
         
