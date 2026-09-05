@@ -17,7 +17,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @app.route("/")
 def home():
-    return "alraed is live and ready for debugging!", 200
+    return "alraed is live with smart matching!", 200
 
 @app.route("/send-report", methods=["POST"])
 def send_report_manual():
@@ -49,17 +49,15 @@ def send_report_manual():
                 except:
                     pass
 
-        # 2. جلب الفواتير بدون شروط مسبقة لنرى هل توجد بيانات أساساً
+        # 2. جلب الفواتير
         bills_res = supabase.table("bills").select("id, account_id, amount_afetr_dis1, operation_type, bill_date, deleted, removed").execute()
         raw_bills = bills_res.data or []
 
         allowed_accounts = ["زبون نقدي", "موبي كاش 1", "ادفع لي 2", "يسر باي 3", "بطاقة مصرفية 4"]
         accounts_totals = {acc: 0.0 for acc in allowed_accounts}
         total_net = 0.0
-        debug_info = []
 
         for row in raw_bills:
-            # التحقق من الحذف
             if row.get("deleted", 0) == 1 or row.get("removed", 0) == 1:
                 continue
 
@@ -69,20 +67,32 @@ def send_report_manual():
                     b_date = datetime.strptime(str(b_date_str).split("T")[0], "%Y-%m-%d").date()
                     if b_date < start_date:
                         continue
-                except Exception as ex:
-                    debug_info.append(f"Date parse error for bill {row.get('id')}: {ex}")
+                except:
+                    pass
 
             amt = float(row.get("amount_afetr_dis1", 0.0) or 0.0)
             op_type = row.get("operation_type", 0)
             acc_id = row.get("account_id")
             
             val = -abs(amt) if op_type == 12 else abs(amt)
-            acc_name = accounts_map.get(int(acc_id), "غير معروف") if acc_id else "غير معروف"
+            acc_name = accounts_map.get(int(acc_id), "") if acc_id else ""
             
-            debug_info.append(f"Bill ID {row.get('id')}: AccID={acc_id} Name='{acc_name}' Amt={val}")
+            # مطابقة ذكية بالكلمات المفتاحية بغض النظر عن اختلاف التسمية حرفياً
+            target_key = None
+            acc_lower = acc_name.lower()
+            if "نقدي" in acc_lower or "صندوق" in acc_lower:
+                target_key = "زبون نقدي"
+            elif "موبي" in acc_lower:
+                target_key = "موبي كاش 1"
+            elif "ادفع" in acc_lower:
+                target_key = "ادفع لي 2"
+            elif "يسر" in acc_lower:
+                target_key = "يسر باي 3"
+            elif "بطاقة" in acc_lower or "مصرفية" in acc_lower:
+                target_key = "بطاقة مصرفية 4"
 
-            if acc_name in accounts_totals:
-                accounts_totals[acc_name] += val
+            if target_key and target_key in accounts_totals:
+                accounts_totals[target_key] += val
                 total_net += val
 
         report_lines = [f"{title}\n"]
@@ -98,18 +108,10 @@ def send_report_manual():
         payload = {"to": RECIPIENT_PHONE, "text": report_message}
         requests.post(WASENDER_URL, json=payload, headers=headers, timeout=15)
 
-        # إعادة النتيجة كـ JSON لنرى التشخيص على الشاشة مباشرة
-        return jsonify({
-            "status": "success",
-            "total_raw_bills_in_db": len(raw_bills),
-            "accounts_found": accounts_map,
-            "calculated_totals": accounts_totals,
-            "total_net": total_net,
-            "debug_logs": debug_info
-        }), 200
+        return jsonify({"status": "success", "totals": accounts_totals, "net": total_net}), 200
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e), "trace": traceback.format_exc()}), 500
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
