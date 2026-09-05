@@ -12,7 +12,7 @@ def home():
 @app.route("/send-report", methods=["POST"])
 def inspect_all():
     try:
-        bills_res = supabase.table("bills").select("id, account_id, amount_afetr_dis1, bill_date, operation_type, deleted, removed").limit(15).execute()
+        bills_res = supabase.table("bills").select("id, account_id, amount_afetr_dis1, bill_date, operation_type, deleted, removed").limit(10).execute()
         accounts_res = supabase.table("accounts").select("account_id, name").execute()
         
         return jsonify({
