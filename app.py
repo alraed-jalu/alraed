@@ -10,15 +10,14 @@ def home():
     return "inspector active", 200
 
 @app.route("/send-report", methods=["POST"])
-def inspect_tables():
+def inspect_all():
     try:
-        # فحص عينة من جدول bills وعينة من جدول accounts
-        bills_sample = supabase.table("bills").select("*").limit(5).execute()
-        accounts_sample = supabase.table("accounts").select("*").execute()
+        bills_res = supabase.table("bills").select("*").limit(20).execute()
+        accounts_res = supabase.table("accounts").select("*").execute()
         
         return jsonify({
-            "accounts": accounts_sample.data,
-            "bills_sample": bills_sample.data
+            "accounts": accounts_res.data,
+            "all_bills_sample": bills_res.data
         }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
