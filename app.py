@@ -16,7 +16,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @app.route("/")
 def home():
-    return "alraed final production report is live!", 200
+    return "alraed strict date report sync is live!", 200
 
 @app.route("/send-report", methods=["POST"])
 def send_report_manual():
@@ -33,11 +33,13 @@ def send_report_manual():
                 except:
                     pass
 
-        # 2. جلب الفواتير الحقيقية
-        bills_res = supabase.table("bills").select("id, account_id, amount_afetr_dis1, operation_type, deleted, removed").execute()
+        # 2. جلب الفواتير
+        bills_res = supabase.table("bills").select("id, account_id, amount_afetr_dis1, operation_type, deleted, removed, bill_date").execute()
         raw_bills = bills_res.data or []
 
-        # الحسابات الـ 5 المطلوبة بالاسم الحرفي الدقيق
+        # تاريخ اليوم بصيغة مطابقة لحقل bill_date (مثال: 2026-09-05)
+        today_str = datetime.now().strftime("%Y-%m-%d")
+
         allowed_accounts = ["زبون نقدي", "موبي كاش 1", "ادفع لي 2", "يسر باي 3", "بطاقة مصرفية 4"]
         accounts_totals = {acc: 0.0 for acc in allowed_accounts}
         total_net = 0.0
@@ -48,17 +50,21 @@ def send_report_manual():
             if row.get("deleted", 0) == 1 or row.get("removed", 0) == 1:
                 continue
 
+            # فلترة تخص تاريخ اليوم فقط بناءً على حقل bill_date الظاهر في العينة
+            b_date = str(row.get("bill_date", ""))
+            if not b_date.startswith(today_str):
+                continue
+
             amt = float(row.get("amount_afetr_dis1", 0.0) or 0.0)
             op_type = row.get("operation_type", 0)
             acc_id = row.get("account_id")
             
-            # معالجة عمليات الإرجاع إذا وجدت (operation_type يشير للإرجاع)
+            # معالجة عمليات الإرجاع إذا وجدت
             val = -abs(amt) if op_type in [12, 2, "return"] else abs(amt)
             
             # الحصول على اسم الحساب من القاموس
             acc_name = accounts_map.get(int(acc_id), "") if acc_id is not None else ""
             
-            # مطابقة ذكية بالكلمات المفتاحية لضمان عدم ضياع أي قيمة بسبب اختلاف المسافات أو التسمية
             target_key = None
             acc_lower = acc_name.lower()
             if "نقدي" in acc_lower or "صندوق" in acc_lower:
@@ -77,7 +83,6 @@ def send_report_manual():
                 total_net += val
                 processed_count += 1
 
-        today_str = datetime.now().strftime("%Y-%m-%d")
         report_lines = [f"📊 تقرير المبيعات اليومي ({today_str}):\n"]
         for acc_name in allowed_accounts:
             val = accounts_totals[acc_name]
@@ -93,6 +98,7 @@ def send_report_manual():
 
         return jsonify({
             "status": "success",
+            "date_filtered": today_str,
             "processed_bills_count": processed_count,
             "calculated_totals": accounts_totals,
             "total_net": total_net
