@@ -1,5 +1,4 @@
-﻿$code = @"
-import os
+﻿import os
 import requests
 from flask import Flask, jsonify, request
 from supabase import create_client, Client
@@ -33,13 +32,20 @@ def generate_report_text(period_type="يومي"):
         elif period_type == "سنوي":
             start_date = today.replace(month=1, day=1)
             title = "📊 تقرير المبيعات السنوي:"
-        else: # يومي
+        else:
             start_date = today
             title = "📊 تقرير المبيعات اليومي:"
 
-        # جلب جميع الفواتير النشطة ثم تصفيتها في بايثون لضمان عدم حدوث أخطاء في تنسيق تاريخ قاعدة البيانات
-        response = supabase.table("bills").select("id, amount_afetr_dis1, operation_type, bill_date, accounts(name)").eq("deleted", 0).eq("removed", 0).execute()
-        data = response.data
+        # 1. جلب الحسابات لعمل خريطة للأسماء بناءً على الـ account_id
+        acc_res = supabase.table("accounts").select("account_id, name").execute()
+        accounts_map = {}
+        if acc_res.data:
+            for acc in acc_res.data:
+                accounts_map[int(acc.get("account_id"))] = str(acc.get("name", "")).strip()
+
+        # 2. جلب الفواتير
+        bills_res = supabase.table("bills").select("id, account_id, amount_afetr_dis1, operation_type, bill_date, deleted, removed").eq("deleted", 0).eq("removed", 0).execute()
+        data = bills_res.data
         
         if not data:
             return f"عذراً، لا توجد بيانات مبيعات مسجلة في قاعدة البيانات."
@@ -54,27 +60,26 @@ def generate_report_text(period_type="يومي"):
             if not b_date_str:
                 continue
             
-            # استخراج تاريخ الفطرة بصيغة Date فقط للمقارنة الصحيحة
             try:
                 b_date = datetime.strptime(str(b_date_str).split("T")[0], "%Y-%m-%d").date()
             except:
                 continue
 
-            # التحقق مما إذا كانت الفاتورة تقع ضمن النطاق المطلوب
             if b_date < start_date:
                 continue
 
             matched_count += 1
             amt = float(row.get("amount_afetr_dis1", 0.0) or 0.0)
             op_type = row.get("operation_type", 0)
+            acc_id = row.get("account_id")
             
             if op_type == 12:
                 val = -abs(amt)
             else:
                 val = abs(amt)
                 
-            acc_info = row.get("accounts")
-            acc_name = str(acc_info.get("name", "")).strip() if acc_info else ""
+            # جلب اسم الحساب من الخريطة باستخدام الـ account_id
+            acc_name = accounts_map.get(int(acc_id), "") if acc_id else ""
             
             if acc_name in accounts_totals:
                 accounts_totals[acc_name] += val
@@ -120,7 +125,6 @@ def send_report_manual():
 def whatsapp_webhook():
     try:
         incoming_data = request.get_json(silent=True) or {}
-        
         message_body = ""
         sender = ""
         
@@ -165,6 +169,3 @@ def whatsapp_webhook():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
-"@
-Set-Content -Path "app.py" -Value $code -Encoding UTF8
-Write-Host "تم تحديث ملف app.py بمعالجة التواريخ بدقة داخل بايثون بنجاح!" -ForegroundColor Green
