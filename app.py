@@ -1,4 +1,5 @@
-﻿import os
+﻿$code = @"
+import os
 import requests
 from flask import Flask, jsonify, request
 from supabase import create_client, Client
@@ -21,7 +22,6 @@ def home():
 
 def generate_report_text(period_type="يومي"):
     try:
-        # تحديد نطاق التاريخ بناءً على الفترة المطلوبة
         today = datetime.now().date()
         
         if period_type == "اسبوعي":
@@ -37,18 +37,34 @@ def generate_report_text(period_type="يومي"):
             start_date = today
             title = "📊 تقرير المبيعات اليومي:"
 
-        # جلب الفواتير من Supabase وتصفيتها حسب التاريخ
-        response = supabase.table("bills").select("id, amount_afetr_dis1, operation_type, bill_date, accounts(name)").eq("deleted", 0).eq("removed", 0).gte("bill_date", str(start_date)).execute()
+        # جلب جميع الفواتير النشطة ثم تصفيتها في بايثون لضمان عدم حدوث أخطاء في تنسيق تاريخ قاعدة البيانات
+        response = supabase.table("bills").select("id, amount_afetr_dis1, operation_type, bill_date, accounts(name)").eq("deleted", 0).eq("removed", 0).execute()
         data = response.data
         
         if not data:
-            return f"عذراً، لا توجد بيانات مبيعات مسجلة للفترة الحالية ({period_type})."
+            return f"عذراً، لا توجد بيانات مبيعات مسجلة في قاعدة البيانات."
 
         allowed_accounts = ["زبون نقدي", "موبي كاش 1", "ادفع لي 2", "يسر باي 3", "بطاقة مصرفية 4"]
         accounts_totals = {acc: 0.0 for acc in allowed_accounts}
         total_net = 0.0
+        matched_count = 0
 
         for row in data:
+            b_date_str = row.get("bill_date")
+            if not b_date_str:
+                continue
+            
+            # استخراج تاريخ الفطرة بصيغة Date فقط للمقارنة الصحيحة
+            try:
+                b_date = datetime.strptime(str(b_date_str).split("T")[0], "%Y-%m-%d").date()
+            except:
+                continue
+
+            # التحقق مما إذا كانت الفاتورة تقع ضمن النطاق المطلوب
+            if b_date < start_date:
+                continue
+
+            matched_count += 1
             amt = float(row.get("amount_afetr_dis1", 0.0) or 0.0)
             op_type = row.get("operation_type", 0)
             
@@ -64,6 +80,9 @@ def generate_report_text(period_type="يومي"):
                 accounts_totals[acc_name] += val
                 total_net += val
 
+        if matched_count == 0:
+            return f"عذراً، لا توجد فواتير مطابقة للفترة ({period_type}) بدءاً من تاريخ {start_date}."
+
         report_lines = [f"{title}\n"]
         for acc_name in allowed_accounts:
             val = accounts_totals[acc_name]
@@ -73,11 +92,10 @@ def generate_report_text(period_type="يومي"):
         return "\n".join(report_lines)
 
     except Exception as e:
-        return f حدث خطأ أثناء إنشاء التقرير: {str(e)}"
+        return f"حدث خطأ أثناء إنشاء التقرير: {str(e)}"
 
 @app.route("/send-report", methods=["POST"])
 def send_report_manual():
-    # نقطة لطلب التقرير اليدوي (افتراضياً اليومي أو حسب الطلب)
     req_data = request.get_json(silent=True) or {}
     period = req_data.get("period", "يومي")
     
@@ -103,11 +121,9 @@ def whatsapp_webhook():
     try:
         incoming_data = request.get_json(silent=True) or {}
         
-        # استخراج نص الرسالة ورقم المرسل من هيكل Wasender webhook
         message_body = ""
         sender = ""
         
-        # التعامل مع الاحتمالات المختلفة لهيكل الـ Webhook الوارد من Wasender
         if "body" in incoming_data:
             message_body = str(incoming_data.get("body", "")).lower().strip()
             sender = str(incoming_data.get("from", ""))
@@ -116,7 +132,6 @@ def whatsapp_webhook():
             message_body = str(msg_obj.get("body", "")).lower().strip()
             sender = str(incoming_data.get("sender", ""))
 
-        # تحليل الكلمات المفتاحية لتحديد الفترة المطلوبة
         period = "يومي"
         if "اسبوع" in message_body or "أسبوع" in message_body:
             period = "اسبوعي"
@@ -127,10 +142,8 @@ def whatsapp_webhook():
         elif "يوم" in message_body or "تقرير" in message_body:
             period = "يومي"
         else:
-            # إذا كانت رسالة أخرى لا تخص طلب التقرير، نتجاهلها أو نرد بشكل مناسب
             return jsonify({"status": "ignored"}), 200
 
-        # توليد وإرسال التقرير المناسب
         report_message = generate_report_text(period)
 
         headers = {
@@ -152,3 +165,6 @@ def whatsapp_webhook():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+"@
+Set-Content -Path "app.py" -Value $code -Encoding UTF8
+Write-Host "تم تحديث ملف app.py بمعالجة التواريخ بدقة داخل بايثون بنجاح!" -ForegroundColor Green
