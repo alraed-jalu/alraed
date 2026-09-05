@@ -23,26 +23,29 @@ def home():
 @app.route("/send-report", methods=["POST"])
 def send_report():
     try:
-        # جلب البيانات من جدول stores في سوبابيس
-        response = supabase.table("stores").select("*").execute()
+        # جلب البيانات من جدول store_sales الصحيح
+        response = supabase.table("store_sales").select("*").execute()
         data = response.data
         
         if not data:
-            return jsonify({"status": "error", "message": "No data found in Supabase"}), 404
+            return jsonify({"status": "error", "message": "No data found in Supabase"}}, 404
 
-        accounts_totals = {}
+        stores_totals = {}
         total_net = 0.0
 
         for row in data:
-            net_val = float(row.get("Net", 0.0))
-            acc_info = row.get("Accounts")
-            acc_name = acc_info.get("Name", "غير معروف") if acc_info else "غير معروف"
-            accounts_totals[acc_name] = accounts_totals.get(acc_name, 0.0) + net_val
+            # استخدام حقل cash_sales للمبيعات وحقل store_name لاسم المتجر
+            net_val = float(row.get("cash_sales", 0.0) or 0.0)
+            store_name = row.get("store_name", "غير معروف")
+            if not store_name:
+                store_name = "غير معروف"
+                
+            stores_totals[store_name] = stores_totals.get(store_name, 0.0) + net_val
             total_net += net_val
 
         report_lines = ["📊 تقرير المبيعات اليومي (Supabase):\n"]
-        for acc_name, total_val in accounts_totals.items():
-            report_lines.append(f"• {acc_name}: {total_val:,.2f} د.ل")
+        for store_name, total_val in stores_totals.items():
+            report_lines.append(f"• {store_name}: {total_val:,.2f} د.ل")
         
         report_lines.append(f"\n🏷 الإجمالي الصافي: {total_net:,.2f} د.ل")
         report_message = "\n".join(report_lines)
