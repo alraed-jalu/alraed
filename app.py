@@ -1,5 +1,4 @@
-﻿$code = @"
-import os
+﻿import os
 import requests
 from flask import Flask, jsonify
 from supabase import create_client, Client
@@ -29,28 +28,32 @@ def send_report():
         if not data:
             return jsonify({"status": "error", "message": "No data found in Supabase"}), 404
 
-        accounts_totals = defaultdict(float)
+        # الحسابات المسموح بظهورها فقط
+        allowed_accounts = ["زبون نقدي", "موبي كاش 1", "ادفع لي 2", "يسر باي 3", "بطاقة مصرفية 4"]
+        accounts_totals = {acc: 0.0 for acc in allowed_accounts}
         total_net = 0.0
 
         for row in data:
             amt = float(row.get("amount_afetr_dis1", 0.0) or 0.0)
             op_type = row.get("operation_type", 0)
             
-            # خصم فواتير الإرجاع (OperationType == 12)
             if op_type == 12:
                 val = -abs(amt)
             else:
                 val = abs(amt)
                 
             acc_info = row.get("accounts")
-            acc_name = acc_info.get("name", "غير معروف") if acc_info else "غير معروف"
+            acc_name = str(acc_info.get("name", "")).strip() if acc_info else ""
             
-            accounts_totals[acc_name] += val
-            total_net += val
+            # إذا كان الحساب من ضمن الحسابات المطلوبة فقط، نقوم بتجميعه وإضافته للإجمالي الصافي
+            if acc_name in accounts_totals:
+                accounts_totals[acc_name] += val
+                total_net += val
 
-        report_lines = ["📊 تقرير المبيعات اليومي المفصل:\n"]
-        for acc_name, total_val in accounts_totals.items():
-            report_lines.append(f"• {acc_name}: {total_val:,.2f} د.ل")
+        report_lines = ["📊 تقرير المبيعات اليومي:\n"]
+        for acc_name in allowed_accounts:
+            val = accounts_totals[acc_name]
+            report_lines.append(f"• {acc_name}: {val:,.2f} د.ل")
         
         report_lines.append(f"\n📌 الإجمالي الصافي: {total_net:,.2f} د.ل")
         report_message = "\n".join(report_lines)
@@ -77,6 +80,3 @@ def send_report():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
-"@
-Set-Content -Path "app.py" -Value $code -Encoding UTF8
-Write-Host "تم تحديث ملف app.py ليعرض التقرير المفصل حسب الحسابات بنجاح!" -ForegroundColor Green
