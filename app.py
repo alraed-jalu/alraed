@@ -16,33 +16,27 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @app.route("/")
 def home():
-    return "alraed exact match report sync is live!", 200
+    return "alraed debug sync is live!", 200
 
 @app.route("/send-report", methods=["POST"])
 def send_report_manual():
     try:
-        # 1. جلب الحسابات لتكوين قاموس الربط
+        # 1. جلب الحسابات
         acc_res = supabase.table("accounts").select("account_id, name").execute()
         accounts_map = {}
         if acc_res.data:
             for acc in acc_res.data:
                 try:
-                    acc_id = int(acc.get("account_id"))
-                    acc_name = str(acc.get("name", "")).strip()
-                    accounts_map[acc_id] = acc_name
+                    accounts_map[int(acc.get("account_id"))] = str(acc.get("name", "")).strip()
                 except:
                     pass
 
-        # 2. جلب الفواتير
-        bills_res = supabase.table("bills").select("id, account_id, amount_afetr_dis1, operation_type, deleted, removed, bill_date").execute()
+        # 2. جلب كافة الفواتير
+        bills_res = supabase.table("bills").select("*").execute()
         raw_bills = bills_res.data or []
 
         today_str = datetime.now().strftime("%Y-%m-%d")
-
-        allowed_accounts = ["زبون نقدي", "موبي كاش 1", "ادفع لي 2", "يسر باي 3", "بطاقة مصرفية 4"]
-        accounts_totals = {acc: 0.0 for acc in allowed_accounts}
-        total_net = 0.0
-        processed_count = 0
+        debug_matched_bills = []
 
         for row in raw_bills:
             if row.get("deleted", 0) == 1 or row.get("removed", 0) == 1:
@@ -52,48 +46,22 @@ def send_report_manual():
             if not b_date.startswith(today_str):
                 continue
 
-            # قراءة القيمة الحقيقية كما هي مخزنة في الحقل (سواء موجبة أو سالبة تماماً مثل المنظومة)
-            amt = float(row.get("amount_afetr_dis1", 0.0) or 0.0)
-            
             acc_id = row.get("account_id")
-            acc_name = accounts_map.get(int(acc_id), "") if acc_id is not None else ""
+            acc_name = accounts_map.get(int(acc_id), "Unknown") if acc_id is not None else "Unknown"
             
-            target_key = None
-            acc_lower = acc_name.lower()
-            if "نقدي" in acc_lower or "صندوق" in acc_lower:
-                target_key = "زبون نقدي"
-            elif "موبي" in acc_lower:
-                target_key = "موبي كاش 1"
-            elif "ادفع" in acc_lower:
-                target_key = "ادفع لي 2"
-            elif "يسر" in acc_lower:
-                target_key = "يسر باي 3"
-            elif "بطاقة" in acc_lower or "مصرفية" in acc_lower:
-                target_key = "بطاقة مصرفية 4"
-
-            if target_key and target_key in accounts_totals:
-                accounts_totals[target_key] += amt
-                total_net += amt
-                processed_count += 1
-
-        report_lines = [f"📊 تقرير المبيعات اليومي ({today_str}):\n"]
-        for acc_name in allowed_accounts:
-            val = accounts_totals[acc_name]
-            report_lines.append(f"• {acc_name}: {val:,.2f} د.ل")
-        
-        report_lines.append(f"\n📌 الإجمالي الصافي: {total_net:,.2f} د.ل")
-        report_message = "\n".join(report_lines)
-
-        # 3. إرسال التقرير عبر Wasender
-        headers = {"Authorization": f"Bearer {WASENDER_TOKEN}", "Content-Type": "application/json"}
-        payload = {"to": RECIPIENT_PHONE, "text": report_message}
-        requests.post(WASENDER_URL, json=payload, headers=headers, timeout=15)
+            debug_matched_bills.append({
+                "id": row.get("id"),
+                "bill_date": b_date,
+                "account_id": acc_id,
+                "account_name": acc_name,
+                "amount": row.get("amount_afetr_dis1"),
+                "operation_type": row.get("operation_type")
+            })
 
         return jsonify({
             "status": "success",
-            "processed_bills_count": processed_count,
-            "calculated_totals": accounts_totals,
-            "total_net": total_net
+            "today_date": today_str,
+            "matched_bills_found": debug_matched_bills
         }), 200
 
     except Exception as e:
