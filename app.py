@@ -1,7 +1,6 @@
-﻿$code = @"
-import os
+﻿import os
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from flask import Flask, request, jsonify
 from supabase import create_client, Client
 
@@ -23,8 +22,9 @@ def home():
 @app.route("/send-report", methods=["POST"])
 def send_report():
     try:
-        # جلب تاريخ اليوم الحالي تلقائياً (YYYY-MM-DD)
-        today_date = datetime.now().strftime("%Y-%m-%d")
+        # ضبط التاريخ حسب توقيت ليبيا المحلي (UTC+2)
+        libya_tz = timezone(timedelta(hours=2))
+        today_date = datetime.now(libya_tz).strftime("%Y-%m-%d")
         
         # جلب فواتير اليوم غير المحذوفة
         response = supabase.table("bills").select("account_id, amount_afetr_dis1").eq("bill_date", today_date).eq("deleted", 0).eq("removed", 0).execute()
@@ -62,6 +62,3 @@ def send_report():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
-"@
-Set-Content -Path "app.py" -Value $code -Encoding UTF8
-Write-Host "تم تحديث الكود ليستخدم تاريخ اليوم تلقائياً!" -ForegroundColor Green
