@@ -66,17 +66,7 @@ else:
     STORE_ID = str(current_store.get("store_id", "1"))
     TABLE_NAME = "store_sales"
 
-    # الشريط الجانبي للإدارة والتحكم
-    st.sidebar.markdown(f"👤 مرحببك بك: **{STORE_NAME}**")
-    st.sidebar.markdown("---")
-
-    # زر التحديث اللحظي للبيانات
-    if st.sidebar.button("🔄 تحديث البيانات اللحظية"):
-        st.cache_data.clear()
-        st.success("تم تحديث البيانات بنجاح!")
-        st.rerun()
-
-    # زر تسجيل الخروج
+    # زر تسجيل الخروج في الشريط الجانبي الضيق
     if st.sidebar.button("🚪 تسجيل الخروج"):
         st.session_state.authenticated = False
         st.session_state.store_data = None
@@ -88,7 +78,17 @@ else:
     )
     st.markdown("---")
 
-    # دالة جلب البيانات مع منع التخزين المؤقت الطويل لضمان جلب الجديد فوراً
+    # وضع زر التحديث في الصفحة الرئيسية مباشرة ليكون واضحاً وسريع الوصول
+    col_refresh, col_empty = st.columns([1, 2])
+    with col_refresh:
+        if st.button("🔄 تحديث البيانات اللحظية"):
+            st.cache_data.clear()
+            st.success("تم تحديث البيانات بنجاح!")
+            st.rerun()
+
+    st.markdown("---")
+
+    # دالة جلب البيانات
     def fetch_sales_data(store_id):
       try:
         response = supabase.table(TABLE_NAME).select("*").eq("store_id", store_id).order("last_update", desc=True).execute()
