@@ -2,6 +2,7 @@
 import pandas as pd
 import requests
 import streamlit as st
+from supabase import create_client
 
 # إعدادات الصفحة
 st.set_page_config(
@@ -10,29 +11,25 @@ st.set_page_config(
     layout="centered",
 )
 
-# إعدادات الاتصال بـ Supabase
+# إعدادات الاتصال بـ Supabase (تأكد من صحة الرابط والمفتاح)
 SUPABASE_PROJECT_URL = "https://romlgjbchyrwlwpcgffi.supabase.co"
-SUPABASE_KEY = (
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw"
-)
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw"
 
-# دالة للتحقق من بيانات المحل (اسم المستخدم والرقم السري) من جدول المحلات stores في السحابة
+# تهيئة اتصال Supabase بشكل آمن لمنع أخطاء الروابط
+@st.cache_resource
+def init_supabase():
+    return create_client(SUPABASE_PROJECT_URL, SUPABASE_KEY)
+
+supabase = init_supabase()
+
+# دالة للتحقق من بيانات المحل (اسم المستخدم والرقم السري) من جدول stores في السحابة
 def verify_store_credentials(username, password):
-    url = f"{SUPABASE_PROJECT_URL}/rest/v1/stores?username=eq.{username}&select=*"
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json",
-    }
     try:
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            stores = response.json()
-            if stores and len(stores) > 0:
-                store_info = stores[0]
-                # مطابقة كلمة المرور
-                if store_info.get("password") == password:
-                    return store_info
+        response = supabase.table("stores").select("*").eq("username", username).execute()
+        if response.data and len(response.data) > 0:
+            store_info = response.data[0]
+            if store_info.get("password") == password:
+                return store_info
     except Exception as e:
         st.error(f"❌ خطأ في الاتصال بقاعدة بيانات التحقق: {e}")
     return None
@@ -42,7 +39,7 @@ if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
     st.session_state.store_data = None
 
-# شاشة تسجيل الدخول
+# 1. شاشة تسجيل الدخول (تظهر أولاً دائماً)
 if not st.session_state.authenticated:
     st.markdown("<h2 style='text-align: center; color: #2c3e50;'>🔐 تسجيل دخول لوحة التحكم</h2>", unsafe_allow_html=True)
     st.markdown("---")
@@ -63,12 +60,11 @@ if not st.session_state.authenticated:
                 st.error("⚠️ اسم المستخدم أو الرقم السري غير صحيح. يرجى المحاولة مرة أخرى.")
 
 else:
-    # الحصول على بيانات المحل الحالي المسجل دخوله
+    # 2. واجهة التحكم بعد تسجيل الدخول بنجاح
     current_store = st.session_state.store_data
     STORE_NAME = current_store.get("store_name", "المتجر")
     STORE_ID = str(current_store.get("store_id", "1"))
     TABLE_NAME = "store_sales"
-    SUPABASE_URL = f"{SUPABASE_PROJECT_URL}/rest/v1/{TABLE_NAME}"
 
     # زر تسجيل الخروج في الشريط الجانبي
     if st.sidebar.button("🚪 تسجيل الخروج"):
@@ -84,24 +80,17 @@ else:
 
     @st.cache_data(ttl=10)
     def fetch_sales_data(store_id):
-      headers = {
-          "apikey": SUPABASE_KEY,
-          "Authorization": f"Bearer {SUPABASE_KEY}",
-          "Content-Type": "application/json",
-      }
-      url = f"{SUPABASE_URL}?store_id=eq.{store_id}&order=last_update.desc"
       try:
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-          data = response.json()
-          if data:
-            df = pd.DataFrame(data)
-            if "last_update" in df.columns:
-              df["last_update"] = pd.to_datetime(df["last_update"])
-              df["date"] = df["last_update"].dt.date
-            return df
+        response = supabase.table(TABLE_NAME).select("*").eq("store_id", store_id).order("last_update", desc=True).execute()
+        data = response.data
+        if data:
+          df = pd.DataFrame(data)
+          if "last_update" in df.columns:
+            df["last_update"] = pd.to_datetime(df["last_update"])
+            df["date"] = df["last_update"].dt.date
+          return df
       except Exception as e:
-        st.error(f"❌ خطأ في الاتصال بقاعدة البيانات السحابية: {e}")
+        st.error(f"❌ خطأ في جلب بيانات المبيعات: {e}")
       return pd.DataFrame()
 
     df = fetch_sales_data(STORE_ID)
