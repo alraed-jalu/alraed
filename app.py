@@ -164,3 +164,23 @@ else:
 
     st.subheader("📁 التفاصيل المالية حسب طرق الدفع")
     st.dataframe(chart_df, use_container_width=True)
+
+import streamlit as st
+from supabase import create_client
+
+# تهيئة الاتصال بـ Supabase (باستخدام مفاتيحك)
+SUPABASE_URL = "رابط_السحابة_هنا"
+SUPABASE_KEY = "مفتاح_السحابة_هنا"
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# جلب قائمة المحلات الفريدة من جدول المبيعات أو جدول الإعدادات في السحابة
+response = supabase.table("sales_summary").select("store_name").execute()
+stores = list(set([row["store_name"] for row in response.data])) if response.data else []
+
+# إضافة قائمة منسدلة في الشريط الجانبي لتغيير المحل
+st.sidebar.title("إدارة المحلات")
+if stores:
+    selected_store = st.sidebar.selectbox("اختر المحل لعرض بياناته:", stores)
+    st.write(f"عرض تقارير ومبيعات المحل: **{selected_store}**")
+else:
+    st.warning("لا توجد محلات مسجلة في السحابة حتى الآن.")
