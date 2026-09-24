@@ -11,18 +11,18 @@ st.set_page_config(
     layout="centered",
 )
 
-# إعدادات الاتصال بـ Supabase (تأكد من صحة الرابط والمفتاح)
+# إعدادات الاتصال بـ Supabase
 SUPABASE_PROJECT_URL = "https://romlgjbchyrwlwpcgffi.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw"
 
-# تهيئة اتصال Supabase بشكل آمن لمنع أخطاء الروابط
+# تهيئة اتصال Supabase بشكل آمن
 @st.cache_resource
 def init_supabase():
     return create_client(SUPABASE_PROJECT_URL, SUPABASE_KEY)
 
 supabase = init_supabase()
 
-# دالة للتحقق من بيانات المحل (اسم المستخدم والرقم السري) من جدول stores في السحابة
+# دالة للتحقق من بيانات المحل (اسم المستخدم والرقم السري)
 def verify_store_credentials(username, password):
     try:
         response = supabase.table("stores").select("*").eq("username", username).execute()
@@ -39,7 +39,7 @@ if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
     st.session_state.store_data = None
 
-# 1. شاشة تسجيل الدخول (تظهر أولاً دائماً)
+# 1. شاشة تسجيل الدخول
 if not st.session_state.authenticated:
     st.markdown("<h2 style='text-align: center; color: #2c3e50;'>🔐 تسجيل دخول لوحة التحكم</h2>", unsafe_allow_html=True)
     st.markdown("---")
@@ -66,7 +66,17 @@ else:
     STORE_ID = str(current_store.get("store_id", "1"))
     TABLE_NAME = "store_sales"
 
-    # زر تسجيل الخروج في الشريط الجانبي
+    # الشريط الجانبي للإدارة والتحكم
+    st.sidebar.markdown(f"👤 مرحببك بك: **{STORE_NAME}**")
+    st.sidebar.markdown("---")
+
+    # زر التحديث اللحظي للبيانات
+    if st.sidebar.button("🔄 تحديث البيانات اللحظية"):
+        st.cache_data.clear()
+        st.success("تم تحديث البيانات بنجاح!")
+        st.rerun()
+
+    # زر تسجيل الخروج
     if st.sidebar.button("🚪 تسجيل الخروج"):
         st.session_state.authenticated = False
         st.session_state.store_data = None
@@ -78,7 +88,7 @@ else:
     )
     st.markdown("---")
 
-    @st.cache_data(ttl=10)
+    # دالة جلب البيانات مع منع التخزين المؤقت الطويل لضمان جلب الجديد فوراً
     def fetch_sales_data(store_id):
       try:
         response = supabase.table(TABLE_NAME).select("*").eq("store_id", store_id).order("last_update", desc=True).execute()
