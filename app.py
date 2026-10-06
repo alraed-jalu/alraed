@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta
+import cv2
+import numpy as np
 import pandas as pd
+from pyzbar.pyzbar import decode
 import requests
 import streamlit as st
 from supabase import create_client
@@ -58,10 +61,9 @@ def verify_staff_credentials(username, password):
 
   # قائمة الموظفين الافتراضيين للتجربة
   default_staff_list = [
-          {"username": "سمارت", "password": "1234", "store_id": "1"},
+       {"username": "سمارت", "password": "1234", "store_id": "1"},
         {"username": "سنتر", "password": "1234", "store_id": "2"},
         {"username": "المتميزة", "password": "1234", "store_id": "3"},
-
 
   ]
 
@@ -121,7 +123,7 @@ if not st.session_state.authenticated:
 
 else:
   # -------------------------------------------------------------
-  # أ) واجهة الموظف (بطاقات بحث نظيفة ومنظمة)
+  # أ) واجهة الموظف (مع دعم البحث اليدوي ومسح الباركود بالكاميرا)
   # -------------------------------------------------------------
   if st.session_state.user_type == "staff":
     staff_info = st.session_state.staff_data
@@ -140,10 +142,37 @@ else:
     )
     st.markdown("---")
 
-    search_query = st.text_input(
-        "🔎 ابحث باسم الصنف أو أدخل/ألصق الباركود:",
-        placeholder="اكتب هنا للبحث الفوري...",
+    # اختيار طريقة البحث (كتابة أو كاميرا)
+    search_method = st.radio(
+        "طريقة البحث:", ["بحث بالكتابة أو الباركود", "مسح الباركود بالكاميرا 📷"], horizontal=True
     )
+
+    search_query = ""
+
+    if search_method == "بحث بالكتابة أو الباركود":
+      search_query = st.text_input(
+          "🔎 ابحث باسم الصنف أو أدخل/ألصق الباركود:",
+          placeholder="اكتب هنا للبحث الفوري...",
+      )
+    else:
+      st.markdown("📸 **قم بتوجيه كاميرا الهاتف نحو الباركود لالتقاطه:**")
+      camera_image = st.camera_input("التقاط صورة الباركود")
+
+      if camera_image is not None:
+        # قراءة الصورة عبر OpenCV و pyzbar لاستخراج الباركود
+        file_bytes = np.asarray(bytearray(camera_image.read()), dtype=np.uint8)
+        opencv_image = cv2.imdecode(file_bytes, 1)
+        decoded_objects = decode(opencv_image)
+
+        if decoded_objects:
+          for obj in decoded_objects:
+            search_query = obj.data.decode("utf-8")
+            st.success(f"✅ تم قراءة الباركود بنجاح: {search_query}")
+        else:
+          st.warning(
+              "⚠️ لم يتم التعرف على الباركود بوضوح، حاول تقريب الكاميرا أو التأكد"
+              " من الإضاءة."
+          )
 
     if search_query:
       try:
@@ -153,7 +182,7 @@ else:
             .eq("store_id", staff_store_id)
         )
 
-        if search_query.isdigit():
+        if str(search_query).isdigit():
           query = query.eq("item_id", int(search_query))
         else:
           query = query.ilike("item_name", f"%{search_query}%")
@@ -184,12 +213,6 @@ else:
           st.info("ℹ️ لا توجد أصناف مطابقة لهذا البحث أو الباركود.")
       except Exception as e:
         st.error(f"❌ حدث خطأ أثناء البحث: {e}")
-    else:
-      st.markdown(
-          "<p style='text-align: center; color: #7f8c8d; margin-top: 40px;'>قم"
-          " بكتابة اسم الصنف أو مسح الباركود للبدء في الاستعلام 👆</p>",
-          unsafe_allow_html=True,
-      )
 
   # -------------------------------------------------------------
   # ب) واجهة صاحب المحل (تقارير المبيعات + إدارة الأصناف بالبحث والبطاقات)
@@ -396,7 +419,7 @@ else:
               .eq("store_id", STORE_ID)
           )
 
-          if item_search.isdigit():
+          if str(item_search).isdigit():
             inv_query = inv_query.eq("item_id", int(item_search))
           else:
             inv_query = inv_query.ilike("item_name", f"%{item_search}%")
