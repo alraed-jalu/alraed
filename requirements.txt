@@ -1,8 +1,5 @@
-﻿flask
-requests
+﻿requests
 supabase
-gunicorn
 Streamlit
 pandas
-opencv-python-headless
-pyzbar
+
