@@ -1,8 +1,5 @@
 from datetime import datetime, timedelta
-import cv2
-import numpy as np
 import pandas as pd
-from pyzbar.pyzbar import decode
 import requests
 import streamlit as st
 from supabase import create_client
@@ -61,7 +58,7 @@ def verify_staff_credentials(username, password):
 
   # قائمة الموظفين الافتراضيين للتجربة
   default_staff_list = [
-       {"username": "سمارت", "password": "1234", "store_id": "1"},
+      {"username": "سمارت", "password": "1234", "store_id": "1"},
         {"username": "سنتر", "password": "1234", "store_id": "2"},
         {"username": "المتميزة", "password": "1234", "store_id": "3"},
 
@@ -109,7 +106,7 @@ if not st.session_state.authenticated:
           st.success("تم تسجيل الدخول بنجاح كمدير للمتجر!")
           st.rerun()
         else:
-          st.error("⚠️ اسم المستخدم أو الرقم السري للإدارة غير صحيح.")
+          st.error("⚠️️ اسم المستخدم أو الرقم السري للإدارة غير صحيح.")
       else:
         staff_record = verify_staff_credentials(username_input, password_input)
         if staff_record:
@@ -123,7 +120,7 @@ if not st.session_state.authenticated:
 
 else:
   # -------------------------------------------------------------
-  # أ) واجهة الموظف (مع دعم البحث اليدوي ومسح الباركود بالكاميرا)
+  # أ) واجهة الموظف (بحث مباشر وسريع بالاسم أو الباركود)
   # -------------------------------------------------------------
   if st.session_state.user_type == "staff":
     staff_info = st.session_state.staff_data
@@ -142,37 +139,10 @@ else:
     )
     st.markdown("---")
 
-    # اختيار طريقة البحث (كتابة أو كاميرا)
-    search_method = st.radio(
-        "طريقة البحث:", ["بحث بالكتابة أو الباركود", "مسح الباركود بالكاميرا 📷"], horizontal=True
+    search_query = st.text_input(
+        "🔎 ابحث باسم الصنف أو أدخل/ألصق الباركود:",
+        placeholder="اكتب اسم الصنف أو امسح الباركود هنا...",
     )
-
-    search_query = ""
-
-    if search_method == "بحث بالكتابة أو الباركود":
-      search_query = st.text_input(
-          "🔎 ابحث باسم الصنف أو أدخل/ألصق الباركود:",
-          placeholder="اكتب هنا للبحث الفوري...",
-      )
-    else:
-      st.markdown("📸 **قم بتوجيه كاميرا الهاتف نحو الباركود لالتقاطه:**")
-      camera_image = st.camera_input("التقاط صورة الباركود")
-
-      if camera_image is not None:
-        # قراءة الصورة عبر OpenCV و pyzbar لاستخراج الباركود
-        file_bytes = np.asarray(bytearray(camera_image.read()), dtype=np.uint8)
-        opencv_image = cv2.imdecode(file_bytes, 1)
-        decoded_objects = decode(opencv_image)
-
-        if decoded_objects:
-          for obj in decoded_objects:
-            search_query = obj.data.decode("utf-8")
-            st.success(f"✅ تم قراءة الباركود بنجاح: {search_query}")
-        else:
-          st.warning(
-              "⚠️ لم يتم التعرف على الباركود بوضوح، حاول تقريب الكاميرا أو التأكد"
-              " من الإضاءة."
-          )
 
     if search_query:
       try:
@@ -213,9 +183,15 @@ else:
           st.info("ℹ️ لا توجد أصناف مطابقة لهذا البحث أو الباركود.")
       except Exception as e:
         st.error(f"❌ حدث خطأ أثناء البحث: {e}")
+    else:
+      st.markdown(
+          "<p style='text-align: center; color: #7f8c8d; margin-top: 40px;'>قم"
+          " بكتابة اسم الصنف أو مسح الباركود للبدء في الاستعلام الفوري 👆</p>",
+          unsafe_allow_html=True,
+      )
 
   # -------------------------------------------------------------
-  # ب) واجهة صاحب المحل (تقارير المبيعات + إدارة الأصناف بالبحث والبطاقات)
+  # ب) واجهة صاحب المحل (تقارير المبيعات + إدارة الأصناف والمخزون)
   # -------------------------------------------------------------
   else:
     current_store = st.session_state.store_data
@@ -274,7 +250,7 @@ else:
 
       if df.empty:
         st.warning(
-            f"⚠️ لا توجد بيانات مبيعات مسجلة حالياً في السحابة لهذا المتجر"
+            f"⚠️️ لا توجد بيانات مبيعات مسجلة حالياً في السحابة لهذا المتجر"
             f" ({STORE_NAME})."
         )
       else:
