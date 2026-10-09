@@ -25,54 +25,6 @@ def init_supabase():
 
 supabase = init_supabase()
 
-
-# دالة للتحقق من بيانات المحل (الإدارة)
-def verify_store_credentials(username, password):
-  try:
-    response = (
-        supabase.table("stores").select("*").eq("username", username).execute()
-    )
-    if response.data and len(response.data) > 0:
-      store_info = response.data[0]
-      if store_info.get("password") == password:
-        return store_info
-  except Exception as e:
-    st.error(f"❌ خطأ في الاتصال بقاعدة بيانات التحقق: {e}")
-  return None
-
-
-# دالة للتحقق من بيانات الموظفين (تدعم عدة حسابات ومحلات)
-def verify_staff_credentials(username, password):
-  try:
-    response = (
-        supabase.table("staff_users")
-        .select("*")
-        .eq("username", username)
-        .execute()
-    )
-    if response.data and len(response.data) > 0:
-      staff_info = response.data[0]
-      if staff_info.get("password") == password:
-        return staff_info
-  except Exception as e:
-    pass
-
-  # قائمة الموظفين الافتراضيين للتجربة
-  default_staff_list = [
-      {"username": "سمارت", "password": "1234", "store_id": "1"},
-        {"username": "سنتر", "password": "1234", "store_id": "2"},
-        {"username": "المتميزة", "password": "1234", "store_id": "3"},
-
-
-  ]
-
-  for staff in default_staff_list:
-    if username == staff["username"] and password == staff["password"]:
-      return staff
-
-  return None
-
-
 # إدارة حالة الجلسة لتسجيل الدخول
 if "authenticated" not in st.session_state:
   st.session_state.authenticated = False
@@ -100,29 +52,74 @@ if not st.session_state.authenticated:
 
     if submit_button:
       if login_mode == "صاحب المحل (الإدارة)":
-        store_record = verify_store_credentials(username_input, password_input)
-        if store_record:
-          st.session_state.authenticated = True
-          st.session_state.user_type = "owner"
-          st.session_state.store_data = store_record
-          st.success("تم تسجيل الدخول بنجاح كمدير للمتجر!")
-          st.rerun()
-        else:
-          st.error("⚠️ اسم المستخدم أو الرقم السري للإدارة غير صحيح.")
+        try:
+          response = (
+              supabase.table("stores")
+              .select("*")
+              .eq("username", username_input)
+              .execute()
+          )
+          if response.data and len(response.data) > 0:
+            store_info = response.data[0]
+            if store_info.get("password") == password_input:
+              st.session_state.authenticated = True
+              st.session_state.user_type = "owner"
+              st.session_state.store_data = store_info
+              st.success("تم تسجيل الدخول بنجاح كمدير للمتجر!")
+              st.rerun()
+            else:
+              st.error("⚠️ الرقم السري للإدارة غير صحيح.")
+          else:
+            st.error("⚠️ اسم المستخدم للإدارة غير صحيح.")
+        except Exception as e:
+          st.error(f"❌ خطأ في الاتصال: {e}")
       else:
-        staff_record = verify_staff_credentials(username_input, password_input)
-        if staff_record:
-          st.session_state.authenticated = True
-          st.session_state.user_type = "staff"
-          st.session_state.staff_data = staff_record
-          st.success("تم تسجيل الدخول بنجاح كموظف!")
-          st.rerun()
-        else:
-          st.error("⚠️ اسم المستخدم أو الرقم السري للموظف غير صحيح.")
+        staff_found = False
+        try:
+          response = (
+              supabase.table("staff_users")
+              .select("*")
+              .eq("username", username_input)
+              .execute()
+          )
+          if response.data and len(response.data) > 0:
+            staff_info = response.data[0]
+            if staff_info.get("password") == password_input:
+              st.session_state.authenticated = True
+              st.session_state.user_type = "staff"
+              st.session_state.staff_data = staff_info
+              staff_found = True
+              st.success("تم تسجيل الدخول بنجاح كموظف!")
+              st.rerun()
+        except Exception:
+          pass
+
+        if not staff_found:
+          default_staff_list = [
+              {"username": "سمارت", "password": "1234", "store_id": "1"},
+        {"username": "سنتر", "password": "1234", "store_id": "2"},
+        {"username": "المتميزة", "password": "1234", "store_id": "3"},
+
+
+          ]
+          for staff in default_staff_list:
+            if (
+                username_input == staff["username"]
+                and password_input == staff["password"]
+            ):
+              st.session_state.authenticated = True
+              st.session_state.user_type = "staff"
+              st.session_state.staff_data = staff
+              staff_found = True
+              st.success("تم تسجيل الدخول بنجاح كموظف!")
+              st.rerun()
+
+          if not staff_found:
+            st.error("⚠️ اسم المستخدم أو الرقم السري للموظف غير صحيح.")
 
 else:
   # -------------------------------------------------------------
-  # أ) واجهة الموظف (بحث مباشر وسريع بالاسم أو الباركود + دعم كاميرا المتصفح)
+  # أ) واجهة الموظف (بحث مباشر وسريع بالاسم أو الباركود + الكاميرا المباشرة)
   # -------------------------------------------------------------
   if st.session_state.user_type == "staff":
     staff_info = st.session_state.staff_data
@@ -141,13 +138,12 @@ else:
     )
     st.markdown("---")
 
-    # زر إظهار/إخفاء ماسح الكاميرا عبر المتصفح
     use_camera = st.checkbox("📷 تفعيل ماسح الباركود بالكاميرا المباشرة")
 
     if use_camera:
       st.markdown(
           "<p style='text-align: center; color: #7f8c8d; font-size: 14px;'>قم"
-          " بتوجيه كاميرا الهاتف نحو الباركود لقراءته تلقائياً 👇</p>",
+          " بتوجيه كاميرا الهاتف نحو الباركود لقراءته والبحث عنه تلقائياً 👇</p>",
           unsafe_allow_html=True,
       )
       barcode_scanner_html = """
@@ -161,10 +157,13 @@ else:
                     document.getElementById('scan_result').innerText = "تم المسح بنجاح: " + decodedText;
                     const inputs = window.parent.document.querySelectorAll('input[type="text"]');
                     if (inputs.length > 0) {
-                        // استهداف أول حقل نصي للبحث
                         const targetInput = inputs[0];
                         targetInput.value = decodedText;
                         targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+                        targetInput.dispatchEvent(new KeyboardEvent('keydown', {
+                            key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true
+                        }));
                     }
                 }
                 const html5QrCode = new Html5Qrcode("reader");
@@ -190,7 +189,6 @@ else:
             .eq("store_id", staff_store_id)
         )
 
-        # البحث الذكي في الباركود أو رقم الصنف أو الاسم
         if str(search_query).isdigit():
           query = query.or_(
               f"barcode.eq.{search_query},item_id.eq.{int(search_query)}"
@@ -266,29 +264,22 @@ else:
 
       st.markdown("---")
 
-
-      def fetch_sales_data(store_id):
-        try:
-          response = (
-              supabase.table(TABLE_NAME)
-              .select("*")
-              .eq("store_id", store_id)
-              .order("last_update", desc=True)
-              .execute()
-          )
-          data = response.data
-          if data:
-            df = pd.DataFrame(data)
-            if "last_update" in df.columns:
-              df["last_update"] = pd.to_datetime(df["last_update"])
-              df["date"] = df["last_update"].dt.date
-            return df
-        except Exception as e:
-          st.error(f"❌ خطأ في جلب بيانات المبيعات: {e}")
-        return pd.DataFrame()
-
-
-      df = fetch_sales_data(STORE_ID)
+      try:
+        sales_response = (
+            supabase.table(TABLE_NAME)
+            .select("*")
+            .eq("store_id", STORE_ID)
+            .order("last_update", desc=True)
+            .execute()
+        )
+        sales_data = sales_response.data
+        df = pd.DataFrame(sales_data) if sales_data else pd.DataFrame()
+        if not df.empty and "last_update" in df.columns:
+          df["last_update"] = pd.to_datetime(df["last_update"])
+          df["date"] = df["last_update"].dt.date
+      except Exception as e:
+        st.error(f"❌ خطأ في جلب بيانات المبيعات: {e}")
+        df = pd.DataFrame()
 
       if df.empty:
         st.warning(
@@ -331,48 +322,33 @@ else:
           )
 
           total_invoices_sum = latest_df["invoice_count"].sum()
-
           c_sales = latest_df["cash_sales"].sum()
           c_returns = latest_df["cash_returns"].sum()
-
           m_sales = latest_df["mobicash_sales"].sum()
           m_returns = latest_df["mobicash_returns"].sum()
-
           card_s = latest_df["card_sales"].sum()
           card_r = latest_df["card_returns"].sum()
-
           y_sales = latest_df["yesserpay_sales"].sum()
           y_returns = latest_df["yesserpay_returns"].sum()
-
           e_sales = latest_df["edfaqli_sales"].sum()
           e_returns = latest_df["edfaqli_returns"].sum()
 
           if invoice_filter == "بيع فقط":
-            cash_val = c_sales
-            mobicash_val = m_sales
-            card_val = card_s
-            yesserpay_val = y_sales
-            edfaqli_val = e_sales
-            total_display = (
-                cash_val
-                + mobicash_val
-                + card_val
-                + yesserpay_val
-                + edfaqli_val
+            cash_val, mobicash_val, card_val, yesserpay_val, edfaqli_val = (
+                c_sales,
+                m_sales,
+                card_s,
+                y_sales,
+                e_sales,
             )
             filter_label = "إجمالي المبيعات (بدون المرتجعات)"
           elif invoice_filter == "ارجاع فقط":
-            cash_val = c_returns
-            mobicash_val = m_returns
-            card_val = card_r
-            yesserpay_val = y_returns
-            edfaqli_val = e_returns
-            total_display = (
-                cash_val
-                + mobicash_val
-                + card_val
-                + yesserpay_val
-                + edfaqli_val
+            cash_val, mobicash_val, card_val, yesserpay_val, edfaqli_val = (
+                c_returns,
+                m_returns,
+                card_r,
+                y_returns,
+                e_returns,
             )
             filter_label = "إجمالي المرتجعات فقط"
           else:
@@ -381,14 +357,11 @@ else:
             card_val = card_s - card_r
             yesserpay_val = y_sales - y_returns
             edfaqli_val = e_sales - e_returns
-            total_display = (
-                cash_val
-                + mobicash_val
-                + card_val
-                + yesserpay_val
-                + edfaqli_val
-            )
             filter_label = "إجمالي الصافي العام"
+
+          total_display = (
+              cash_val + mobicash_val + card_val + yesserpay_val + edfaqli_val
+          )
 
           st.subheader(f"📌 الملخص {period_title} ({invoice_filter})")
           col1, col2 = st.columns(2)
@@ -397,7 +370,7 @@ else:
 
           st.markdown("---")
 
-          payment_methods_data = {
+          chart_df = pd.DataFrame({
               "طريقة الدفع": [
                   "نقدي",
                   "موبي كاش",
@@ -412,8 +385,7 @@ else:
                   yesserpay_val,
                   edfaqli_val,
               ],
-          }
-          chart_df = pd.DataFrame(payment_methods_data)
+          })
 
           st.subheader("📁 التفاصيل المالية حسب طرق الدفع")
           st.dataframe(chart_df, use_container_width=True)
