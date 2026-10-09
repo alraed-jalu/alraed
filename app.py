@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 from supabase import create_client
 
 # إعدادات الصفحة
@@ -62,6 +63,7 @@ def verify_staff_credentials(username, password):
         {"username": "سنتر", "password": "1234", "store_id": "2"},
         {"username": "المتميزة", "password": "1234", "store_id": "3"},
 
+
   ]
 
   for staff in default_staff_list:
@@ -120,7 +122,7 @@ if not st.session_state.authenticated:
 
 else:
   # -------------------------------------------------------------
-  # أ) واجهة الموظف (بحث مباشر وسريع بالاسم أو الباركود)
+  # أ) واجهة الموظف (بحث مباشر وسريع بالاسم أو الباركود + دعم كاميرا المتصفح)
   # -------------------------------------------------------------
   if st.session_state.user_type == "staff":
     staff_info = st.session_state.staff_data
@@ -139,6 +141,42 @@ else:
     )
     st.markdown("---")
 
+    # زر إظهار/إخفاء ماسح الكاميرا عبر المتصفح
+    use_camera = st.checkbox("📷 تفعيل ماسح الباركود بالكاميرا المباشرة")
+
+    if use_camera:
+      st.markdown(
+          "<p style='text-align: center; color: #7f8c8d; font-size: 14px;'>قم"
+          " بتوجيه كاميرا الهاتف نحو الباركود لقراءته تلقائياً 👇</p>",
+          unsafe_allow_html=True,
+      )
+      barcode_scanner_html = """
+            <div style="text-align: center; background: #f1f2f6; padding: 10px; border-radius: 10px;">
+                <div id="reader" style="width: 100%; max-width: 350px; margin: auto;"></div>
+                <p id="scan_result" style="color: #27ae60; font-weight: bold; margin-top: 8px; font-size: 16px;"></p>
+            </div>
+            <script src="https://unpkg.com/html5-qrcode"></script>
+            <script>
+                function onScanSuccess(decodedText, decodedResult) {
+                    document.getElementById('scan_result').innerText = "تم المسح بنجاح: " + decodedText;
+                    const inputs = window.parent.document.querySelectorAll('input[type="text"]');
+                    if (inputs.length > 0) {
+                        // استهداف أول حقل نصي للبحث
+                        const targetInput = inputs[0];
+                        targetInput.value = decodedText;
+                        targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+                const html5QrCode = new Html5Qrcode("reader");
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 100 } },
+                    onScanSuccess
+                ).catch(err => { console.error(err); });
+            </script>
+            """
+      components.html(barcode_scanner_html, height=320)
+
     search_query = st.text_input(
         "🔎 ابحث باسم الصنف أو أدخل/ألصق الباركود:",
         placeholder="اكتب اسم الصنف أو امسح الباركود هنا...",
@@ -152,7 +190,7 @@ else:
             .eq("store_id", staff_store_id)
         )
 
-        # البحث الذكي: إذا كان المدخل رقماً يبحث في الباركود أو رقم الصنف، وإلا يبحث في الاسم
+        # البحث الذكي في الباركود أو رقم الصنف أو الاسم
         if str(search_query).isdigit():
           query = query.or_(
               f"barcode.eq.{search_query},item_id.eq.{int(search_query)}"
@@ -176,7 +214,7 @@ else:
                     <h4 style="color: #2c3e50; margin: 0 0 10px 0;">📦 {item.get('item_name')} <span style="font-size: 13px; color: #7f8c8d;">(الباركود: {item.get('barcode')})</span></h4>
                     <div style="display: flex; justify-content: space-between; font-size: 16px;">
                         <span>💰 سعر البيع: <b style="color: #27ae60; font-size: 18px;">{item.get('sale_price')} د.ل</b></span>
-                        <span>📦 الكمية: <b style="color: #2980b9; font-size: 18px;">{item.get('available_qty')}</b></span>
+                        <span>📦 الكمية المتاحة: <b style="color: #2980b9; font-size: 18px;">{item.get('available_qty')}</b></span>
                     </div>
                 </div>
                 """,
@@ -188,8 +226,9 @@ else:
         st.error(f"❌ حدث خطأ أثناء البحث: {e}")
     else:
       st.markdown(
-          "<p style='text-align: center; color: #7f8c8d; margin-top: 40px;'>قم"
-          " بكتابة اسم الصنف أو مسح الباركود للبدء في الاستعلام الفوري 👆</p>",
+          "<p style='text-align: center; color: #7f8c8d; margin-top: 30px;'>قم"
+          " بكتابة اسم الصنف، أو تفعيل الكاميرا، أو استخدام قارئ الباركود"
+          " للاستعلام الفوري 👆</p>",
           unsafe_allow_html=True,
       )
 
@@ -422,7 +461,7 @@ else:
                       <div style="display: flex; justify-content: space-between; font-size: 15px; flex-wrap: wrap; gap: 10px;">
                           <span>🛒 سعر الشراء: <b style="color: #e67e22;">{item.get('buy_price')} د.ل</b></span>
                           <span>💰 سعر البيع: <b style="color: #27ae60; font-size: 17px;">{item.get('sale_price')} د.ل</b></span>
-                          <span>📦 الكمية: <b style="color: #2980b9; font-size: 17px;">{item.get('available_qty')}</b></span>
+                          <span>📦 الكمية المتاحة: <b style="color: #2980b9; font-size: 17px;">{item.get('available_qty')}</b></span>
                       </div>
                   </div>
                   """,
@@ -434,7 +473,7 @@ else:
           st.error(f"❌ حدث خطأ أثناء البحث في المخزون: {e}")
       else:
         st.markdown(
-            "<p style='text-align: center; color: #7f8c8d; margin-top: 40px;'>قم"
+            "<p style='text-align: center; color: #7f8c8d; margin-top: 30px;'>قم"
             " بكتابة اسم الصنف أو مسح الباركود للبحث في أصناف ومخزون المتجر 👆</p>",
             unsafe_allow_html=True,
         )
