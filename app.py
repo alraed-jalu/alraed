@@ -106,7 +106,7 @@ if not st.session_state.authenticated:
           st.success("تم تسجيل الدخول بنجاح كمدير للمتجر!")
           st.rerun()
         else:
-          st.error("⚠️️ اسم المستخدم أو الرقم السري للإدارة غير صحيح.")
+          st.error("⚠️ اسم المستخدم أو الرقم السري للإدارة غير صحيح.")
       else:
         staff_record = verify_staff_credentials(username_input, password_input)
         if staff_record:
@@ -148,12 +148,15 @@ else:
       try:
         query = (
             supabase.table("store_items")
-            .select("item_name, sale_price, available_qty, item_id")
+            .select("item_name, sale_price, available_qty, barcode, item_id")
             .eq("store_id", staff_store_id)
         )
 
+        # البحث الذكي: إذا كان المدخل رقماً يبحث في الباركود أو رقم الصنف، وإلا يبحث في الاسم
         if str(search_query).isdigit():
-          query = query.eq("item_id", int(search_query))
+          query = query.or_(
+              f"barcode.eq.{search_query},item_id.eq.{int(search_query)}"
+          )
         else:
           query = query.ilike("item_name", f"%{search_query}%")
 
@@ -170,7 +173,7 @@ else:
             st.markdown(
                 f"""
                 <div style="background-color: #f8f9fa; padding: 15px; border-radius: 10px; border: 1px solid #dcdde1; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <h4 style="color: #2c3e50; margin: 0 0 10px 0;">📦 {item.get('item_name')}</h4>
+                    <h4 style="color: #2c3e50; margin: 0 0 10px 0;">📦 {item.get('item_name')} <span style="font-size: 13px; color: #7f8c8d;">(الباركود: {item.get('barcode')})</span></h4>
                     <div style="display: flex; justify-content: space-between; font-size: 16px;">
                         <span>💰 سعر البيع: <b style="color: #27ae60; font-size: 18px;">{item.get('sale_price')} د.ل</b></span>
                         <span>📦 الكمية: <b style="color: #2980b9; font-size: 18px;">{item.get('available_qty')}</b></span>
@@ -250,7 +253,7 @@ else:
 
       if df.empty:
         st.warning(
-            f"⚠️️ لا توجد بيانات مبيعات مسجلة حالياً في السحابة لهذا المتجر"
+            f"⚠️ لا توجد بيانات مبيعات مسجلة حالياً في السحابة لهذا المتجر"
             f" ({STORE_NAME})."
         )
       else:
@@ -390,13 +393,15 @@ else:
               supabase.table("store_items")
               .select(
                   "item_id, item_name, buy_price, sale_price, available_qty,"
-                  " last_update"
+                  " barcode, last_update"
               )
               .eq("store_id", STORE_ID)
           )
 
           if str(item_search).isdigit():
-            inv_query = inv_query.eq("item_id", int(item_search))
+            inv_query = inv_query.or_(
+                f"barcode.eq.{item_search},item_id.eq.{int(item_search)}"
+            )
           else:
             inv_query = inv_query.ilike("item_name", f"%{item_search}%")
 
@@ -413,7 +418,7 @@ else:
               st.markdown(
                   f"""
                   <div style="background-color: #f8f9fa; padding: 15px; border-radius: 10px; border: 1px solid #dcdde1; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                      <h4 style="color: #2c3e50; margin: 0 0 10px 0;">📦 {item.get('item_name')} <span style="font-size: 13px; color: #7f8c8d;">(الباركود: {item.get('item_id')})</span></h4>
+                      <h4 style="color: #2c3e50; margin: 0 0 10px 0;">📦 {item.get('item_name')} <span style="font-size: 13px; color: #7f8c8d;">(الباركود: {item.get('barcode')})</span></h4>
                       <div style="display: flex; justify-content: space-between; font-size: 15px; flex-wrap: wrap; gap: 10px;">
                           <span>🛒 سعر الشراء: <b style="color: #e67e22;">{item.get('buy_price')} د.ل</b></span>
                           <span>💰 سعر البيع: <b style="color: #27ae60; font-size: 17px;">{item.get('sale_price')} د.ل</b></span>
