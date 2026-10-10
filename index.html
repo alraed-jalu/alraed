@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>استعلام الأسعار - معرض سنتر العائلة</title>
+    <!-- مكتبة Supabase الرسمية للـ CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- مكتبة قراءة الباركود بالكاميرا -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body { font-family: Tahoma, sans-serif; background-color: #f4f6f7; margin: 0; padding: 15px; color: #333; }
@@ -49,8 +51,8 @@
     const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
     
-    const { createClient } = supabase;
-    const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    // التهيئة الصحيحة لكائن Supabase عبر الـ CDN
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const FIXED_STORE_ID = "2";
 
@@ -92,7 +94,6 @@
         resultsDiv.innerHTML = "<p style='text-align: center; color: #7f8c8d; margin-top: 15px;'>⏳ جاري البحث...</p>";
 
         try {
-            // جلب كافة بيانات صنف المحل رقم 2 للبحث الآمن
             let { data, error } = await _supabase
                 .table("store_items")
                 .select("*")
@@ -108,7 +109,6 @@
                 return;
             }
 
-            // تصفية النتائج برمجياً لتجنب أي مشاكل في استعلامات الـ API
             const filtered = data.filter(item => {
                 const bCode = String(item.barcode || "").toLowerCase();
                 const iName = String(item.item_name || "").toLowerCase();
