@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>استعلام الأسعار - منظومة الرائد</title>
+    <title>استعلام الأسعار - معرض سنتر العائلة</title>
     <!-- مكتبة Supabase للاتصال بالسحابة -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- مكتبة قراءة الباركود بالكاميرا -->
@@ -11,13 +11,16 @@
     <style>
         body { font-family: Tahoma, sans-serif; background-color: #f4f6f7; margin: 0; padding: 15px; color: #333; }
         .container { max-width: 500px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
+        .store-title { text-align: center; color: #e67e22; font-size: 16px; font-weight: bold; margin-bottom: 20px; }
         .form-group { margin-bottom: 15px; }
         label { font-weight: bold; display: block; margin-bottom: 5px; }
-        select, input { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        input { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
         #reader { width: 100%; max-width: 400px; margin: 15px auto; border-radius: 8px; overflow: hidden; display: none; }
         .btn-cam { background: #3498db; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; font-weight: bold; }
         .btn-cam:hover { background: #2980b9; }
+        .btn-search { background: #27ae60; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; border-radius: 8px; cursor: pointer; margin-top: 10px; font-weight: bold; }
+        .btn-search:hover { background: #219653; }
         .item-card { background: #f8f9fa; border: 1px solid #dcdde1; padding: 15px; border-radius: 8px; margin-top: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .item-name { font-size: 18px; color: #2c3e50; font-weight: bold; margin-bottom: 8px; }
         .info-row { display: flex; justify-content: space-between; font-size: 16px; margin-top: 5px; }
@@ -29,33 +32,30 @@
 
 <div class="container">
     <h2>🔍 استعلام الأسعار السريع</h2>
-    
-    <div class="form-group">
-        <label>اختر المحل:</label>
-        <select id="storeId" onchange="searchItem()">
-            
-            <option value="2">سنتر العائلة</option>
-        </select>
-    </div>
+    <div class="store-title">🏪 معرض سنتر العائلة (المحل 2)</div>
 
     <button class="btn-cam" onclick="toggleCamera()">📷 فتح / إغلاق كاميرا المسح</button>
     <div id="reader"></div>
 
     <div class="form-group">
         <label>ابحث باسم الصنف أو الباركود:</label>
-        <input type="text" id="searchInput" placeholder="اكتب اسم الصنف أو امسح الباركود..." oninput="searchItem()">
+        <input type="text" id="searchInput" placeholder="اكتب اسم الصنف أو امسح الباركود...">
     </div>
+
+    <button class="btn-search" onclick="searchItem()">بحث فوراً 🔍</button>
 
     <div id="results"></div>
 </div>
 
 <script>
-    // بيانات الاتصال بقاعدة بيانات Supabase الخاصة بك
     const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
     
     const { createClient } = supabase;
     const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // ثابت يحدد المحل رقم 2 حصرياً (معرض سنتر العائلة)
+    const FIXED_STORE_ID = "2";
 
     let html5QrCode;
     let cameraIsRunning = false;
@@ -70,8 +70,8 @@
                 { fps: 10, qrbox: { width: 250, height: 100 } },
                 (decodedText) => {
                     document.getElementById('searchInput').value = decodedText;
-                    searchItem();
-                    toggleCamera(); // إغلاق الكاميرا تلقائياً بعد القراءة الناجحة
+                    toggleCamera(); // إغلاق الكاميرا تلقائياً
+                    searchItem();   // تنفيذ البحث فوراً
                 }
             ).catch(err => { console.error(err); });
             cameraIsRunning = true;
@@ -85,16 +85,17 @@
 
     async function searchItem() {
         const queryText = document.getElementById('searchInput').value.trim();
-        const currentStore = document.getElementById('storeId').value;
         const resultsDiv = document.getElementById('results');
 
         if (!queryText) {
-            resultsDiv.innerHTML = "";
+            resultsDiv.innerHTML = "<p style='color: #e74c3c; text-align: center; margin-top: 15px;'>⚠️ الرجاء إدخال اسم الصنف أو الباركود أولاً.</p>";
             return;
         }
 
+        resultsDiv.innerHTML = "<p style='text-align: center; color: #7f8c8d; margin-top: 15px;'>⏳ جاري البحث...</p>";
+
         try {
-            let query = _supabase.table("store_items").select("*").eq("store_id", currentStore);
+            let query = _supabase.table("store_items").select("*").eq("store_id", FIXED_STORE_ID);
 
             if (!isNaN(queryText) && queryText !== "") {
                 query = query.or(`barcode.eq.${queryText},item_id.eq.${queryText}`);
@@ -106,11 +107,12 @@
 
             if (error) {
                 console.error(error);
+                resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center;">❌ حدث خطأ في الاتصال بقاعدة البيانات.</p>`;
                 return;
             }
 
             if (data && data.length > 0) {
-                let html = `<p style="color: #27ae60; font-weight: bold;">تم العثور على ${data.length} صنف:</p>`;
+                let html = `<p style="color: #27ae60; font-weight: bold; margin-top: 15px;">تم العثور على ${data.length} صنف:</p>`;
                 data.forEach(item => {
                     html += `
                         <div class="item-card">
@@ -128,12 +130,20 @@
                 });
                 resultsDiv.innerHTML = html;
             } else {
-                resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center; margin-top: 20px;">⚠️ لم يتم العثور على أي صنف مطابق.</p>`;
+                resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center; margin-top: 15px;">⚠️ لم يتم العثور على أي صنف مطابق في معرض سنتر العائلة.</p>`;
             }
         } catch (err) {
             console.error(err);
+            resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center;">❌ حدث خطأ غير متوقع.</p>`;
         }
     }
+    
+    // السماح بالبحث عند الضغط على زر Enter في لوحة المفاتيح
+    document.getElementById('searchInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            searchItem();
+        }
+    });
 </script>
 
 </body>
