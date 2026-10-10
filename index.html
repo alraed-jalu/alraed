@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>استعلام الأسعار - معرض سنتر العائلة</title>
-    <!-- مكتبة Supabase للاتصال بالسحابة -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- مكتبة قراءة الباركود بالكاميرا -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body { font-family: Tahoma, sans-serif; background-color: #f4f6f7; margin: 0; padding: 15px; color: #333; }
@@ -94,44 +92,45 @@
         resultsDiv.innerHTML = "<p style='text-align: center; color: #7f8c8d; margin-top: 15px;'>⏳ جاري البحث...</p>";
 
         try {
-            let data = null;
-            let error = null;
-
-            // إذا كان المدخل أرقام فقط (باركود أو رقم مادة)
-            if (!isNaN(queryText)) {
-                let res1 = await _supabase.table("store_items").select("*").eq("store_id", FIXED_STORE_ID).eq("barcode", queryText);
-                if (res1.data && res1.data.length > 0) {
-                    data = res1.data;
-                } else {
-                    let res2 = await _supabase.table("store_items").select("*").eq("store_id", FIXED_STORE_ID).eq("item_id", Number(queryText));
-                    data = res2.data;
-                }
-            } else {
-                // البحث بالاسم
-                let res3 = await _supabase.table("store_items").select("*").eq("store_id", FIXED_STORE_ID).ilike("item_name", `%${queryText}%`);
-                data = res3.data;
-                error = res3.error;
-            }
+            // جلب كافة بيانات صنف المحل رقم 2 للبحث الآمن
+            let { data, error } = await _supabase
+                .table("store_items")
+                .select("*")
+                .eq("store_id", FIXED_STORE_ID);
 
             if (error) {
-                console.error(error);
-                resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center;">❌ حدث خطأ في الاتصال بقاعدة البيانات.</p>`;
+                resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center;">❌ خطأ قاعدة البيانات: ${error.message}</p>`;
                 return;
             }
 
-            if (data && data.length > 0) {
-                let html = `<p style="color: #27ae60; font-weight: bold; margin-top: 15px;">تم العثور على ${data.length} صنف:</p>`;
-                data.forEach(item => {
+            if (!data || data.length === 0) {
+                resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center; margin-top: 15px;">⚠️ لا توجد أصناف مخزنة لهذا المحل في السحابة.</p>`;
+                return;
+            }
+
+            // تصفية النتائج برمجياً لتجنب أي مشاكل في استعلامات الـ API
+            const filtered = data.filter(item => {
+                const bCode = String(item.barcode || "").toLowerCase();
+                const iName = String(item.item_name || "").toLowerCase();
+                const iId = String(item.item_id || "");
+                const search = queryText.toLowerCase();
+
+                return bCode.includes(search) || iName.includes(search) || iId.includes(search);
+            });
+
+            if (filtered.length > 0) {
+                let html = `<p style="color: #27ae60; font-weight: bold; margin-top: 15px;">تم العثور على ${filtered.length} صنف:</p>`;
+                filtered.forEach(item => {
                     html += `
                         <div class="item-card">
-                            <div class="item-name">📦 ${item.item_name} <span style="font-size: 13px; color: #7f8c8d;">(${item.barcode || 'بدون باركود'})</span></div>
+                            <div class="item-name">📦 ${item.item_name || 'بدون اسم'} <span style="font-size: 13px; color: #7f8c8d;">(${item.barcode || 'بدون باركود'})</span></div>
                             <div class="info-row">
                                 <span>سعر البيع:</span>
-                                <span class="price">${item.sale_price} د.ل</span>
+                                <span class="price">${item.sale_price !== undefined ? item.sale_price : 0} د.ل</span>
                             </div>
                             <div class="info-row">
                                 <span>الكمية المتاحة:</span>
-                                <span class="qty">${item.available_qty}</span>
+                                <span class="qty">${item.available_qty !== undefined ? item.available_qty : 0}</span>
                             </div>
                         </div>
                     `;
@@ -141,8 +140,7 @@
                 resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center; margin-top: 15px;">⚠️ لم يتم العثور على أي صنف مطابق في معرض سنتر العائلة.</p>`;
             }
         } catch (err) {
-            console.error(err);
-            resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center;">❌ حدث خطأ غير متوقع.</p>`;
+            resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center;">❌ خطأ في النظام: ${err.message}</p>`;
         }
     }
     
