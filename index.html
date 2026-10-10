@@ -32,7 +32,7 @@
 
 <div class="container">
     <h2>🔍 استعلام الأسعار السريع</h2>
-    <div class="store-title">🏪 معرض سنتر العائلة (المحل 2)</div>
+    <div class="store-title">🏪 معرض سنتر العائلة </div>
 
     <button class="btn-cam" onclick="toggleCamera()">📷 فتح / إغلاق كاميرا المسح</button>
     <div id="reader"></div>
@@ -54,7 +54,6 @@
     const { createClient } = supabase;
     const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // ثابت يحدد المحل رقم 2 حصرياً (معرض سنتر العائلة)
     const FIXED_STORE_ID = "2";
 
     let html5QrCode;
@@ -70,8 +69,8 @@
                 { fps: 10, qrbox: { width: 250, height: 100 } },
                 (decodedText) => {
                     document.getElementById('searchInput').value = decodedText;
-                    toggleCamera(); // إغلاق الكاميرا تلقائياً
-                    searchItem();   // تنفيذ البحث فوراً
+                    toggleCamera(); 
+                    searchItem();   
                 }
             ).catch(err => { console.error(err); });
             cameraIsRunning = true;
@@ -95,15 +94,24 @@
         resultsDiv.innerHTML = "<p style='text-align: center; color: #7f8c8d; margin-top: 15px;'>⏳ جاري البحث...</p>";
 
         try {
-            let query = _supabase.table("store_items").select("*").eq("store_id", FIXED_STORE_ID);
+            let data = null;
+            let error = null;
 
-            if (!isNaN(queryText) && queryText !== "") {
-                query = query.or(`barcode.eq.${queryText},item_id.eq.${queryText}`);
+            // إذا كان المدخل أرقام فقط (باركود أو رقم مادة)
+            if (!isNaN(queryText)) {
+                let res1 = await _supabase.table("store_items").select("*").eq("store_id", FIXED_STORE_ID).eq("barcode", queryText);
+                if (res1.data && res1.data.length > 0) {
+                    data = res1.data;
+                } else {
+                    let res2 = await _supabase.table("store_items").select("*").eq("store_id", FIXED_STORE_ID).eq("item_id", Number(queryText));
+                    data = res2.data;
+                }
             } else {
-                query = query.ilike("item_name", `%${queryText}%`);
+                // البحث بالاسم
+                let res3 = await _supabase.table("store_items").select("*").eq("store_id", FIXED_STORE_ID).ilike("item_name", `%${queryText}%`);
+                data = res3.data;
+                error = res3.error;
             }
-
-            let { data, error } = await query;
 
             if (error) {
                 console.error(error);
@@ -138,7 +146,6 @@
         }
     }
     
-    // السماح بالبحث عند الضغط على زر Enter في لوحة المفاتيح
     document.getElementById('searchInput').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             searchItem();
