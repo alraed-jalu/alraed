@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>استعلام الأسعار - معرض سنتر العائلة</title>
-    <!-- مكتبة Supabase الرسمية للـ CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- مكتبة قراءة الباركود بالكاميرا -->
+    <!-- مكتبة قراءة الباركود بالكاميرا فقط -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body { font-family: Tahoma, sans-serif; background-color: #f4f6f7; margin: 0; padding: 15px; color: #333; }
@@ -50,10 +48,6 @@
 <script>
     const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
-    
-    // التهيئة الصحيحة لكائن Supabase عبر الـ CDN
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
     const FIXED_STORE_ID = "2";
 
     let html5QrCode;
@@ -94,21 +88,29 @@
         resultsDiv.innerHTML = "<p style='text-align: center; color: #7f8c8d; margin-top: 15px;'>⏳ جاري البحث...</p>";
 
         try {
-            let { data, error } = await _supabase
-                .table("store_items")
-                .select("*")
-                .eq("store_id", FIXED_STORE_ID);
+            // طلب البيانات مباشرة من قاعدة البيانات عبر REST API
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&select=*`, {
+                method: 'GET',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            });
 
-            if (error) {
-                resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center;">❌ خطأ قاعدة البيانات: ${error.message}</p>`;
+            if (!response.ok) {
+                resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center;">❌ خطأ في الاتصال بالسحابة: ${response.statusText}</p>`;
                 return;
             }
+
+            const data = await response.json();
 
             if (!data || data.length === 0) {
-                resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center; margin-top: 15px;">⚠️ لا توجد أصناف مخزنة لهذا المحل في السحابة.</p>`;
+                resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center; margin-top: 15px;">⚠️ لا توجد أصناف مخزنة لهذا المحل.</p>`;
                 return;
             }
 
+            // تصفية النتائج برمجياً للبحث الدقيق بالباركود أو الاسم أو رقم المادة
             const filtered = data.filter(item => {
                 const bCode = String(item.barcode || "").toLowerCase();
                 const iName = String(item.item_name || "").toLowerCase();
