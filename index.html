@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>استعلام الأسعار - معرض سنتر العائلة</title>
-    <!-- مكتبة قراءة الباركود بالكاميرا فقط -->
+    <!-- مكتبة قراءة الباركود بالكاميرا -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body { font-family: Tahoma, sans-serif; background-color: #f4f6f7; margin: 0; padding: 15px; color: #333; }
@@ -88,8 +88,16 @@
         resultsDiv.innerHTML = "<p style='text-align: center; color: #7f8c8d; margin-top: 15px;'>⏳ جاري البحث...</p>";
 
         try {
-            // طلب البيانات مباشرة من قاعدة البيانات عبر REST API
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&select=*`, {
+            let apiUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&select=*`;
+
+            // توجيه البحث مباشرة للخادم بناءً على نوع المدخل (باركود، رقم صنف، أو اسم)
+            if (!isNaN(queryText) && queryText !== "") {
+                apiUrl += `&or=(barcode.eq.${queryText},item_id.eq.${queryText})`;
+            } else {
+                apiUrl += `&item_name=ilike.*${queryText}*`;
+            }
+
+            const response = await fetch(apiUrl, {
                 method: 'GET',
                 headers: {
                     'apikey': SUPABASE_KEY,
@@ -105,24 +113,9 @@
 
             const data = await response.json();
 
-            if (!data || data.length === 0) {
-                resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center; margin-top: 15px;">⚠️ لا توجد أصناف مخزنة لهذا المحل.</p>`;
-                return;
-            }
-
-            // تصفية النتائج برمجياً للبحث الدقيق بالباركود أو الاسم أو رقم المادة
-            const filtered = data.filter(item => {
-                const bCode = String(item.barcode || "").toLowerCase();
-                const iName = String(item.item_name || "").toLowerCase();
-                const iId = String(item.item_id || "");
-                const search = queryText.toLowerCase();
-
-                return bCode.includes(search) || iName.includes(search) || iId.includes(search);
-            });
-
-            if (filtered.length > 0) {
-                let html = `<p style="color: #27ae60; font-weight: bold; margin-top: 15px;">تم العثور على ${filtered.length} صنف:</p>`;
-                filtered.forEach(item => {
+            if (data && data.length > 0) {
+                let html = `<p style="color: #27ae60; font-weight: bold; margin-top: 15px;">تم العثور على ${data.length} صنف:</p>`;
+                data.forEach(item => {
                     html += `
                         <div class="item-card">
                             <div class="item-name">📦 ${item.item_name || 'بدون اسم'} <span style="font-size: 13px; color: #7f8c8d;">(${item.barcode || 'بدون باركود'})</span></div>
