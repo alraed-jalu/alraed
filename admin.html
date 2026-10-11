@@ -139,7 +139,6 @@
     let currentStoreId = null;
     let html5QrcodeScanner = null;
 
-    // ضبط الفترة الافتراضية لأول الشهر الحالي وحتى اليوم
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -149,6 +148,7 @@
     document.getElementById('startDate').value = firstDayOfMonth;
     document.getElementById('endDate').value = today;
 
+    // التحقق من الجلسة عند فتح الصفحة (مدة الصلاحية 6 ساعات) دون أي إعادة تحميل لا نهائية
     window.onload = function() {
         const savedSession = localStorage.getItem('admin_session');
         const loginTime = localStorage.getItem('admin_login_time');
@@ -166,10 +166,12 @@
                 document.getElementById('welcomeStore').innerText = `🏪 ${storeData.store_name}`;
                 
                 fetchSalesData();
-                return;
+            } else {
+                // انتهت الصلاحية، يتم حذف بيانات الجلسة القديمة وترك شاشة الدخول مفتوحة
+                localStorage.removeItem('admin_session');
+                localStorage.removeItem('admin_login_time');
             }
         }
-        logout();
     };
 
     async function cloudLogin() {
@@ -248,7 +250,6 @@
         loadingDiv.style.display = 'block';
 
         try {
-            // جلب حتى 2000 سجل تنازلياً لضمان تغطية الفترة الكبيرة (الشهر كاملاً) بدون نقصان
             const response = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${currentStoreId}&order=last_update.desc&limit=2000&select=*`, {
                 method: 'GET',
                 headers: {
@@ -274,9 +275,7 @@
                     if (!item.last_update) return;
                     const itemDate = item.last_update.split('T')[0];
                     
-                    // التحقق من وقوع السجل ضمن الفترة المحددة (من / إلى)
                     if (itemDate >= startDate && itemDate <= endDate) {
-                        // الاحتفاظ بأحدث سجل لكل يوم
                         if (!dailyRecords[itemDate]) {
                             dailyRecords[itemDate] = item;
                         }
