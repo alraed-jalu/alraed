@@ -128,7 +128,7 @@
             </div>
         </div>
         
-        <button class="btn" style="background: #475569; color: white; margin-top: 25px;" onclick="location.reload()">تسجيل الخروج 🚪</button>
+        <button class="btn" style="background: #475569; color: white; margin-top: 25px;" onclick="logout()">تسجيل الخروج 🚪</button>
     </div>
 </div>
 
@@ -139,9 +139,38 @@
     let currentStoreId = null;
     let html5QrcodeScanner = null;
 
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('startDate').value = today;
+    // ضبط الفترة الافتراضية لأول الشهر الحالي وحتى اليوم
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const firstDayOfMonth = `${year}-${month}-01`;
+    const today = now.toISOString().split('T')[0];
+
+    document.getElementById('startDate').value = firstDayOfMonth;
     document.getElementById('endDate').value = today;
+
+    window.onload = function() {
+        const savedSession = localStorage.getItem('admin_session');
+        const loginTime = localStorage.getItem('admin_login_time');
+
+        if (savedSession && loginTime) {
+            const currentTime = new Date().getTime();
+            const hoursElapsed = (currentTime - Number(loginTime)) / (1000 * 60 * 60);
+
+            if (hoursElapsed < 6) {
+                const storeData = JSON.parse(savedSession);
+                currentStoreId = storeData.store_id;
+                
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                document.getElementById('welcomeStore').innerText = `🏪 ${storeData.store_name}`;
+                
+                fetchSalesData();
+                return;
+            }
+        }
+        logout();
+    };
 
     async function cloudLogin() {
         const usernameInput = document.getElementById('userInput').value.trim();
@@ -181,10 +210,15 @@
             if (data && data.length > 0) {
                 const store = data[0];
                 currentStoreId = String(store.store_id || store.id || "2");
+                const storeName = store.store_name || 'معرض التجارة';
+
+                const sessionData = { store_id: currentStoreId, store_name: storeName };
+                localStorage.setItem('admin_session', JSON.stringify(sessionData));
+                localStorage.setItem('admin_login_time', new Date().getTime().toString());
                 
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('dashboardSection').classList.remove('hidden');
-                document.getElementById('welcomeStore').innerText = `🏪 ${store.store_name || 'معرض التجارة'}`;
+                document.getElementById('welcomeStore').innerText = `🏪 ${storeName}`;
                 
                 fetchSalesData();
             } else {
@@ -198,6 +232,12 @@
         }
     }
 
+    function logout() {
+        localStorage.removeItem('admin_session');
+        localStorage.removeItem('admin_login_time');
+        location.reload();
+    }
+
     async function fetchSalesData() {
         if (!currentStoreId) return;
 
@@ -208,7 +248,8 @@
         loadingDiv.style.display = 'block';
 
         try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${currentStoreId}&order=last_update.desc&select=*`, {
+            // جلب حتى 2000 سجل تنازلياً لضمان تغطية الفترة الكبيرة (الشهر كاملاً) بدون نقصان
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${currentStoreId}&order=last_update.desc&limit=2000&select=*`, {
                 method: 'GET',
                 headers: {
                     'apikey': SUPABASE_KEY,
@@ -233,7 +274,9 @@
                     if (!item.last_update) return;
                     const itemDate = item.last_update.split('T')[0];
                     
+                    // التحقق من وقوع السجل ضمن الفترة المحددة (من / إلى)
                     if (itemDate >= startDate && itemDate <= endDate) {
+                        // الاحتفاظ بأحدث سجل لكل يوم
                         if (!dailyRecords[itemDate]) {
                             dailyRecords[itemDate] = item;
                         }
@@ -267,7 +310,6 @@
         }
     }
 
-    // البحث النصي والباركود
     let searchTimeout = null;
     async function searchItems(overrideQuery = null) {
         const query = overrideQuery !== null ? overrideQuery : document.getElementById('itemSearchInput').value.trim();
@@ -326,7 +368,6 @@
         }, 200);
     }
 
-    // تشغيل وإيقاف كاميرا قراءة الباركود
     function toggleCameraScanner() {
         const readerDiv = document.getElementById('reader');
         if (readerDiv.style.display === 'block') {
@@ -335,17 +376,14 @@
             readerDiv.style.display = 'block';
             html5QrcodeScanner = new Html5Qrcode("reader");
             html5QrcodeScanner.start(
-                { facingMode: "environment" }, // الكاميرا الخلفية
+                { facingMode: "environment" },
                 { fps: 10, qrbox: { width: 250, height: 150 } },
                 (decodedText) => {
-                    // عند نجاح القراءة
                     document.getElementById('itemSearchInput').value = decodedText;
                     searchItems(decodedText);
-                    stopScanner(); // إيقاف الكاميرا بعد المسح المباشر
+                    stopScanner();
                 },
-                (errorMessage) => {
-                    // خطأ أو عدم التعرف لحظياً
-                }
+                (errorMessage) => {}
             ).catch(err => {
                 alert("⚠️ لا يمكن فتح الكاميرا، يرجى التأكد من إعطاء المتصفح صلاحية الكاميرا.");
                 stopScanner();
