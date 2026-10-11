@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم الإدارة - معرض سنتر العائلة</title>
+    <!-- مكتبة مسح الباركود عبر الكاميرا -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body { font-family: Tahoma, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 15px; }
         .container { max-width: 650px; margin: auto; background: #1e293b; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
@@ -35,11 +37,16 @@
         .val-bank { color: #60a5fa; }
         .val-total { color: #fde047; }
 
-        /* قسم البحث والاستعلام عن المواد */
+        /* قسم البحث والماسح */
         .search-section { margin-top: 30px; border-top: 2px solid #334155; padding-top: 20px; }
         .search-box-wrapper { display: flex; gap: 8px; margin-bottom: 15px; }
-        .search-box-wrapper input { margin-bottom: 0; text-align: right; }
+        .search-box-wrapper input { margin-bottom: 0; text-align: right; flex: 1; }
         
+        .btn-scan { background: #10b981; color: white; border: none; padding: 0 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; white-space: nowrap; }
+        .btn-scan:hover { background: #059669; }
+
+        #reader { width: 100%; max-width: 400px; margin: 0 auto 15px auto; border-radius: 12px; overflow: hidden; display: none; border: 2px solid #38bdf8; }
+
         .items-results { display: flex; flex-direction: column; gap: 10px; max-height: 350px; overflow-y: auto; }
         .item-card { background: #0f172a; border: 1px solid #334155; padding: 15px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
         .item-name { font-size: 16px; font-weight: bold; color: #38bdf8; }
@@ -103,12 +110,18 @@
             </div>
         </div>
 
-        <!-- قسم الاستعلام عن المواد والأسعار -->
+        <!-- قسم الاستعلام عن المواد ومسح الباركود -->
         <div class="search-section">
             <h3 style="color: #38bdf8; text-align: right; font-size: 18px; margin-bottom: 10px;">📦 الاستعلام عن المواد والمخزون</h3>
+            
             <div class="search-box-wrapper">
                 <input type="text" id="itemSearchInput" placeholder="ابحث بالاسم أو الباركود..." oninput="searchItems()">
+                <button class="btn-scan" onclick="toggleCameraScanner()">مسح الكاميرا 📷</button>
             </div>
+
+            <!-- نافذة عرض كاميرا الهاتف -->
+            <div id="reader"></div>
+
             <div id="itemsLoading" style="text-align: center; color: #94a3b8; display: none; font-size: 13px; margin-bottom: 10px;">⏳ جاري البحث في الأصناف...</div>
             <div class="items-results" id="itemsResultsContainer">
                 <div style="text-align: center; color: #64748b; font-size: 14px; padding: 15px;">اكتب اسم الصنف أو مسح الباركود للبحث...</div>
@@ -124,6 +137,7 @@
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
     
     let currentStoreId = null;
+    let html5QrcodeScanner = null;
 
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('startDate').value = today;
@@ -253,10 +267,10 @@
         }
     }
 
-    // وظيفة الاستعلام والبحث عن المواد من جدول store_items
+    // البحث النصي والباركود
     let searchTimeout = null;
-    async function searchItems() {
-        const query = document.getElementById('itemSearchInput').value.trim();
+    async function searchItems(overrideQuery = null) {
+        const query = overrideQuery !== null ? overrideQuery : document.getElementById('itemSearchInput').value.trim();
         const resultsContainer = document.getElementById('itemsResultsContainer');
         const loadingIndicator = document.getElementById('itemsLoading');
 
@@ -270,7 +284,6 @@
             loadingIndicator.style.display = 'block';
 
             try {
-                // البحث في جدول store_items باستخدام الباركود أو اسم الصنف (حسب store_id للمحل الحالي)
                 const response = await fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&or=(item_name.ilike.*${encodeURIComponent(query)}*,barcode.eq.${encodeURIComponent(query)})&limit=20&select=*`, {
                     method: 'GET',
                     headers: {
@@ -310,7 +323,48 @@
                 loadingIndicator.style.display = 'none';
                 console.error("خطأ في البحث:", err);
             }
-        }, 300); // تأخير بسيط لتجنب الطلبات المتكررة السريعة أثناء الكتابة
+        }, 200);
+    }
+
+    // تشغيل وإيقاف كاميرا قراءة الباركود
+    function toggleCameraScanner() {
+        const readerDiv = document.getElementById('reader');
+        if (readerDiv.style.display === 'block') {
+            stopScanner();
+        } else {
+            readerDiv.style.display = 'block';
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, // الكاميرا الخلفية
+                { fps: 10, qrbox: { width: 250, height: 150 } },
+                (decodedText) => {
+                    // عند نجاح القراءة
+                    document.getElementById('itemSearchInput').value = decodedText;
+                    searchItems(decodedText);
+                    stopScanner(); // إيقاف الكاميرا بعد المسح المباشر
+                },
+                (errorMessage) => {
+                    // خطأ أو عدم التعرف لحظياً
+                }
+            ).catch(err => {
+                alert("⚠️ لا يمكن فتح الكاميرا، يرجى التأكد من إعطاء المتصفح صلاحية الكاميرا.");
+                stopScanner();
+            });
+        }
+    }
+
+    function stopScanner() {
+        const readerDiv = document.getElementById('reader');
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.stop().then(() => {
+                html5QrcodeScanner.clear();
+                readerDiv.style.display = 'none';
+            }).catch(() => {
+                readerDiv.style.display = 'none';
+            });
+        } else {
+            readerDiv.style.display = 'none';
+        }
     }
 </script>
 
