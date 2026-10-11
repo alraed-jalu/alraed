@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم الإدارة - مبيعات المعارض</title>
+    <title>لوحة تحكم الإدارة - معرض سنتر العائلة</title>
     <style>
         body { font-family: Tahoma, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 15px; }
         .container { max-width: 650px; margin: auto; background: #1e293b; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
@@ -22,7 +22,7 @@
         .date-group label { font-size: 13px; color: #94a3b8; display: block; margin-bottom: 4px; }
         .date-group input { margin-bottom: 0; }
 
-        /* النوافذ الثلاث المطلوبة */
+        /* النوافذ الثلاث للمبيعات */
         .stats-container { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
         .stat-card { background: #0f172a; border: 1px solid #334155; padding: 20px; border-radius: 12px; text-align: center; }
         .stat-card.cash { border-right: 6px solid #22c55e; }
@@ -34,7 +34,19 @@
         .val-cash { color: #4ade80; }
         .val-bank { color: #60a5fa; }
         .val-total { color: #fde047; }
+
+        /* قسم البحث والاستعلام عن المواد */
+        .search-section { margin-top: 30px; border-top: 2px solid #334155; padding-top: 20px; }
+        .search-box-wrapper { display: flex; gap: 8px; margin-bottom: 15px; }
+        .search-box-wrapper input { margin-bottom: 0; text-align: right; }
         
+        .items-results { display: flex; flex-direction: column; gap: 10px; max-height: 350px; overflow-y: auto; }
+        .item-card { background: #0f172a; border: 1px solid #334155; padding: 15px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .item-name { font-size: 16px; font-weight: bold; color: #38bdf8; }
+        .item-details { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; font-size: 14px; text-align: center; background: #1e293b; padding: 8px; border-radius: 6px; }
+        .item-details span { color: #cbd5e1; }
+        .item-details b { color: #f8fafc; display: block; margin-top: 3px; }
+
         .hidden { display: none; }
     </style>
 </head>
@@ -44,6 +56,7 @@
     <h2>📊 لوحة تحكم الإدارة</h2>
     <div class="store-tag" id="welcomeStore">تسجيل الدخول مطلوب</div>
 
+    <!-- شاشة تسجيل الدخول -->
     <div id="loginSection">
         <label style="display:block; margin-bottom: 8px; color: #cbd5e1; text-align: right;">اسم المستخدم:</label>
         <input type="text" id="userInput" placeholder="أدخل اسم المستخدم...">
@@ -56,6 +69,7 @@
         <p id="loginLoading" style="color: #38bdf8; display: none; margin-top: 10px;">⏳ جاري التحقق من قاعدة البيانات...</p>
     </div>
 
+    <!-- لوحة البيانات الرئيسية والبحث -->
     <div id="dashboardSection" class="hidden">
         <div class="date-range-grid">
             <div class="date-group">
@@ -71,28 +85,37 @@
 
         <div id="loadingStatus" style="text-align: center; color: #94a3b8; display: none;">⏳ جاري جلب البيانات من السحابة...</div>
 
-        <!-- النوافذ الثلاث المطلوبة -->
+        <!-- النوافذ الثلاث للمبيعات -->
         <div class="stats-container">
-            <!-- النافذة الأولى: النقدي -->
             <div class="stat-card cash">
                 <div class="stat-title">💵 إجمالي الفواتير النقدية (الكاش الصافي)</div>
                 <div class="stat-value val-cash" id="cashAmount">0.00 د.ل</div>
             </div>
 
-            <!-- النافذة الثانية: الخدمات المصرفية مجتمعة -->
             <div class="stat-card bank">
                 <div class="stat-title">💳 إجمالي فواتير الخدمات المصرفية والبطاقات</div>
                 <div class="stat-value val-bank" id="bankAmount">0.00 د.ل</div>
             </div>
 
-            <!-- النافذة الثالثة: الإجمالي الكلي -->
             <div class="stat-card total">
                 <div class="stat-title">💰 الإجمالي العام (النقدية + الخدمات المصرفية)</div>
                 <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
             </div>
         </div>
+
+        <!-- قسم الاستعلام عن المواد والأسعار -->
+        <div class="search-section">
+            <h3 style="color: #38bdf8; text-align: right; font-size: 18px; margin-bottom: 10px;">📦 الاستعلام عن المواد والمخزون</h3>
+            <div class="search-box-wrapper">
+                <input type="text" id="itemSearchInput" placeholder="ابحث بالاسم أو الباركود..." oninput="searchItems()">
+            </div>
+            <div id="itemsLoading" style="text-align: center; color: #94a3b8; display: none; font-size: 13px; margin-bottom: 10px;">⏳ جاري البحث في الأصناف...</div>
+            <div class="items-results" id="itemsResultsContainer">
+                <div style="text-align: center; color: #64748b; font-size: 14px; padding: 15px;">اكتب اسم الصنف أو مسح الباركود للبحث...</div>
+            </div>
+        </div>
         
-        <button class="btn" style="background: #475569; color: white; margin-top: 20px;" onclick="location.reload()">تسجيل الخروج 🚪</button>
+        <button class="btn" style="background: #475569; color: white; margin-top: 25px;" onclick="location.reload()">تسجيل الخروج 🚪</button>
     </div>
 </div>
 
@@ -203,7 +226,6 @@
                     }
                 });
 
-                // تجميع النقدي بشكل مستقل، وتجميع كافة الخدمات المصرفية مجتمعة في بند واحد
                 Object.values(dailyRecords).forEach(item => {
                     const netCash = Number(item.cash_sales || 0) - Number(item.cash_returns || 0);
                     
@@ -219,7 +241,6 @@
                 });
             }
 
-            // عرض القيم في النوافذ الثلاث
             document.getElementById('cashAmount').innerText = totalCash.toFixed(2) + " د.ل";
             document.getElementById('bankAmount').innerText = totalBank.toFixed(2) + " د.ل";
             
@@ -230,6 +251,66 @@
             loadingDiv.style.display = 'none';
             console.error("خطأ في جلب المبيعات:", err);
         }
+    }
+
+    // وظيفة الاستعلام والبحث عن المواد من جدول store_items
+    let searchTimeout = null;
+    async function searchItems() {
+        const query = document.getElementById('itemSearchInput').value.trim();
+        const resultsContainer = document.getElementById('itemsResultsContainer');
+        const loadingIndicator = document.getElementById('itemsLoading');
+
+        if (query.length < 2) {
+            resultsContainer.innerHTML = '<div style="text-align: center; color: #64748b; font-size: 14px; padding: 15px;">اكتب حرفين على الأقل أو امسح الباركود للبحث...</div>';
+            return;
+        }
+
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(async () => {
+            loadingIndicator.style.display = 'block';
+
+            try {
+                // البحث في جدول store_items باستخدام الباركود أو اسم الصنف (حسب store_id للمحل الحالي)
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&or=(item_name.ilike.*${encodeURIComponent(query)}*,barcode.eq.${encodeURIComponent(query)})&limit=20&select=*`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                loadingIndicator.style.display = 'none';
+
+                if (!response.ok) return;
+
+                const items = await response.json();
+
+                if (items && items.length > 0) {
+                    let html = '';
+                    items.forEach(item => {
+                        html += `
+                            <div class="item-card">
+                                <div class="item-name">${item.item_name}</div>
+                                <div style="font-size: 12px; color: #94a3b8;">الباركود: ${item.barcode || 'بدون باركود'}</div>
+                                <div class="item-details">
+                                    <div><span>سعر الشراء</span><b>${Number(item.buy_price || 0).toFixed(2)} د.ل</b></div>
+                                    <div><span>سعر البيع</span><b style="color: #4ade80;">${Number(item.sale_price || 0).toFixed(2)} د.ل</b></div>
+                                    <div><span>الكمية</span><b style="color: #38bdf8;">${item.available_qty} قطعة</b></div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    resultsContainer.innerHTML = html;
+                } else {
+                    resultsContainer.innerHTML = '<div style="text-align: center; color: #f87171; font-size: 14px; padding: 15px;">❌ لم يتم العثور على أي صنف مطابق</div>';
+                }
+
+            } catch (err) {
+                loadingIndicator.style.display = 'none';
+                console.error("خطأ في البحث:", err);
+            }
+        }, 300); // تأخير بسيط لتجنب الطلبات المتكررة السريعة أثناء الكتابة
     }
 </script>
 
