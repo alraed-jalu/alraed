@@ -1,1 +1,149 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم المدير - مبيعات سنتر العائلة</title>
+    <style>
+        body { font-family: Tahoma, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 15px; }
+        .container { max-width: 600px; margin: auto; background: #1e293b; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        h2 { text-align: center; color: #38bdf8; margin-top: 0; }
+        .store-tag { text-align: center; color: #94a3b8; font-size: 14px; margin-bottom: 20px; }
+        
+        /* شاشة تسجيل الدخول بكلمة المرور */
+        #loginSection { text-align: center; padding: 20px 0; }
+        input[type="password"], input[type="date"] { width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; box-sizing: border-box; margin-bottom: 15px; text-align: center; }
+        
+        .btn { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; transition: 0.2s; }
+        .btn-primary { background: #0284c7; color: white; }
+        .btn-primary:hover { background: #0369a1; }
+        
+        /* كروت الإحصائيات */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        .stat-card { background: #0f172a; border: 1px solid #334155; padding: 15px; border-radius: 12px; text-align: center; }
+        .stat-card.cash { border-top: 4px solid #22c55e; }
+        .stat-card.bank { border-top: 4px solid #3b82f6; }
+        .stat-card.total { grid-column: span 2; border-top: 4px solid #eab308; background: #1e293b; }
+        
+        .stat-title { font-size: 14px; color: #94a3b8; margin-bottom: 5px; }
+        .stat-value { font-size: 22px; font-weight: bold; }
+        .val-cash { color: #4ade80; }
+        .val-bank { color: #60a5fa; }
+        .val-total { color: #fde047; }
+        
+        .filter-section { display: flex; gap: 10px; margin-bottom: 15px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
 
+<div class="container">
+    <h2>📊 لوحة مبيعات المدير</h2>
+    <div class="store-tag">معرض سنتر العائلة (المحل 2)</div>
+
+    <!-- شاشة الحماية بكلمة مرور -->
+    <div id="loginSection">
+        <label style="display:block; margin-bottom: 10px; color: #cbd5e1;">أدخل رمز دخول المدير:</label>
+        <input type="password" id="pinInput" placeholder="****">
+        <button class="btn btn-primary" onclick="checkAuth()">دخول اللوحة 🔐</button>
+        <p id="loginError" style="color: #f87171; display: none; margin-top: 10px;">❌ رمز الدخول غير صحيح</p>
+    </div>
+
+    <!-- لوحة البيانات الرئيسية -->
+    <div id="dashboardSection" class="hidden">
+        <div class="filter-section">
+            <input type="date" id="searchDate">
+            <button class="btn btn-primary" style="width: auto; padding: 0 20px;" onclick="fetchSalesData()">عرض</button>
+        </div>
+
+        <div id="loadingStatus" style="text-align: center; color: #94a3b8; display: none;">⏳ جاري جلب المبيعات من السحابة...</div>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card cash">
+                <div class="stat-title">💵 المبيعات النقدية (كاش)</div>
+                <div class="stat-value val-cash" id="cashAmount">0.00 د.ل</div>
+            </div>
+            <div class="stat-card bank">
+                <div class="stat-title">💳 المبيعات المصرفية (كارت)</div>
+                <div class="stat-value val-bank" id="bankAmount">0.00 د.ل</div>
+            </div>
+            <div class="stat-card total">
+                <div class="stat-title">💰 إجمالي مبيعات اليوم</div>
+                <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
+    const FIXED_STORE_ID = "2";
+    
+    // رمز الدخول الخاص بك (يمكنك تغييره هنا)
+    const ADMIN_PIN = "1234";
+
+    // ضبط تاريخ اليوم تلقائياً
+    document.getElementById('searchDate').valueAsDate = new Date();
+
+    function checkAuth() {
+        const inputPin = document.getElementById('pinInput').value;
+        if (inputPin === ADMIN_PIN) {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+            fetchSalesData(); // جلب المبيعات فور الدخول
+        } else {
+            document.getElementById('loginError').style.display = 'block';
+        }
+    }
+
+    async function fetchSalesData() {
+        const selectedDate = document.getElementById('searchDate').value;
+        const loadingDiv = document.getElementById('loadingStatus');
+        loadingDiv.style.display = 'block';
+
+        try {
+            // جلب حركات المبيعات للمحل رقم 2 من جدول الفواتير في Supabase
+            // ملحوظة: يفترض اسم الجدول sales_invoices ويمكن تعديله حسب اسم الجدول لديك
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/sales_invoices?store_id=eq.${FIXED_STORE_ID}&created_at=gte.${selectedDate}T00:00:00&created_at=lte.${selectedDate}T23:59:59&select=*`, {
+                method: 'GET',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            loadingDiv.style.display = 'none';
+
+            if (!response.ok) {
+                console.error("جدول المبيعات يحتاج لتحديد اسم الجدول والأعمدة الصحيحة");
+                return;
+            }
+
+            const data = await response.json();
+
+            let totalCash = 0;
+            let totalBank = 0;
+
+            if (data && data.length > 0) {
+                data.forEach(item => {
+                    // تجميع الكاش والمصرفي حسب الحقول المخزنة
+                    totalCash += Number(item.cash_amount || 0);
+                    totalBank += Number(item.bank_amount || 0);
+                });
+            }
+
+            document.getElementById('cashAmount').innerText = totalCash.toFixed(2) + " د.ل";
+            document.getElementById('bankAmount').innerText = totalBank.toFixed(2) + " د.ل";
+            document.getElementById('totalAmount').innerText = (totalCash + totalBank).toFixed(2) + " د.ل";
+
+        } catch (err) {
+            loadingDiv.style.display = 'none';
+            console.error("خطأ في الاتصال:", err);
+        }
+    }
+</script>
+
+</body>
+</html>
