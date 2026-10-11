@@ -17,20 +17,20 @@
         .btn-primary { background: #0284c7; color: white; }
         .btn-primary:hover { background: #0369a1; }
         
-        /* تنسيق اختيار الفترة */
         .date-range-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .date-group { text-align: right; }
         .date-group label { font-size: 13px; color: #94a3b8; display: block; margin-bottom: 4px; }
         .date-group input { margin-bottom: 0; }
 
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
-        .stat-card { background: #0f172a; border: 1px solid #334155; padding: 15px; border-radius: 12px; text-align: center; }
-        .stat-card.cash { border-top: 4px solid #22c55e; }
-        .stat-card.bank { border-top: 4px solid #3b82f6; }
-        .stat-card.total { grid-column: span 2; border-top: 4px solid #eab308; background: #1e293b; }
+        /* النوافذ الثلاث المطلوبة */
+        .stats-container { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+        .stat-card { background: #0f172a; border: 1px solid #334155; padding: 20px; border-radius: 12px; text-align: center; }
+        .stat-card.cash { border-right: 6px solid #22c55e; }
+        .stat-card.bank { border-right: 6px solid #3b82f6; }
+        .stat-card.total { border-right: 6px solid #eab308; background: #1e293b; }
         
-        .stat-title { font-size: 14px; color: #94a3b8; margin-bottom: 5px; }
-        .stat-value { font-size: 22px; font-weight: bold; }
+        .stat-title { font-size: 15px; color: #94a3b8; margin-bottom: 8px; }
+        .stat-value { font-size: 26px; font-weight: bold; }
         .val-cash { color: #4ade80; }
         .val-bank { color: #60a5fa; }
         .val-total { color: #fde047; }
@@ -44,7 +44,6 @@
     <h2>📊 لوحة تحكم الإدارة</h2>
     <div class="store-tag" id="welcomeStore">تسجيل الدخول مطلوب</div>
 
-    <!-- شاشة تسجيل الدخول -->
     <div id="loginSection">
         <label style="display:block; margin-bottom: 8px; color: #cbd5e1; text-align: right;">اسم المستخدم:</label>
         <input type="text" id="userInput" placeholder="أدخل اسم المستخدم...">
@@ -57,9 +56,7 @@
         <p id="loginLoading" style="color: #38bdf8; display: none; margin-top: 10px;">⏳ جاري التحقق من قاعدة البيانات...</p>
     </div>
 
-    <!-- لوحة البيانات الرئيسية -->
     <div id="dashboardSection" class="hidden">
-        <!-- تحديد الفترة الزمنية من / إلى -->
         <div class="date-range-grid">
             <div class="date-group">
                 <label>من تاريخ:</label>
@@ -70,21 +67,27 @@
                 <input type="date" id="endDate">
             </div>
         </div>
-        <button class="btn btn-primary" style="margin-bottom: 15px;" onclick="fetchSalesData()">عرض التقرير 🔍</button>
+        <button class="btn btn-primary" style="margin-bottom: 15px;" onclick="fetchSalesData()">عرض التقارير 🔍</button>
 
         <div id="loadingStatus" style="text-align: center; color: #94a3b8; display: none;">⏳ جاري جلب البيانات من السحابة...</div>
 
-        <div class="stats-grid" id="statsGrid">
+        <!-- النوافذ الثلاث المطلوبة -->
+        <div class="stats-container">
+            <!-- النافذة الأولى: النقدي -->
             <div class="stat-card cash">
-                <div class="stat-title">💵 المبيعات النقدية (كاش الصافي)</div>
+                <div class="stat-title">💵 إجمالي الفواتير النقدية (الكاش الصافي)</div>
                 <div class="stat-value val-cash" id="cashAmount">0.00 د.ل</div>
             </div>
+
+            <!-- النافذة الثانية: الخدمات المصرفية مجتمعة -->
             <div class="stat-card bank">
-                <div class="stat-title">💳 المبيعات المصرفية والبطاقات</div>
+                <div class="stat-title">💳 إجمالي فواتير الخدمات المصرفية والبطاقات</div>
                 <div class="stat-value val-bank" id="bankAmount">0.00 د.ل</div>
             </div>
+
+            <!-- النافذة الثالثة: الإجمالي الكلي -->
             <div class="stat-card total">
-                <div class="stat-title">💰 إجمالي صافي المبيعات للفترة</div>
+                <div class="stat-title">💰 الإجمالي العام (النقدية + الخدمات المصرفية)</div>
                 <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
             </div>
         </div>
@@ -99,7 +102,6 @@
     
     let currentStoreId = null;
 
-    // ضبط التواريخ الافتراضية إلى تاريخ اليوم
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('startDate').value = today;
     document.getElementById('endDate').value = today;
@@ -169,8 +171,7 @@
         loadingDiv.style.display = 'block';
 
         try {
-            // جلب السجلات التابعة لـ store_id المحدد
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${currentStoreId}&select=*`, {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${currentStoreId}&order=last_update.desc&select=*`, {
                 method: 'GET',
                 headers: {
                     'apikey': SUPABASE_KEY,
@@ -187,17 +188,23 @@
 
             let totalCash = 0;
             let totalBank = 0;
-            let grandTotal = 0;
 
             if (data && data.length > 0) {
-                // تصفية النتائج جغرافياً حسب نطاق التاريخ المحدد (من / إلى)
-                const filtered = data.filter(item => {
-                    if (!item.last_update) return false;
+                const dailyRecords = {};
+                
+                data.forEach(item => {
+                    if (!item.last_update) return;
                     const itemDate = item.last_update.split('T')[0];
-                    return itemDate >= startDate && itemDate <= endDate;
+                    
+                    if (itemDate >= startDate && itemDate <= endDate) {
+                        if (!dailyRecords[itemDate]) {
+                            dailyRecords[itemDate] = item;
+                        }
+                    }
                 });
 
-                filtered.forEach(item => {
+                // تجميع النقدي بشكل مستقل، وتجميع كافة الخدمات المصرفية مجتمعة في بند واحد
+                Object.values(dailyRecords).forEach(item => {
                     const netCash = Number(item.cash_sales || 0) - Number(item.cash_returns || 0);
                     
                     const netCard = Number(item.card_sales || 0) - Number(item.card_returns || 0);
@@ -209,12 +216,14 @@
 
                     totalCash += netCash;
                     totalBank += netBankTotal;
-                    grandTotal += Number(item.total_sales || 0);
                 });
             }
 
+            // عرض القيم في النوافذ الثلاث
             document.getElementById('cashAmount').innerText = totalCash.toFixed(2) + " د.ل";
             document.getElementById('bankAmount').innerText = totalBank.toFixed(2) + " د.ل";
+            
+            const grandTotal = totalCash + totalBank;
             document.getElementById('totalAmount').innerText = grandTotal.toFixed(2) + " د.ل";
 
         } catch (err) {
