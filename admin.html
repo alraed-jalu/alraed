@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل دخول المدير - مبيعات المعارض</title>
+    <title>لوحة تحكم الإدارة - مبيعات المعارض</title>
     <style>
         body { font-family: Tahoma, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 15px; }
-        .container { max-width: 600px; margin: auto; background: #1e293b; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .container { max-width: 650px; margin: auto; background: #1e293b; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
         h2 { text-align: center; color: #38bdf8; margin-top: 0; }
         .store-tag { text-align: center; color: #e67e22; font-size: 16px; font-weight: bold; margin-bottom: 20px; }
         
@@ -17,6 +17,12 @@
         .btn-primary { background: #0284c7; color: white; }
         .btn-primary:hover { background: #0369a1; }
         
+        /* تنسيق اختيار الفترة */
+        .date-range-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .date-group { text-align: right; }
+        .date-group label { font-size: 13px; color: #94a3b8; display: block; margin-bottom: 4px; }
+        .date-group input { margin-bottom: 0; }
+
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
         .stat-card { background: #0f172a; border: 1px solid #334155; padding: 15px; border-radius: 12px; text-align: center; }
         .stat-card.cash { border-top: 4px solid #22c55e; }
@@ -29,7 +35,6 @@
         .val-bank { color: #60a5fa; }
         .val-total { color: #fde047; }
         
-        .filter-section { display: flex; gap: 10px; margin-bottom: 15px; }
         .hidden { display: none; }
     </style>
 </head>
@@ -39,7 +44,7 @@
     <h2>📊 لوحة تحكم الإدارة</h2>
     <div class="store-tag" id="welcomeStore">تسجيل الدخول مطلوب</div>
 
-    <!-- شاشة تسجيل الدخول السحابية -->
+    <!-- شاشة تسجيل الدخول -->
     <div id="loginSection">
         <label style="display:block; margin-bottom: 8px; color: #cbd5e1; text-align: right;">اسم المستخدم:</label>
         <input type="text" id="userInput" placeholder="أدخل اسم المستخدم...">
@@ -54,12 +59,20 @@
 
     <!-- لوحة البيانات الرئيسية -->
     <div id="dashboardSection" class="hidden">
-        <div class="filter-section">
-            <input type="date" id="searchDate">
-            <button class="btn btn-primary" style="width: auto; padding: 0 20px;" onclick="fetchSalesData()">عرض</button>
+        <!-- تحديد الفترة الزمنية من / إلى -->
+        <div class="date-range-grid">
+            <div class="date-group">
+                <label>من تاريخ:</label>
+                <input type="date" id="startDate">
+            </div>
+            <div class="date-group">
+                <label>إلى تاريخ:</label>
+                <input type="date" id="endDate">
+            </div>
         </div>
+        <button class="btn btn-primary" style="margin-bottom: 15px;" onclick="fetchSalesData()">عرض التقرير 🔍</button>
 
-        <div id="loadingStatus" style="text-align: center; color: #94a3b8; display: none;">⏳ جاري جلب المبيعات من السحابة...</div>
+        <div id="loadingStatus" style="text-align: center; color: #94a3b8; display: none;">⏳ جاري جلب البيانات من السحابة...</div>
 
         <div class="stats-grid" id="statsGrid">
             <div class="stat-card cash">
@@ -71,7 +84,7 @@
                 <div class="stat-value val-bank" id="bankAmount">0.00 د.ل</div>
             </div>
             <div class="stat-card total">
-                <div class="stat-title">💰 إجمالي صافي المبيعات</div>
+                <div class="stat-title">💰 إجمالي صافي المبيعات للفترة</div>
                 <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
             </div>
         </div>
@@ -85,7 +98,11 @@
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
     
     let currentStoreId = null;
-    document.getElementById('searchDate').valueAsDate = new Date();
+
+    // ضبط التواريخ الافتراضية إلى تاريخ اليوم
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('startDate').value = today;
+    document.getElementById('endDate').value = today;
 
     async function cloudLogin() {
         const usernameInput = document.getElementById('userInput').value.trim();
@@ -103,7 +120,6 @@
         loadingMsg.style.display = 'block';
 
         try {
-            // البحث عن المستخدم في جدول stores المرفق في السحابة
             const response = await fetch(`${SUPABASE_URL}/rest/v1/stores?username=eq.${encodeURIComponent(usernameInput)}&password=eq.${encodeURIComponent(passwordInput)}&select=*`, {
                 method: 'GET',
                 headers: {
@@ -125,8 +141,7 @@
 
             if (data && data.length > 0) {
                 const store = data[0];
-                // اعتماد معرف المحل (سواء كان حقل id أو store_id حسب جدولك)
-                currentStoreId = String(store.id || store.store_id || "2");
+                currentStoreId = String(store.store_id || store.id || "2");
                 
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('dashboardSection').classList.remove('hidden');
@@ -147,12 +162,15 @@
     async function fetchSalesData() {
         if (!currentStoreId) return;
 
-        const selectedDate = document.getElementById('searchDate').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
         const loadingDiv = document.getElementById('loadingStatus');
+        
         loadingDiv.style.display = 'block';
 
         try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${currentStoreId}&last_update=gte.${selectedDate}T00:00:00&last_update=lte.${selectedDate}T23:59:59&select=*`, {
+            // جلب السجلات التابعة لـ store_id المحدد
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${currentStoreId}&select=*`, {
                 method: 'GET',
                 headers: {
                     'apikey': SUPABASE_KEY,
@@ -172,8 +190,16 @@
             let grandTotal = 0;
 
             if (data && data.length > 0) {
-                data.forEach(item => {
+                // تصفية النتائج جغرافياً حسب نطاق التاريخ المحدد (من / إلى)
+                const filtered = data.filter(item => {
+                    if (!item.last_update) return false;
+                    const itemDate = item.last_update.split('T')[0];
+                    return itemDate >= startDate && itemDate <= endDate;
+                });
+
+                filtered.forEach(item => {
                     const netCash = Number(item.cash_sales || 0) - Number(item.cash_returns || 0);
+                    
                     const netCard = Number(item.card_sales || 0) - Number(item.card_returns || 0);
                     const netMobi = Number(item.mobicash_sales || 0) - Number(item.mobicash_returns || 0);
                     const netYesser = Number(item.yesserpay_sales || 0) - Number(item.yesserpay_returns || 0);
