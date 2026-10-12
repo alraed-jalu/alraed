@@ -17,7 +17,6 @@
             --card-bg: #0f172a;
         }
 
-        /* التكيف التلقائي مع وضع الهاتف (فاتح / غامق) */
         @media (prefers-color-scheme: light) {
             :root {
                 --bg-color: #f1f5f9;
@@ -48,7 +47,6 @@
         .date-group label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 4px; }
         .date-group input { margin-bottom: 0; }
 
-        /* النوافذ الثلاث للمبيعات */
         .stats-container { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
         .stat-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 20px; border-radius: 12px; text-align: center; }
         .stat-card.cash { border-right: 6px solid #22c55e; }
@@ -61,11 +59,14 @@
         .val-bank { color: #3b82f6; }
         .val-total { color: #eab308; }
 
-        /* قسم البحث والماسح */
+        /* قسم البحث والماسح مع الأزرار الجديدة */
         .search-section { margin-top: 30px; border-top: 2px solid var(--border-color); padding-top: 20px; }
         .search-box-wrapper { display: flex; gap: 8px; margin-bottom: 15px; }
         .search-box-wrapper input { margin-bottom: 0; text-align: right; flex: 1; }
         
+        .btn-action { background: #0284c7; color: white; border: none; padding: 0 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; white-space: nowrap; }
+        .btn-action:hover { background: #0369a1; }
+
         .btn-scan { background: #10b981; color: white; border: none; padding: 0 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; white-space: nowrap; }
         .btn-scan:hover { background: #059669; }
 
@@ -140,8 +141,9 @@
             <h3 style="color: #38bdf8; text-align: right; font-size: 18px; margin-bottom: 10px;">📦 الاستعلام عن المواد والمخزون</h3>
             
             <div class="search-box-wrapper">
-                <input type="text" id="itemSearchInput" placeholder="ابحث بالاسم أو الباركود..." oninput="searchItems()">
-                <button class="btn-scan" onclick="toggleCameraScanner()">مسح الكاميرا 📷</button>
+                <input type="text" id="itemSearchInput" placeholder="ابحث بالاسم أو الباركود..." onkeydown="if(event.key === 'Enter') searchItems()">
+                <button class="btn-action" onclick="searchItems()">بحث 🔍</button>
+                <button class="btn-scan" onclick="toggleCameraScanner()">كاميرا 📷</button>
             </div>
 
             <!-- نافذة عرض كاميرا الهاتف -->
@@ -164,7 +166,6 @@
     let currentStoreId = null;
     let html5QrcodeScanner = null;
 
-    // ضبط التواريخ الافتراضية على اليوم الحالي
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('startDate').value = today;
     document.getElementById('endDate').value = today;
@@ -302,11 +303,10 @@
                     }
                 });
 
-                // استخراج وقت آخر تحديث متوفر في السجلات المجلوبة
                 if (data[0] && data[0].last_update) {
                     const timePart = data[0].last_update.split('T')[1];
                     if (timePart) {
-                        latestTimestamp = timePart.substring(0, 8); // HH:MM:SS
+                        latestTimestamp = timePart.substring(0, 8);
                     }
                 }
 
@@ -331,7 +331,6 @@
             const grandTotal = totalCash + totalBank;
             document.getElementById('totalAmount').innerText = grandTotal.toFixed(2) + " د.ل";
 
-            // تحديث ساعة آخر مزامنة
             document.getElementById('lastSyncTime').innerText = `آخر تحديث للبيانات: ${latestTimestamp}`;
 
         } catch (err) {
@@ -340,62 +339,58 @@
         }
     }
 
-    let searchTimeout = null;
     async function searchItems(overrideQuery = null) {
         const query = overrideQuery !== null ? overrideQuery : document.getElementById('itemSearchInput').value.trim();
         const resultsContainer = document.getElementById('itemsResultsContainer');
         const loadingIndicator = document.getElementById('itemsLoading');
 
-        if (query.length < 2) {
-            resultsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 14px; padding: 15px;">اكتب حرفين على الأقل أو امسح الباركود للبحث...</div>';
+        if (query.length < 1) {
+            resultsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 14px; padding: 15px;">اكتب اسم الصنف أو الباركود للبحث...</div>';
             return;
         }
 
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(async () => {
-            loadingIndicator.style.display = 'block';
+        loadingIndicator.style.display = 'block';
 
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&or=(item_name.ilike.*${encodeURIComponent(query)}*,barcode.eq.${encodeURIComponent(query)})&limit=20&select=*`, {
-                    method: 'GET',
-                    headers: {
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': `Bearer ${SUPABASE_KEY}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                loadingIndicator.style.display = 'none';
-
-                if (!response.ok) return;
-
-                const items = await response.json();
-
-                if (items && items.length > 0) {
-                    let html = '';
-                    items.forEach(item => {
-                        html += `
-                            <div class="item-card">
-                                <div class="item-name">${item.item_name}</div>
-                                <div style="font-size: 12px; color: var(--text-muted);">الباركود: ${item.barcode || 'بدون باركود'}</div>
-                                <div class="item-details">
-                                    <div><span>سعر الشراء</span><b>${Number(item.buy_price || 0).toFixed(2)} د.ل</b></div>
-                                    <div><span>سعر البيع</span><b style="color: #4ade80;">${Number(item.sale_price || 0).toFixed(2)} د.ل</b></div>
-                                    <div><span>الكمية</span><b style="color: #38bdf8;">${item.available_qty} قطعة</b></div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    resultsContainer.innerHTML = html;
-                } else {
-                    resultsContainer.innerHTML = '<div style="text-align: center; color: #f87171; font-size: 14px; padding: 15px;">❌ لم يتم العثور على أي صنف مطابق</div>';
+        try {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&or=(item_name.ilike.*${encodeURIComponent(query)}*,barcode.eq.${encodeURIComponent(query)})&limit=20&select=*`, {
+                method: 'GET',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
                 }
+            });
 
-            } catch (err) {
-                loadingIndicator.style.display = 'none';
-                console.error("خطأ في البحث:", err);
+            loadingIndicator.style.display = 'none';
+
+            if (!response.ok) return;
+
+            const items = await response.json();
+
+            if (items && items.length > 0) {
+                let html = '';
+                items.forEach(item => {
+                    html += `
+                        <div class="item-card">
+                            <div class="item-name">${item.item_name}</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">الباركود: ${item.barcode || 'بدون باركود'}</div>
+                            <div class="item-details">
+                                <div><span>سعر الشراء</span><b>${Number(item.buy_price || 0).toFixed(2)} د.ل</b></div>
+                                <div><span>سعر البيع</span><b style="color: #4ade80;">${Number(item.sale_price || 0).toFixed(2)} د.ل</b></div>
+                                <div><span>الكمية</span><b style="color: #38bdf8;">${item.available_qty} قطعة</b></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                resultsContainer.innerHTML = html;
+            } else {
+                resultsContainer.innerHTML = '<div style="text-align: center; color: #f87171; font-size: 14px; padding: 15px;">❌ لم يتم العثور على أي صنف مطابق</div>';
             }
-        }, 200);
+
+        } catch (err) {
+            loadingIndicator.style.display = 'none';
+            console.error("خطأ في البحث:", err);
+        }
     }
 
     function toggleCameraScanner() {
