@@ -7,13 +7,37 @@
     <!-- مكتبة مسح الباركود عبر الكاميرا -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: Tahoma, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 15px; }
-        .container { max-width: 650px; margin: auto; background: #1e293b; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        :root {
+            --bg-color: #0f172a;
+            --container-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --input-bg: #0f172a;
+            --border-color: #334155;
+            --card-bg: #0f172a;
+        }
+
+        /* التكيف التلقائي مع وضع الهاتف (فاتح / غامق) */
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg-color: #f1f5f9;
+                --container-bg: #ffffff;
+                --text-color: #0f172a;
+                --text-muted: #64748b;
+                --input-bg: #f8fafc;
+                --border-color: #cbd5e1;
+                --card-bg: #f8fafc;
+            }
+        }
+
+        body { font-family: Tahoma, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px; transition: 0.3s; }
+        .container { max-width: 650px; margin: auto; background: var(--container-bg); padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
         h2 { text-align: center; color: #38bdf8; margin-top: 0; }
-        .store-tag { text-align: center; color: #e67e22; font-size: 16px; font-weight: bold; margin-bottom: 20px; }
+        .store-tag { text-align: center; color: #e67e22; font-size: 16px; font-weight: bold; margin-bottom: 5px; }
+        .last-sync-time { text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 20px; }
         
         #loginSection { text-align: center; padding: 20px 0; }
-        input { width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; box-sizing: border-box; margin-bottom: 15px; text-align: center; }
+        input { width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); box-sizing: border-box; margin-bottom: 15px; text-align: center; }
         
         .btn { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; transition: 0.2s; }
         .btn-primary { background: #0284c7; color: white; }
@@ -21,24 +45,24 @@
         
         .date-range-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .date-group { text-align: right; }
-        .date-group label { font-size: 13px; color: #94a3b8; display: block; margin-bottom: 4px; }
+        .date-group label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 4px; }
         .date-group input { margin-bottom: 0; }
 
         /* النوافذ الثلاث للمبيعات */
         .stats-container { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
-        .stat-card { background: #0f172a; border: 1px solid #334155; padding: 20px; border-radius: 12px; text-align: center; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 20px; border-radius: 12px; text-align: center; }
         .stat-card.cash { border-right: 6px solid #22c55e; }
         .stat-card.bank { border-right: 6px solid #3b82f6; }
-        .stat-card.total { border-right: 6px solid #eab308; background: #1e293b; }
+        .stat-card.total { border-right: 6px solid #eab308; background: var(--container-bg); }
         
-        .stat-title { font-size: 15px; color: #94a3b8; margin-bottom: 8px; }
+        .stat-title { font-size: 15px; color: var(--text-muted); margin-bottom: 8px; }
         .stat-value { font-size: 26px; font-weight: bold; }
-        .val-cash { color: #4ade80; }
-        .val-bank { color: #60a5fa; }
-        .val-total { color: #fde047; }
+        .val-cash { color: #22c55e; }
+        .val-bank { color: #3b82f6; }
+        .val-total { color: #eab308; }
 
         /* قسم البحث والماسح */
-        .search-section { margin-top: 30px; border-top: 2px solid #334155; padding-top: 20px; }
+        .search-section { margin-top: 30px; border-top: 2px solid var(--border-color); padding-top: 20px; }
         .search-box-wrapper { display: flex; gap: 8px; margin-bottom: 15px; }
         .search-box-wrapper input { margin-bottom: 0; text-align: right; flex: 1; }
         
@@ -48,11 +72,11 @@
         #reader { width: 100%; max-width: 400px; margin: 0 auto 15px auto; border-radius: 12px; overflow: hidden; display: none; border: 2px solid #38bdf8; }
 
         .items-results { display: flex; flex-direction: column; gap: 10px; max-height: 350px; overflow-y: auto; }
-        .item-card { background: #0f172a; border: 1px solid #334155; padding: 15px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .item-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
         .item-name { font-size: 16px; font-weight: bold; color: #38bdf8; }
-        .item-details { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; font-size: 14px; text-align: center; background: #1e293b; padding: 8px; border-radius: 6px; }
-        .item-details span { color: #cbd5e1; }
-        .item-details b { color: #f8fafc; display: block; margin-top: 3px; }
+        .item-details { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; font-size: 14px; text-align: center; background: var(--input-bg); padding: 8px; border-radius: 6px; }
+        .item-details span { color: var(--text-muted); }
+        .item-details b { color: var(--text-color); display: block; margin-top: 3px; }
 
         .hidden { display: none; }
     </style>
@@ -62,13 +86,14 @@
 <div class="container">
     <h2>📊 لوحة تحكم الإدارة</h2>
     <div class="store-tag" id="welcomeStore">تسجيل الدخول مطلوب</div>
+    <div class="last-sync-time" id="lastSyncTime">آخر تحديث: --:--:--</div>
 
     <!-- شاشة تسجيل الدخول -->
     <div id="loginSection">
-        <label style="display:block; margin-bottom: 8px; color: #cbd5e1; text-align: right;">اسم المستخدم:</label>
+        <label style="display:block; margin-bottom: 8px; text-align: right;">اسم المستخدم:</label>
         <input type="text" id="userInput" placeholder="أدخل اسم المستخدم...">
         
-        <label style="display:block; margin-bottom: 8px; color: #cbd5e1; text-align: right;">كلمة المرور:</label>
+        <label style="display:block; margin-bottom: 8px; text-align: right;">كلمة المرور:</label>
         <input type="password" id="passInput" placeholder="****">
 
         <button class="btn btn-primary" onclick="cloudLogin()">دخول 🔐</button>
@@ -90,7 +115,7 @@
         </div>
         <button class="btn btn-primary" style="margin-bottom: 15px;" onclick="fetchSalesData()">عرض التقارير 🔍</button>
 
-        <div id="loadingStatus" style="text-align: center; color: #94a3b8; display: none;">⏳ جاري جلب البيانات من السحابة...</div>
+        <div id="loadingStatus" style="text-align: center; color: var(--text-muted); display: none;">⏳ جاري جلب البيانات من السحابة...</div>
 
         <!-- النوافذ الثلاث للمبيعات -->
         <div class="stats-container">
@@ -122,9 +147,9 @@
             <!-- نافذة عرض كاميرا الهاتف -->
             <div id="reader"></div>
 
-            <div id="itemsLoading" style="text-align: center; color: #94a3b8; display: none; font-size: 13px; margin-bottom: 10px;">⏳ جاري البحث في الأصناف...</div>
+            <div id="itemsLoading" style="text-align: center; color: var(--text-muted); display: none; font-size: 13px; margin-bottom: 10px;">⏳ جاري البحث في الأصناف...</div>
             <div class="items-results" id="itemsResultsContainer">
-                <div style="text-align: center; color: #64748b; font-size: 14px; padding: 15px;">اكتب اسم الصنف أو مسح الباركود للبحث...</div>
+                <div style="text-align: center; color: var(--text-muted); font-size: 14px; padding: 15px;">اكتب اسم الصنف أو مسح الباركود للبحث...</div>
             </div>
         </div>
         
@@ -139,7 +164,7 @@
     let currentStoreId = null;
     let html5QrcodeScanner = null;
 
-    // ضبط التواريخ الافتراضية دائماً لتكون على تاريخ اليوم الحالي عند فتح الصفحة
+    // ضبط التواريخ الافتراضية على اليوم الحالي
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('startDate').value = today;
     document.getElementById('endDate').value = today;
@@ -261,6 +286,7 @@
 
             let totalCash = 0;
             let totalBank = 0;
+            let latestTimestamp = "--:--:--";
 
             if (data && data.length > 0) {
                 const dailyRecords = {};
@@ -275,6 +301,14 @@
                         }
                     }
                 });
+
+                // استخراج وقت آخر تحديث متوفر في السجلات المجلوبة
+                if (data[0] && data[0].last_update) {
+                    const timePart = data[0].last_update.split('T')[1];
+                    if (timePart) {
+                        latestTimestamp = timePart.substring(0, 8); // HH:MM:SS
+                    }
+                }
 
                 Object.values(dailyRecords).forEach(item => {
                     const netCash = Number(item.cash_sales || 0) - Number(item.cash_returns || 0);
@@ -297,6 +331,9 @@
             const grandTotal = totalCash + totalBank;
             document.getElementById('totalAmount').innerText = grandTotal.toFixed(2) + " د.ل";
 
+            // تحديث ساعة آخر مزامنة
+            document.getElementById('lastSyncTime').innerText = `آخر تحديث للبيانات: ${latestTimestamp}`;
+
         } catch (err) {
             loadingDiv.style.display = 'none';
             console.error("خطأ في جلب المبيعات:", err);
@@ -310,7 +347,7 @@
         const loadingIndicator = document.getElementById('itemsLoading');
 
         if (query.length < 2) {
-            resultsContainer.innerHTML = '<div style="text-align: center; color: #64748b; font-size: 14px; padding: 15px;">اكتب حرفين على الأقل أو امسح الباركود للبحث...</div>';
+            resultsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 14px; padding: 15px;">اكتب حرفين على الأقل أو امسح الباركود للبحث...</div>';
             return;
         }
 
@@ -340,7 +377,7 @@
                         html += `
                             <div class="item-card">
                                 <div class="item-name">${item.item_name}</div>
-                                <div style="font-size: 12px; color: #94a3b8;">الباركود: ${item.barcode || 'بدون باركود'}</div>
+                                <div style="font-size: 12px; color: var(--text-muted);">الباركود: ${item.barcode || 'بدون باركود'}</div>
                                 <div class="item-details">
                                     <div><span>سعر الشراء</span><b>${Number(item.buy_price || 0).toFixed(2)} د.ل</b></div>
                                     <div><span>سعر البيع</span><b style="color: #4ade80;">${Number(item.sale_price || 0).toFixed(2)} د.ل</b></div>
