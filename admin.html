@@ -139,16 +139,11 @@
     let currentStoreId = null;
     let html5QrcodeScanner = null;
 
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const firstDayOfMonth = `${year}-${month}-01`;
-    const today = now.toISOString().split('T')[0];
-
-    document.getElementById('startDate').value = firstDayOfMonth;
+    // ضبط التواريخ الافتراضية دائماً لتكون على تاريخ اليوم الحالي عند فتح الصفحة
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('startDate').value = today;
     document.getElementById('endDate').value = today;
 
-    // التحقق من الجلسة عند فتح الصفحة (مدة الصلاحية 6 ساعات) دون أي إعادة تحميل لا نهائية
     window.onload = function() {
         const savedSession = localStorage.getItem('admin_session');
         const loginTime = localStorage.getItem('admin_login_time');
@@ -167,7 +162,6 @@
                 
                 fetchSalesData();
             } else {
-                // انتهت الصلاحية، يتم حذف بيانات الجلسة القديمة وترك شاشة الدخول مفتوحة
                 localStorage.removeItem('admin_session');
                 localStorage.removeItem('admin_login_time');
             }
