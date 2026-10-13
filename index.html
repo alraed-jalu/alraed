@@ -4,100 +4,125 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>استعلام الأسعار - معرض سنتر العائلة</title>
-    <!-- مكتبة قراءة الباركود بالكاميرا -->
+    <!-- مكتبة مسح الباركود عبر الكاميرا -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: Tahoma, sans-serif; background-color: #f4f6f7; margin: 0; padding: 15px; color: #333; }
-        .container { max-width: 500px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
-        .store-title { text-align: center; color: #e67e22; font-size: 16px; font-weight: bold; margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { font-weight: bold; display: block; margin-bottom: 5px; }
-        input { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-        #reader { width: 100%; max-width: 400px; margin: 15px auto; border-radius: 8px; overflow: hidden; display: none; }
-        .btn-cam { background: #3498db; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; font-weight: bold; }
-        .btn-cam:hover { background: #2980b9; }
-        .btn-search { background: #27ae60; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; border-radius: 8px; cursor: pointer; margin-top: 10px; font-weight: bold; }
-        .btn-search:hover { background: #219653; }
-        .item-card { background: #f8f9fa; border: 1px solid #dcdde1; padding: 15px; border-radius: 8px; margin-top: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .item-name { font-size: 18px; color: #2c3e50; font-weight: bold; margin-bottom: 8px; }
-        .info-row { display: flex; justify-content: space-between; font-size: 16px; margin-top: 5px; }
-        .price { color: #27ae60; font-weight: bold; font-size: 19px; }
-        .qty { color: #2980b9; font-weight: bold; font-size: 19px; }
+        :root {
+            --bg-color: #0f172a;
+            --container-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --input-bg: #0f172a;
+            --border-color: #334155;
+            --card-bg: #0f172a;
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg-color: #f1f5f9;
+                --container-bg: #ffffff;
+                --text-color: #0f172a;
+                --text-muted: #64748b;
+                --input-bg: #f8fafc;
+                --border-color: #cbd5e1;
+                --card-bg: #f8fafc;
+            }
+        }
+
+        body { font-family: Tahoma, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px; transition: 0.3s; }
+        .container { max-width: 600px; margin: auto; background: var(--container-bg); padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        h2 { text-align: center; color: #38bdf8; margin-top: 0; }
+        .store-tag { text-align: center; color: #e67e22; font-size: 16px; font-weight: bold; margin-bottom: 25px; }
+        
+        /* أزرار تحديد نمط البحث */
+        .search-mode-selector { 
+            display: flex; justify-content: center; gap: 15px; margin-bottom: 15px; background: var(--input-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); 
+        }
+        .search-mode-selector label { font-size: 14px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 6px; }
+
+        .search-box-wrapper { display: flex; gap: 8px; margin-bottom: 15px; }
+        input[type="text"] { width: 100%; padding: 14px; font-size: 16px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); box-sizing: border-box; text-align: center; font-weight: bold; flex: 1; }
+        
+        .btn-action { background: #0284c7; color: white; border: none; padding: 0 18px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; white-space: nowrap; }
+        .btn-action:hover { background: #0369a1; }
+
+        .btn-scan { background: #10b981; color: white; border: none; padding: 0 18px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; white-space: nowrap; }
+        .btn-scan:hover { background: #059669; }
+
+        #reader { width: 100%; max-width: 400px; margin: 0 auto 15px auto; border-radius: 12px; overflow: hidden; display: none; border: 2px solid #38bdf8; }
+
+        .items-results { display: flex; flex-direction: column; gap: 12px; max-height: 450px; overflow-y: auto; margin-top: 20px; }
+        .item-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 20px; border-radius: 12px; display: flex; flex-direction: column; gap: 12px; text-align: center; }
+        .item-name { font-size: 18px; font-weight: bold; color: #38bdf8; }
+        
+        /* مربع عرض سعر البيع فقط */
+        .price-box { background: var(--input-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .price-label { font-size: 14px; color: var(--text-muted); margin-bottom: 5px; }
+        .price-value { font-size: 28px; font-weight: bold; color: #4ade80; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🔍 استعلام الأسعار السريع</h2>
-    <div class="store-title">🏪 معرض سنتر العائلة </div>
+    <h2>🏷️ الاستعلام عن أسعار المواد</h2>
+    <div class="store-tag">معرض سنتر العائلة</div>
 
-    <button class="btn-cam" onclick="toggleCamera()">📷 فتح / إغلاق كاميرا المسح</button>
-    <div id="reader"></div>
-
-    <div class="form-group">
-        <label>ابحث باسم الصنف أو الباركود:</label>
-        <input type="text" id="searchInput" placeholder="اكتب اسم الصنف أو امسح الباركود...">
+    <!-- خيارات تحديد طريقة البحث -->
+    <div class="search-mode-selector">
+        <label><input type="radio" name="searchMode" value="barcode_only" checked> 🏷️ باركود فقط</label>
+        <label><input type="radio" name="searchMode" value="barcode_and_text"> 🔍 باركود + اسم المادة</label>
     </div>
 
-    <button class="btn-search" onclick="searchItem()">بحث فوراً 🔍</button>
+    <!-- مربع البحث والماسح -->
+    <div class="search-box-wrapper">
+        <input type="text" id="itemSearchInput" placeholder="أدخل رقم الباركود أو النص..." onkeydown="if(event.key === 'Enter') searchItems()">
+        <button class="btn-action" onclick="searchItems()">بحث 🔍</button>
+        <button class="btn-scan" onclick="toggleCameraScanner()">كاميرا 📷</button>
+    </div>
 
-    <div id="results"></div>
+    <!-- نافذة الكاميرا -->
+    <div id="reader"></div>
+
+    <div id="itemsLoading" style="text-align: center; color: var(--text-muted); display: none; font-size: 14px; margin-bottom: 10px;">⏳ جاري جلب السعر...</div>
+    
+    <div class="items-results" id="itemsResultsContainer">
+        <div style="text-align: center; color: var(--text-muted); font-size: 15px; padding: 20px;">امسح أو أدخل الباركود لمعرفة سعر البيع...</div>
+    </div>
 </div>
 
 <script>
     const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
-    const FIXED_STORE_ID = "2";
+    
+    const storeId = "2"; 
+    let html5QrcodeScanner = null;
 
-    let html5QrCode;
-    let cameraIsRunning = false;
+    async function searchItems(overrideQuery = null) {
+        const rawQuery = overrideQuery !== null ? overrideQuery : document.getElementById('itemSearchInput').value;
+        const query = rawQuery.trim();
+        const resultsContainer = document.getElementById('itemsResultsContainer');
+        const loadingIndicator = document.getElementById('itemsLoading');
+        const selectedMode = document.querySelector('input[name="searchMode"]:checked').value;
 
-    function toggleCamera() {
-        const readerDiv = document.getElementById('reader');
-        if (!cameraIsRunning) {
-            readerDiv.style.display = 'block';
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 100 } },
-                (decodedText) => {
-                    document.getElementById('searchInput').value = decodedText;
-                    toggleCamera(); 
-                    searchItem();   
-                }
-            ).catch(err => { console.error(err); });
-            cameraIsRunning = true;
-        } else {
-            html5QrCode.stop().then(() => {
-                readerDiv.style.display = 'none';
-                cameraIsRunning = false;
-            }).catch(err => { console.error(err); });
-        }
-    }
-
-    async function searchItem() {
-        const queryText = document.getElementById('searchInput').value.trim();
-        const resultsDiv = document.getElementById('results');
-
-        if (!queryText) {
-            resultsDiv.innerHTML = "<p style='color: #e74c3c; text-align: center; margin-top: 15px;'>⚠️ الرجاء إدخال اسم الصنف أو الباركود أولاً.</p>";
+        if (query.length < 1) {
+            resultsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 15px; padding: 20px;">ادخل القيمة للبحث...</div>';
             return;
         }
 
-        resultsDiv.innerHTML = "<p style='text-align: center; color: #7f8c8d; margin-top: 15px;'>⏳ جاري البحث...</p>";
+        loadingIndicator.style.display = 'block';
 
         try {
-            let apiUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&select=*`;
+            let fetchUrl = "";
 
-            // توجيه البحث مباشرة للخادم بناءً على نوع المدخل (باركود، رقم صنف، أو اسم)
-            if (!isNaN(queryText) && queryText !== "") {
-                apiUrl += `&or=(barcode.eq.${queryText},item_id.eq.${queryText})`;
+            if (selectedMode === "barcode_only") {
+                // البحث بالباركود فقط مع حظر الفهرسة النصية لأسماء المواد
+                fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${storeId}&barcode=eq.${encodeURIComponent(query)}&limit=20&select=*`;
             } else {
-                apiUrl += `&item_name=ilike.*${queryText}*`;
+                // البحث الشامل بالباركود أو اسم المادة
+                fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${storeId}&or=(barcode.eq.${encodeURIComponent(query)},item_name.ilike.*${encodeURIComponent(query)}*)&limit=20&select=*`;
             }
 
-            const response = await fetch(apiUrl, {
+            const response = await fetch(fetchUrl, {
                 method: 'GET',
                 headers: {
                     'apikey': SUPABASE_KEY,
@@ -106,44 +131,70 @@
                 }
             });
 
-            if (!response.ok) {
-                resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center;">❌ خطأ في الاتصال بالسحابة: ${response.statusText}</p>`;
-                return;
-            }
+            const items = await response.json();
+            loadingIndicator.style.display = 'none';
 
-            const data = await response.json();
-
-            if (data && data.length > 0) {
-                let html = `<p style="color: #27ae60; font-weight: bold; margin-top: 15px;">تم العثور على ${data.length} صنف:</p>`;
-                data.forEach(item => {
+            if (items && items.length > 0) {
+                let html = '';
+                items.forEach(item => {
                     html += `
                         <div class="item-card">
-                            <div class="item-name">📦 ${item.item_name || 'بدون اسم'} <span style="font-size: 13px; color: #7f8c8d;">(${item.barcode || 'بدون باركود'})</span></div>
-                            <div class="info-row">
-                                <span>سعر البيع:</span>
-                                <span class="price">${item.sale_price !== undefined ? item.sale_price : 0} د.ل</span>
-                            </div>
-                            <div class="info-row">
-                                <span>الكمية المتاحة:</span>
-                                <span class="qty">${item.available_qty !== undefined ? item.available_qty : 0}</span>
+                            <div class="item-name">${item.item_name}</div>
+                            <div style="font-size: 13px; color: var(--text-muted);">الباركود: ${item.barcode || 'بدون باركود'}</div>
+                            <div class="price-box">
+                                <div class="price-label">سعر البيع المعتمد</div>
+                                <div class="price-value">${Number(item.sale_price || 0).toFixed(2)} د.ل</div>
                             </div>
                         </div>
                     `;
                 });
-                resultsDiv.innerHTML = html;
+                resultsContainer.innerHTML = html;
             } else {
-                resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center; margin-top: 15px;">⚠️ لم يتم العثور على أي صنف مطابق في معرض سنتر العائلة.</p>`;
+                resultsContainer.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 15px; padding: 20px;">❌ لا توجد مادة بهذا الباركود (${selectedMode === 'barcode_only' ? 'الباركود غير موجود' : 'الباركود أو الاسم غير موجود'})</div>`;
             }
+
         } catch (err) {
-            resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center;">❌ خطأ في النظام: ${err.message}</p>`;
+            loadingIndicator.style.display = 'none';
+            console.error("خطأ في البحث:", err);
         }
     }
-    
-    document.getElementById('searchInput').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            searchItem();
+
+    function toggleCameraScanner() {
+        const readerDiv = document.getElementById('reader');
+        if (readerDiv.style.display === 'block') {
+            stopScanner();
+        } else {
+            readerDiv.style.display = 'block';
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 150 } },
+                (decodedText) => {
+                    document.getElementById('itemSearchInput').value = decodedText;
+                    searchItems(decodedText);
+                    stopScanner();
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                alert("⚠️ لا يمكن فتح الكاميرا، يرجى التأكد من إعطاء المتصفح صلاحية الكاميرا.");
+                stopScanner();
+            });
         }
-    });
+    }
+
+    function stopScanner() {
+        const readerDiv = document.getElementById('reader');
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.stop().then(() => {
+                html5QrcodeScanner.clear();
+                readerDiv.style.display = 'none';
+            }).catch(() => {
+                readerDiv.style.display = 'none';
+            });
+        } else {
+            readerDiv.style.display = 'none';
+        }
+    }
 </script>
 
 </body>
