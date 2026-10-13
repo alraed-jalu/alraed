@@ -59,7 +59,6 @@
         .val-bank { color: #3b82f6; }
         .val-total { color: #eab308; }
 
-        /* قسم البحث والماسح مع الأزرار الجديدة */
         .search-section { margin-top: 30px; border-top: 2px solid var(--border-color); padding-top: 20px; }
         .search-box-wrapper { display: flex; gap: 8px; margin-bottom: 15px; }
         .search-box-wrapper input { margin-bottom: 0; text-align: right; flex: 1; }
@@ -146,7 +145,6 @@
                 <button class="btn-scan" onclick="toggleCameraScanner()">كاميرا 📷</button>
             </div>
 
-            <!-- نافذة عرض كاميرا الهاتف -->
             <div id="reader"></div>
 
             <div id="itemsLoading" style="text-align: center; color: var(--text-muted); display: none; font-size: 13px; margin-bottom: 10px;">⏳ جاري البحث في الأصناف...</div>
@@ -339,8 +337,10 @@
         }
     }
 
+    // دالة البحث المحدثة الذكية التي تقدم مطابقة الباركود بدقة
     async function searchItems(overrideQuery = null) {
-        const query = overrideQuery !== null ? overrideQuery : document.getElementById('itemSearchInput').value.trim();
+        const rawQuery = overrideQuery !== null ? overrideQuery : document.getElementById('itemSearchInput').value;
+        const query = rawQuery.trim();
         const resultsContainer = document.getElementById('itemsResultsContainer');
         const loadingIndicator = document.getElementById('itemsLoading');
 
@@ -352,7 +352,8 @@
         loadingIndicator.style.display = 'block';
 
         try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&or=(item_name.ilike.*${encodeURIComponent(query)}*,barcode.eq.${encodeURIComponent(query)})&limit=20&select=*`, {
+            // المحاولة الأولى: البحث المباشر بالتطابق التام للباركود أولاً
+            let response = await fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&barcode=ilike.*${encodeURIComponent(query)}*&limit=20&select=*`, {
                 method: 'GET',
                 headers: {
                     'apikey': SUPABASE_KEY,
@@ -361,11 +362,22 @@
                 }
             });
 
+            let items = await response.json();
+
+            // إذا لم يتم العثور على الباركود، قم بالبحث التلقائي في اسم الصنف
+            if (!items || items.length === 0) {
+                response = await fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&item_name=ilike.*${encodeURIComponent(query)}*&limit=20&select=*`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                items = await response.json();
+            }
+
             loadingIndicator.style.display = 'none';
-
-            if (!response.ok) return;
-
-            const items = await response.json();
 
             if (items && items.length > 0) {
                 let html = '';
