@@ -3,144 +3,401 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم العليا - متابعة المتاجر والمزامنة</title>
+    <title>لوحة التحكم المركزية - متابعة المتاجر والمبيعات</title>
+    <!-- مكتبة Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --container-bg: #1e293b;
-            --text-color: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-color: #334155;
-            --card-bg: #0f172a;
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
         }
 
-        @media (prefers-color-scheme: light) {
-            :root {
-                --bg-color: #f1f5f9;
-                --container-bg: #ffffff;
-                --text-color: #0f172a;
-                --text-muted: #64748b;
-                --border-color: #cbd5e1;
-                --card-bg: #f8fafc;
-            }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        body { font-family: Tahoma, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px; transition: 0.3s; }
-        .container { max-width: 650px; margin: auto; background: var(--container-bg); padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
-        h2 { text-align: center; color: #38bdf8; margin-top: 0; margin-bottom: 20px; font-size: 20px; }
-        
-        .stores-grid { display: flex; flex-direction: column; gap: 12px; }
-        .store-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-        .store-info h3 { margin: 0 0 5px 0; color: #38bdf8; font-size: 16px; }
-        .store-info p { margin: 0; font-size: 12px; color: var(--text-muted); }
-        
-        .status-badge { padding: 6px 12px; border-radius: 16px; font-weight: bold; font-size: 12px; text-align: center; white-space: nowrap; }
-        
-        /* الألوان المطلوبة للحالات */
-        .status-good { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid #22c55e; }
-        .status-warning { background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid #eab308; }
-        .status-danger { background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid #f87171; }
-        
-        .loading { text-align: center; color: var(--text-muted); padding: 20px; font-size: 14px; }
-        .refresh-btn { display: block; width: 100%; margin-top: 15px; padding: 10px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
-        .refresh-btn:hover { background: #0369a1; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        header h1 {
+            color: #1a252f;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        /* تنسيق كروت المبيعات */
+        .section-title {
+            font-size: 18px;
+            margin: 20px 0 12px 0;
+            color: #2c3e50;
+            border-right: 4px solid var(--primary-color);
+            padding-right: 8px;
+        }
+
+        .sales-dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            border: 1px solid #e9ecef;
+            position: relative;
+        }
+
+        .card h3 {
+            font-size: 16px;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+
+        .card .amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #212529;
+        }
+
+        .card.clickable {
+            cursor: pointer;
+            border: 2px dashed var(--primary-color);
+            background-color: #f8faff;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .card.clickable:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 123, 255, 0.15);
+            background-color: #eef5ff;
+        }
+
+        .hint-text {
+            display: block;
+            font-size: 12px;
+            color: var(--primary-color);
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        /* تنسيق جدول/كروت متابعة المتاجر */
+        .stores-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .store-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            border: 1px solid #e0e0e0;
+        }
+
+        .store-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .store-title {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
+
+        .btn-refresh {
+            display: block;
+            width: 100%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+
+        .btn-refresh:hover {
+            background: #0056b3;
+        }
+
+        /* تنسيق الشاشة المنبثقة (Modal) */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(3px);
+        }
+
+        .modal-content {
+            background-color: #ffffff;
+            margin: 12% auto;
+            padding: 25px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .close-btn {
+            font-size: 24px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+
+        .close-btn:hover {
+            color: #000;
+        }
+
+        .bank-breakdown-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .bank-breakdown-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+        }
+
+        .bank-breakdown-list li:last-child {
+            border-bottom: none;
+        }
+
+        .bank-breakdown-list strong {
+            color: #1a252f;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>⚡ متابعة المتاجر والمزامنة</h2>
-    
-    <div id="loadingDiv" class="loading">⏳ جاري فحص حالة اتصال ومزامنة المتاجر...</div>
-    <div class="stores-grid" id="storesContainer"></div>
+    <header>
+        <h1>⚡ لوحة التحكم والإدارة المركزية</h1>
+        <p style="color: #6c757d; font-size: 14px;">متابعة المبيعات المباشرة وحالة المزامنة لكافة المتاجر</p>
+    </header>
 
-    <button class="refresh-btn" onclick="checkStoresSyncStatus()">تحديث الحالة 🔄</button>
+    <!-- 1. قسم كروت إجماليات المبيعات -->
+    <div class="section-title">إجماليات المبيعات اليومية</div>
+    <div class="sales-dashboard-cards">
+        
+        <!-- خانة فواتير المبيعات النقدية -->
+        <div class="card">
+            <h3>💵 المبيعات النقدية</h3>
+            <div class="amount" id="cashSalesVal">0.00 د.ل</div>
+        </div>
+
+        <!-- خانة فواتير المبيعات المصرفية (تفاعلية) -->
+        <div class="card clickable" onclick="toggleBankModal(true)">
+            <h3>💳 المبيعات المصرفية 🔻</h3>
+            <div class="amount" id="totalBankSalesVal">0.00 د.ل</div>
+            <span class="hint-text">انقر لعرض التفاصيل المصرفية</span>
+        </div>
+
+        <!-- خانة إجمالي المبيعات الكلي -->
+        <div class="card" style="background: #eef9f1; border-color: #28a745;">
+            <h3 style="color: #155724;">📊 إجمالي المبيعات الكلي</h3>
+            <div class="amount" id="totalSalesVal" style="color: #28a745;">0.00 د.ل</div>
+        </div>
+
+    </div>
+
+    <!-- 2. قسم متابعة حالة المتاجر -->
+    <div class="section-title">حالة المزامنة المباشرة للمتاجر</div>
+    <div class="stores-grid" id="storesContainer">
+        <!-- يتم تحميل المتاجر ديناميكياً هنا -->
+    </div>
+
+    <button class="btn-refresh" onclick="loadDashboardData()">تحديث البيانات والحالة 🔄</button>
+</div>
+
+<!-- النافذة المنبثقة (Modal) لتفاصيل المبيعات المصرفية -->
+<div id="bankDetailsModal" class="modal" onclick="handleModalBackgroundClick(event)">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>تفاصيل المبيعات المصرفية</h2>
+            <button class="close-btn" onclick="toggleBankModal(false)">&times;</button>
+        </div>
+        <ul class="bank-breakdown-list">
+            <li><span>📱 موبي كاش:</span> <strong id="mobicashVal">0.00 د.ل</strong></li>
+            <li><span>💳 البطاقة المصرفية:</span> <strong id="cardVal">0.00 د.ل</strong></li>
+            <li><span>🤝 يسر باي:</span> <strong id="yesserpayVal">0.00 د.ل</strong></li>
+            <li><span>🛒 ادفع لي:</span> <strong id="edfaqliVal">0.00 د.ل</strong></li>
+        </ul>
+    </div>
 </div>
 
 <script>
+    // إعداد الاتصال بـ Supabase
     const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    async function checkStoresSyncStatus() {
-        const container = document.getElementById('storesContainer');
-        const loadingDiv = document.getElementById('loadingDiv');
-        
-        loadingDiv.style.display = 'block';
-        container.innerHTML = '';
+    // دالة التحكم بفتح وإغلاق النافذة المنبثقة
+    function toggleBankModal(show) {
+        const modal = document.getElementById('bankDetailsModal');
+        modal.style.display = show ? 'block' : 'none';
+    }
 
-        try {
-            // 1. جلب قائمة المتاجر
-            const storesRes = await fetch(`${SUPABASE_URL}/rest/v1/stores?select=*`, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-            });
-            const stores = await storesRes.json();
-
-            if (!stores || stores.length === 0) {
-                loadingDiv.innerText = "❌ لا توجد متاجر مسجلة في النظام.";
-                return;
-            }
-
-            let html = '';
-            const now = new Date();
-
-            for (let store of stores) {
-                const storeId = store.store_id || store.id;
-                const storeName = store.store_name || "معرض بدون اسم";
-
-                // 2. جلب آخر وقت تحديث للمتجر
-                const salesRes = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${storeId}&order=last_update.desc&limit=1&select=last_update`, {
-                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-                });
-                const salesData = await salesRes.json();
-
-                let lastSyncStr = "لم تتم المزامنة بعد";
-                let badgeClass = "status-danger";
-                let badgeText = "⚠️ متوقفة (> 24 ساعة)";
-
-                if (salesData && salesData.length > 0 && salesData[0].last_update) {
-                    const syncDate = new Date(salesData[0].last_update);
-                    const diffHours = (now - syncDate) / (1000 * 60 * 60); // الفارق بالساعات
-
-                    const datePart = salesData[0].last_update.split('T')[0];
-                    const timePart = salesData[0].last_update.split('T')[1].substring(0, 8);
-                    lastSyncStr = `${datePart} ${timePart}`;
-
-                    // تحديد الحالة بناءً على الفارق الزمني المطلوب
-                    if (diffHours <= 3) {
-                        badgeClass = "status-good";
-                        badgeText = "✅ ممتازة";
-                    } else if (diffHours > 3 && diffHours <= 24) {
-                        badgeClass = "status-warning";
-                        badgeText = "⚠️ متوقفة أو متأخرة";
-                    } else {
-                        badgeClass = "status-danger";
-                        badgeText = "❌ متوقفة (> 24 ساعة)";
-                    }
-                }
-
-                html += `
-                    <div class="store-card">
-                        <div class="store-info">
-                            <h3>🏪 ${storeName}</h3>
-                            <p>آخر مزامنة: <b>${lastSyncStr}</b></p>
-                        </div>
-                        <div>
-                            <span class="status-badge ${badgeClass}">${badgeText}</span>
-                        </div>
-                    </div>
-                `;
-            }
-
-            loadingDiv.style.display = 'none';
-            container.innerHTML = html;
-
-        } catch (err) {
-            loadingDiv.style.display = 'block';
-            loadingDiv.innerText = "❌ حدث خطأ أثناء جلب البيانات: " + err.message;
+    function handleModalBackgroundClick(event) {
+        if (event.target.id === 'bankDetailsModal') {
+            toggleBankModal(false);
         }
     }
 
-    window.onload = checkStoresSyncStatus;
+    // دالة جلب وتحديث بيانات اللوحة من Supabase
+    async function loadDashboardData() {
+        try {
+            // 1. جلب المبيعات
+            const { data: salesData, error: salesErr } = await _supabase.from('store_sales').select('*');
+            if (salesErr) throw salesErr;
+
+            let totalCash = 0;
+            let totalMobicash = 0;
+            let totalCard = 0;
+            let totalYesserpay = 0;
+            let totalEdfaqli = 0;
+
+            if (salesData && salesData.length > 0) {
+                salesData.forEach(item => {
+                    totalCash += (item.cash_sales || 0) - (item.cash_returns || 0);
+                    totalMobicash += (item.mobicash_sales || 0) - (item.mobicash_returns || 0);
+                    totalCard += (item.card_sales || 0) - (item.card_returns || 0);
+                    totalYesserpay += (item.yesserpay_sales || 0) - (item.yesserpay_returns || 0);
+                    totalEdfaqli += (item.edfaqli_sales || 0) - (item.edfaqli_returns || 0);
+                });
+            }
+
+            const totalBankSum = totalMobicash + totalCard + totalYesserpay + totalEdfaqli;
+            const grandTotalSum = totalCash + totalBankSum;
+
+            // تحديث قيم الواجهة الرئيسي
+            document.getElementById('cashSalesVal').innerText = totalCash.toFixed(2) + ' د.ل';
+            document.getElementById('totalBankSalesVal').innerText = totalBankSum.toFixed(2) + ' د.ل';
+            document.getElementById('totalSalesVal').innerText = grandTotalSum.toFixed(2) + ' د.ل';
+
+            // تحديث تفاصيل النافذة المنبثقة
+            document.getElementById('mobicashVal').innerText = totalMobicash.toFixed(2) + ' د.ل';
+            document.getElementById('cardVal').innerText = totalCard.toFixed(2) + ' د.ل';
+            document.getElementById('yesserpayVal').innerText = totalYesserpay.toFixed(2) + ' د.ل';
+            document.getElementById('edfaqliVal').innerText = totalEdfaqli.toFixed(2) + ' د.ل';
+
+            // 2. جلب وتحديث حالة المتاجر والمزامنة
+            const { data: storesData, error: storesErr } = await _supabase.from('stores').select('*');
+            if (storesErr) throw storesErr;
+
+            const storesContainer = document.getElementById('storesContainer');
+            storesContainer.innerHTML = '';
+
+            if (storesData && storesData.length > 0) {
+                storesData.forEach(store => {
+                    const lastSyncDate = store.last_sync ? new Date(store.last_sync) : null;
+                    const now = new Date();
+                    
+                    // اعتبار المتجر نشط إذا كانت آخر مزامنة خلال آخر 24 ساعة
+                    const isHealthy = lastSyncDate && ((now - lastSyncDate) / (1000 * 60 * 60)) < 24;
+
+                    const formattedDate = lastSyncDate 
+                        ? `${lastSyncDate.toLocaleDateString('ar-LY')} ${lastSyncDate.toLocaleTimeString('ar-LY')}`
+                        : 'لم تتم المزامنة بعد';
+
+                    const storeCardHTML = `
+                        <div class="store-card">
+                            <div class="store-header">
+                                <span class="store-title">🏬 ${store.name || 'متجر'}</span>
+                                <span class="badge ${isHealthy ? 'badge-success' : 'badge-danger'}">
+                                    ${isHealthy ? '✅ ممتازة' : '❌ متوقفة (> 24 ساعة)'}
+                                </span>
+                            </div>
+                            <div style="font-size: 13px; color: #6c757d;">
+                                آخر مزامنة: <strong>${formattedDate}</strong>
+                            </div>
+                        </div>
+                    `;
+                    storesContainer.innerHTML += storeCardHTML;
+                });
+            }
+
+        } catch (err) {
+            console.error('خطأ أثناء جلب البيانات:', err);
+        }
+    }
+
+    // التحميل التلقائي عند فتح الصفحة
+    window.onload = loadDashboardData;
 </script>
 
 </body>
