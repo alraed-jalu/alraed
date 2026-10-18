@@ -63,7 +63,7 @@
         .val-total { color: #eab308; }
         .hint-text { display: block; font-size: 12px; color: #3b82f6; margin-top: 5px; font-weight: bold; }
 
-        /* تنسيق النافذة المنبثقة (Modal) للتفاصيل المصرفية */
+        /* تنسيق النافذة المنبثقة (Modal) لتفاصيل الخدمات المصرفية */
         .modal {
             display: none;
             position: fixed;
@@ -241,7 +241,6 @@
     let currentStoreId = null;
     let html5QrcodeScanner = null;
 
-    // متغيرات لحفظ القيم التفصيلية لعرضها في النافذة المنبثقة
     let currentBankBreakdown = { mobi: 0, card: 0, yesser: 0, edfaq: 0 };
 
     const today = new Date().toISOString().split('T')[0];
@@ -272,7 +271,6 @@
         }
     };
 
-    // دوال التحكم بالنافذة المنبثقة
     function toggleBankModal(show) {
         const modal = document.getElementById('bankModal');
         modal.style.display = show ? 'block' : 'none';
@@ -382,14 +380,10 @@
             const data = await response.json();
 
             let totalCash = 0;
-            let totalBank = 0;
-            
-            // تصفير التفاصيل قبل الحساب الجديد
             let sumCard = 0;
             let sumMobi = 0;
             let sumYesser = 0;
             let sumEdfaq = 0;
-
             let latestTimestamp = "--:--:--";
 
             if (data && data.length > 0) {
@@ -415,17 +409,12 @@
 
                 Object.values(dailyRecords).forEach(item => {
                     const netCash = Number(item.cash_sales || 0) - Number(item.cash_returns || 0);
-                    
                     const netCard = Number(item.card_sales || 0) - Number(item.card_returns || 0);
                     const netMobi = Number(item.mobicash_sales || 0) - Number(item.mobicash_returns || 0);
                     const netYesser = Number(item.yesserpay_sales || 0) - Number(item.yesserpay_returns || 0);
                     const netEdfaq = Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0);
 
-                    const netBankTotal = netCard + netMobi + netYesser + netEdfaq;
-
                     totalCash += netCash;
-                    totalBank += netBankTotal;
-
                     sumCard += netCard;
                     sumMobi += netMobi;
                     sumYesser += netYesser;
@@ -433,8 +422,14 @@
                 });
             }
 
-            // تحديث المتجر العام للتفاصيل
-            currentBankBreakdown = { mobi: sumMobi, card: sumCard, yesser: sumYesser, edfaq: sumEdfaq };
+            const totalBank = sumCard + sumMobi + sumYesser + sumEdfaq;
+
+            currentBankBreakdown = { 
+                mobi: sumMobi, 
+                card: sumCard, 
+                yesser: sumYesser, 
+                edfaq: sumEdfaq 
+            };
 
             document.getElementById('cashAmount').innerText = totalCash.toFixed(2) + " د.ل";
             document.getElementById('bankAmount').innerText = totalBank.toFixed(2) + " د.ل";
@@ -443,6 +438,11 @@
             document.getElementById('totalAmount').innerText = grandTotal.toFixed(2) + " د.ل";
 
             document.getElementById('lastSyncTime').innerText = `آخر تحديث للبيانات: ${latestTimestamp}`;
+
+            const modal = document.getElementById('bankModal');
+            if (modal && modal.style.display === 'block') {
+                toggleBankModal(true);
+            }
 
         } catch (err) {
             loadingDiv.style.display = 'none';
