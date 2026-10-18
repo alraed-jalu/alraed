@@ -13,28 +13,43 @@
             --border-color: #334155;
             --card-bg: #0f172a;
         }
-        body { font-family: Tahoma, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: auto; background: var(--container-bg); padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        h2 { text-align: center; color: #38bdf8; margin-top: 0; margin-bottom: 25px; }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg-color: #f1f5f9;
+                --container-bg: #ffffff;
+                --text-color: #0f172a;
+                --text-muted: #64748b;
+                --border-color: #cbd5e1;
+                --card-bg: #f8fafc;
+            }
+        }
+
+        body { font-family: Tahoma, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px; transition: 0.3s; }
+        .container { max-width: 650px; margin: auto; background: var(--container-bg); padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        h2 { text-align: center; color: #38bdf8; margin-top: 0; margin-bottom: 20px; font-size: 20px; }
         
-        .stores-grid { display: flex; flex-direction: column; gap: 15px; }
-        .store-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .store-info h3 { margin: 0 0 8px 0; color: #38bdf8; font-size: 18px; }
-        .store-info p { margin: 0; font-size: 13px; color: var(--text-muted); }
+        .stores-grid { display: flex; flex-direction: column; gap: 12px; }
+        .store-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .store-info h3 { margin: 0 0 5px 0; color: #38bdf8; font-size: 16px; }
+        .store-info p { margin: 0; font-size: 12px; color: var(--text-muted); }
         
-        .status-badge { padding: 8px 14px; border-radius: 20px; font-weight: bold; font-size: 13px; text-align: center; }
+        .status-badge { padding: 6px 12px; border-radius: 16px; font-weight: bold; font-size: 12px; text-align: center; white-space: nowrap; }
+        
+        /* الألوان المطلوبة للحالات */
         .status-good { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid #22c55e; }
-        .status-bad { background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid #f87171; }
+        .status-warning { background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid #eab308; }
+        .status-danger { background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid #f87171; }
         
-        .loading { text-align: center; color: var(--text-muted); padding: 30px; font-size: 16px; }
-        .refresh-btn { display: block; width: 100%; margin-top: 20px; padding: 12px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        .loading { text-align: center; color: var(--text-muted); padding: 20px; font-size: 14px; }
+        .refresh-btn { display: block; width: 100%; margin-top: 15px; padding: 10px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
         .refresh-btn:hover { background: #0369a1; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>⚡ مراقبة حالة المزامنة للمتاجر</h2>
+    <h2>⚡ متابعة المتاجر والمزامنة</h2>
     
     <div id="loadingDiv" class="loading">⏳ جاري فحص حالة اتصال ومزامنة المتاجر...</div>
     <div class="stores-grid" id="storesContainer"></div>
@@ -54,7 +69,7 @@
         container.innerHTML = '';
 
         try {
-            // 1. جلب قائمة المتاجر المسجلة
+            // 1. جلب قائمة المتاجر
             const storesRes = await fetch(`${SUPABASE_URL}/rest/v1/stores?select=*`, {
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
             });
@@ -72,38 +87,45 @@
                 const storeId = store.store_id || store.id;
                 const storeName = store.store_name || "معرض بدون اسم";
 
-                // 2. جلب آخر عملية تحديث/مزامنة تمت للمتجر من جدول المبيعات
+                // 2. جلب آخر وقت تحديث للمتجر
                 const salesRes = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${storeId}&order=last_update.desc&limit=1&select=last_update`, {
                     headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
                 });
                 const salesData = await salesRes.json();
 
                 let lastSyncStr = "لم تتم المزامنة بعد";
-                let isGood = false;
+                let badgeClass = "status-danger";
+                let badgeText = "⚠️ متوقفة (> 24 ساعة)";
 
                 if (salesData && salesData.length > 0 && salesData[0].last_update) {
                     const syncDate = new Date(salesData[0].last_update);
                     const diffHours = (now - syncDate) / (1000 * 60 * 60); // الفارق بالساعات
 
-                    // تنسيق الوقت للعرض بشكل جميل
                     const datePart = salesData[0].last_update.split('T')[0];
                     const timePart = salesData[0].last_update.split('T')[1].substring(0, 8);
                     lastSyncStr = `${datePart} ${timePart}`;
 
-                    // إذا كانت المزامنة قد حدثت خلال آخر 3 ساعات، تعتبر ممتازة
+                    // تحديد الحالة بناءً على الفارق الزمني المطلوب
                     if (diffHours <= 3) {
-                        isGood = true;
+                        badgeClass = "status-good";
+                        badgeText = "✅ ممتازة";
+                    } else if (diffHours > 3 && diffHours <= 24) {
+                        badgeClass = "status-warning";
+                        badgeText = "⚠️ متوقفة أو متأخرة";
+                    } else {
+                        badgeClass = "status-danger";
+                        badgeText = "❌ متوقفة (> 24 ساعة)";
                     }
                 }
 
                 html += `
                     <div class="store-card">
                         <div class="store-info">
-                            <h3>🏪 ${storeName} (رقم المعرض: ${storeId})</h3>
-                            <p>آخر وقت مزامنة مسجل: <b>${lastSyncStr}</b></p>
+                            <h3>🏪 ${storeName}</h3>
+                            <p>آخر مزامنة: <b>${lastSyncStr}</b></p>
                         </div>
                         <div>
-                            ${isGood ? '<span class="status-badge status-good">✅ تعمل بشكل جيد</span>' : '<span class="status-badge status-bad">⚠️ متوقفة أو متأخرة</span>'}
+                            <span class="status-badge ${badgeClass}">${badgeText}</span>
                         </div>
                     </div>
                 `;
@@ -114,11 +136,10 @@
 
         } catch (err) {
             loadingDiv.style.display = 'block';
-            loadingDiv.innerText = "❌ حدث خطأ أثناء جلب بيانات المتاجر: " + err.message;
+            loadingDiv.innerText = "❌ حدث خطأ أثناء جلب البيانات: " + err.message;
         }
     }
 
-    // تشغيل الفحص تلقائياً عند فتح الصفحة
     window.onload = checkStoresSyncStatus;
 </script>
 
