@@ -54,16 +54,21 @@
         .stat-card.cash { border-right: 6px solid #22c55e; }
         .stat-card.bank { border-right: 6px solid #3b82f6; cursor: pointer; transition: transform 0.2s, background-color 0.2s; }
         .stat-card.bank:hover { transform: translateY(-2px); background-color: rgba(59, 130, 246, 0.05); }
+        
+        .stat-card.other { border-right: 6px solid #a855f7; cursor: pointer; transition: transform 0.2s, background-color 0.2s; }
+        .stat-card.other:hover { transform: translateY(-2px); background-color: rgba(168, 85, 247, 0.05); }
+
         .stat-card.total { border-right: 6px solid #eab308; background: var(--container-bg); }
         
         .stat-title { font-size: 15px; color: var(--text-muted); margin-bottom: 8px; }
         .stat-value { font-size: 26px; font-weight: bold; }
         .val-cash { color: #22c55e; }
         .val-bank { color: #3b82f6; }
+        .val-other { color: #a855f7; }
         .val-total { color: #eab308; }
-        .hint-text { display: block; font-size: 12px; color: #3b82f6; margin-top: 5px; font-weight: bold; }
+        .hint-text { display: block; font-size: 12px; color: inherit; margin-top: 5px; font-weight: bold; }
 
-        /* تنسيق النافذة المنبثقة (Modal) لتفاصيل الخدمات المصرفية */
+        /* تنسيق النوافذ المنبثقة (Modal) */
         .modal {
             display: none;
             position: fixed;
@@ -81,10 +86,12 @@
             padding: 20px;
             border-radius: 12px;
             width: 90%;
-            max-width: 380px;
+            max-width: 400px;
             border: 1px solid var(--border-color);
             box-shadow: 0 10px 25px rgba(0,0,0,0.3);
             text-align: right;
+            max-height: 70vh;
+            overflow-y: auto;
         }
         .modal-header {
             display: flex;
@@ -171,22 +178,31 @@
 
         <div id="loadingStatus" style="text-align: center; color: var(--text-muted); display: none;">⏳ جاري جلب البيانات من السحابة...</div>
 
-        <!-- النوافذ الثلاث للمبيعات -->
+        <!-- الكروت الأربعة للمبيعات -->
         <div class="stats-container">
+            <!-- 1. المبيعات النقدية -->
             <div class="stat-card cash">
                 <div class="stat-title">💵 إجمالي الفواتير النقدية (الكاش الصافي)</div>
                 <div class="stat-value val-cash" id="cashAmount">0.00 د.ل</div>
             </div>
 
-            <!-- خانة المبيعات المصرفية (تفاعلية تفتح النافذة المنبثقة) -->
+            <!-- 2. المبيعات المصرفية (تفاعلية) -->
             <div class="stat-card bank" onclick="toggleBankModal(true)">
                 <div class="stat-title">💳 إجمالي فواتير الخدمات المصرفية والبطاقات</div>
                 <div class="stat-value val-bank" id="bankAmount">0.00 د.ل</div>
-                <span class="hint-text">🔍 انقر هنا لعرض تفاصيل الخدمات المصرفية</span>
+                <span class="hint-text" style="color: #3b82f6;">🔍 انقر لعرض تفاصيل الخدمات المصرفية</span>
             </div>
 
+            <!-- 3. مبيعات أخرى (تفاعلية جديدة) -->
+            <div class="stat-card other" onclick="toggleOtherModal(true)">
+                <div class="stat-title">📦 مبيعات أخرى (حسابات وأسماء أخرى)</div>
+                <div class="stat-value val-other" id="otherAmount">0.00 د.ل</div>
+                <span class="hint-text" style="color: #a855f7;">🔍 انقر لعرض تفاصيل الحسابات والقيم</span>
+            </div>
+
+            <!-- 4. الإجمالي العام الشامل لكل الخانات -->
             <div class="stat-card total">
-                <div class="stat-title">💰 الإجمالي العام (النقدية + الخدمات المصرفية)</div>
+                <div class="stat-title">💰 الإجمالي العام الشامل (النقدية + المصرفية + أخرى)</div>
                 <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
             </div>
         </div>
@@ -219,7 +235,7 @@
 </div>
 
 <!-- النافذة المنبثقة لتفاصيل الخدمات المصرفية -->
-<div id="bankModal" class="modal" onclick="handleModalClick(event)">
+<div id="bankModal" class="modal" onclick="handleModalClick(event, 'bankModal')">
     <div class="modal-content">
         <div class="modal-header">
             <h3>💳 تفاصيل العمليات المصرفية</h3>
@@ -228,8 +244,21 @@
         <ul class="bank-details-list">
             <li><span>📱 موبي كاش:</span> <strong id="mobiDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
             <li><span>💳 البطاقة المصرفية:</span> <strong id="cardDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
-            <li><span>🤝 يسر باي:</span> <strong id="yesserDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+            <li><span>🤝 يسر باي 3:</span> <strong id="yesserDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
             <li><span>🛒 ادفع لي:</span> <strong id="edfaqDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+        </ul>
+    </div>
+</div>
+
+<!-- النافذة المنبثقة الجديدة لتفاصيل "مبيعات أخرى" (اسم الحساب وقيمته) -->
+<div id="otherModal" class="modal" onclick="handleModalClick(event, 'otherModal')">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📦 تفاصيل مبيعات أخرى</h3>
+            <button class="close-btn" onclick="toggleOtherModal(false)">&times;</button>
+        </div>
+        <ul class="bank-details-list" id="otherAccountsList">
+            <li><span>لا توجد بيانات</span> <strong>0.00 د.ل</strong></li>
         </ul>
     </div>
 </div>
@@ -242,6 +271,7 @@
     let html5QrcodeScanner = null;
 
     let currentBankBreakdown = { mobi: 0, card: 0, yesser: 0, edfaq: 0 };
+    let currentOtherAccounts = []; // لتخزين تفاصيل الحسابات الأخرى
 
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('startDate').value = today;
@@ -282,9 +312,27 @@
         }
     }
 
-    function handleModalClick(event) {
-        if (event.target.id === 'bankModal') {
-            toggleBankModal(false);
+    function toggleOtherModal(show) {
+        const modal = document.getElementById('otherModal');
+        modal.style.display = show ? 'block' : 'none';
+        if(show) {
+            const listContainer = document.getElementById('otherAccountsList');
+            if (currentOtherAccounts.length > 0) {
+                let html = '';
+                currentOtherAccounts.forEach(acc => {
+                    html += `<li><span>👤 ${acc.name}</span> <strong style="color: #a855f7;">${acc.amount.toFixed(2)} د.ل</strong></li>`;
+                });
+                listContainer.innerHTML = html;
+            } else {
+                listContainer.innerHTML = `<li><span>لا توجد مبيعات أخرى مسجلة</span> <strong>0.00 د.ل</strong></li>`;
+            }
+        }
+    }
+
+    function handleModalClick(event, modalId) {
+        if (event.target.id === modalId) {
+            if(modalId === 'bankModal') toggleBankModal(false);
+            if(modalId === 'otherModal') toggleOtherModal(false);
         }
     }
 
@@ -384,6 +432,9 @@
             let sumMobi = 0;
             let sumYesser = 0;
             let sumEdfaq = 0;
+            let sumOther = 0;
+            
+            let otherAccountsMap = {}; // لجمع قيم الحسابات الأخرى وتجميعها بالاسم
             let latestTimestamp = "--:--:--";
 
             if (data && data.length > 0) {
@@ -413,16 +464,29 @@
                     const netMobi = Number(item.mobicash_sales || 0) - Number(item.mobicash_returns || 0);
                     const netYesser = Number(item.yesserpay_sales || 0) - Number(item.yesserpay_returns || 0);
                     const netEdfaq = Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0);
+                    const netOther = Number(item.other_sales || 0) - Number(item.other_returns || 0);
 
                     totalCash += netCash;
                     sumCard += netCard;
                     sumMobi += netMobi;
                     sumYesser += netYesser;
                     sumEdfaq += netEdfaq;
+                    sumOther += netOther;
+
+                    // إذا كانت هناك تفاصيل للحسابات الأخرى مخزنة كـ JSON في السجل
+                    if (item.other_accounts_json) {
+                        try {
+                            const accountsObj = typeof item.other_accounts_json === 'string' ? JSON.parse(item.other_accounts_json) : item.other_accounts_json;
+                            for (const [accName, accVal] of Object.entries(accountsObj)) {
+                                otherAccountsMap[accName] = (otherAccountsMap[accName] || 0) + Number(accVal);
+                            }
+                        } catch(e) {}
+                    }
                 });
             }
 
             const totalBank = sumCard + sumMobi + sumYesser + sumEdfaq;
+            const grandTotal = totalCash + totalBank + sumOther; // الإجمالي الشامل لكل الخانات
 
             currentBankBreakdown = { 
                 mobi: sumMobi, 
@@ -431,18 +495,23 @@
                 edfaq: sumEdfaq 
             };
 
+            // تحويل خريطة الحسابات الأخرى إلى مصفوفة لعرضها في النافذة المنبثقة
+            currentOtherAccounts = Object.keys(otherAccountsMap).map(name => ({
+                name: name,
+                amount: otherAccountsMap[name]
+            }));
+
+            // تحديث قيم الواجهة
             document.getElementById('cashAmount').innerText = totalCash.toFixed(2) + " د.ل";
             document.getElementById('bankAmount').innerText = totalBank.toFixed(2) + " د.ل";
-            
-            const grandTotal = totalCash + totalBank;
+            document.getElementById('otherAmount').innerText = sumOther.toFixed(2) + " د.ل";
             document.getElementById('totalAmount').innerText = grandTotal.toFixed(2) + " د.ل";
 
             document.getElementById('lastSyncTime').innerText = `آخر تحديث للبيانات: ${latestTimestamp}`;
 
-            const modal = document.getElementById('bankModal');
-            if (modal && modal.style.display === 'block') {
-                toggleBankModal(true);
-            }
+            // تحديث النوافذ المنبثقة إذا كانت مفتوحة
+            if (document.getElementById('bankModal').style.display === 'block') toggleBankModal(true);
+            if (document.getElementById('otherModal').style.display === 'block') toggleOtherModal(true);
 
         } catch (err) {
             loadingDiv.style.display = 'none';
@@ -466,7 +535,6 @@
 
         try {
             let fetchUrl = "";
-
             if (selectedMode === "barcode_only") {
                 fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&barcode=eq.${encodeURIComponent(query)}&limit=20&select=*`;
             } else {
