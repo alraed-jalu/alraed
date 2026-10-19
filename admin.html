@@ -29,63 +29,116 @@
             }
         }
 
-        body { font-family: Tahoma, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px; transition: 0.3s; }
-        .container { max-width: 650px; margin: auto; background: var(--container-bg); padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
-        h2 { text-align: center; color: #38bdf8; margin-top: 0; }
-        .store-tag { text-align: center; color: #e67e22; font-size: 16px; font-weight: bold; margin-bottom: 5px; }
-        .last-sync-time { text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 20px; }
+        body { font-family: Tahoma, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 10px; transition: 0.3s; }
+        .container { max-width: 600px; margin: auto; background: var(--container-bg); padding: 15px; border-radius: 14px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+        h2 { text-align: center; color: #38bdf8; margin-top: 0; margin-bottom: 5px; font-size: 20px; }
+        .store-tag { text-align: center; color: #e67e22; font-size: 15px; font-weight: bold; margin-bottom: 3px; }
+        .last-sync-time { text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 12px; }
         
-        #loginSection { text-align: center; padding: 20px 0; }
+        #loginSection { text-align: center; padding: 15px 0; }
         input[type="text"], input[type="password"], input[type="date"] { 
-            width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); box-sizing: border-box; margin-bottom: 15px; text-align: center; 
+            width: 100%; padding: 10px; font-size: 14px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); box-sizing: border-box; margin-bottom: 12px; text-align: center; 
         }
         
-        .btn { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; transition: 0.2s; }
+        .btn { width: 100%; padding: 10px; font-size: 15px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; transition: 0.2s; }
         .btn-primary { background: #0284c7; color: white; }
         .btn-primary:hover { background: #0369a1; }
         
-        .date-range-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .date-range-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
         .date-group { text-align: right; }
-        .date-group label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 4px; }
-        .date-group input { margin-bottom: 0; }
+        .date-group label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 3px; }
+        .date-group input { margin-bottom: 0; padding: 8px; font-size: 13px; }
 
-        .stats-container { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
-        .stat-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 20px; border-radius: 12px; text-align: center; }
-        .stat-card.cash { border-right: 6px solid #22c55e; }
-        .stat-card.bank { border-right: 6px solid #3b82f6; }
-        .stat-card.total { border-right: 6px solid #eab308; background: var(--container-bg); }
+        /* تصغير حجم الخانات والكروت الإحصائية لتصبح مدمجة وغير مزعجة */
+        .stats-container { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 12px 15px; border-radius: 10px; text-align: center; }
+        .stat-card.cash { border-right: 5px solid #22c55e; }
+        .stat-card.bank { border-right: 5px solid #3b82f6; cursor: pointer; transition: transform 0.2s, background-color 0.2s; }
+        .stat-card.bank:hover { transform: translateY(-1px); background-color: rgba(59, 130, 246, 0.05); }
         
-        .stat-title { font-size: 15px; color: var(--text-muted); margin-bottom: 8px; }
-        .stat-value { font-size: 26px; font-weight: bold; }
+        .stat-card.other { border-right: 5px solid #a855f7; cursor: pointer; transition: transform 0.2s, background-color 0.2s; }
+        .stat-card.other:hover { transform: translateY(-1px); background-color: rgba(168, 85, 247, 0.05); }
+
+        .stat-card.total { border-right: 5px solid #eab308; background: var(--container-bg); }
+        
+        .stat-title { font-size: 13px; color: var(--text-muted); margin-bottom: 5px; }
+        .stat-value { font-size: 21px; font-weight: bold; }
         .val-cash { color: #22c55e; }
         .val-bank { color: #3b82f6; }
+        .val-other { color: #a855f7; }
         .val-total { color: #eab308; }
+        .hint-text { display: block; font-size: 11px; color: inherit; margin-top: 3px; font-weight: bold; }
 
-        .search-section { margin-top: 30px; border-top: 2px solid var(--border-color); padding-top: 20px; }
-        
-        /* أزرار تحديد نوع البحث */
-        .search-mode-selector { 
-            display: flex; justify-content: center; gap: 20px; margin-bottom: 15px; background: var(--input-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); 
+        /* تنسيق النوافذ المنبثقة (Modal) */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
         }
-        .search-mode-selector label { font-size: 14px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 6px; }
+        .modal-content {
+            background-color: var(--container-bg);
+            margin: 15% auto;
+            padding: 15px;
+            border-radius: 10px;
+            width: 85%;
+            max-width: 350px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            text-align: right;
+            max-height: 65vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+        .modal-header h3 { color: #38bdf8; margin: 0; font-size: 15px; }
+        .close-btn { background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; }
+        .close-btn:hover { color: var(--text-color); }
+        .bank-details-list { list-style: none; padding: 0; margin: 0; }
+        .bank-details-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+        .bank-details-list li:last-child { border-bottom: none; }
 
-        .search-box-wrapper { display: flex; gap: 8px; margin-bottom: 15px; }
-        .search-box-wrapper input { margin-bottom: 0; text-align: center; flex: 1; font-weight: bold; }
+        .search-section { margin-top: 20px; border-top: 2px solid var(--border-color); padding-top: 15px; }
         
-        .btn-action { background: #0284c7; color: white; border: none; padding: 0 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; white-space: nowrap; }
+        .search-mode-selector { 
+            display: flex; justify-content: center; gap: 15px; margin-bottom: 10px; background: var(--input-bg); padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); 
+        }
+        .search-mode-selector label { font-size: 13px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+
+        .search-box-wrapper { display: flex; gap: 6px; margin-bottom: 10px; }
+        .search-box-wrapper input { margin-bottom: 0; text-align: center; flex: 1; font-weight: bold; padding: 10px; font-size: 14px; }
+        
+        .btn-action { background: #0284c7; color: white; border: none; padding: 0 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap; }
         .btn-action:hover { background: #0369a1; }
 
-        .btn-scan { background: #10b981; color: white; border: none; padding: 0 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; white-space: nowrap; }
+        .btn-scan { background: #10b981; color: white; border: none; padding: 0 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap; }
         .btn-scan:hover { background: #059669; }
 
-        #reader { width: 100%; max-width: 400px; margin: 0 auto 15px auto; border-radius: 12px; overflow: hidden; display: none; border: 2px solid #38bdf8; }
+        #reader { width: 100%; max-width: 350px; margin: 0 auto 10px auto; border-radius: 10px; overflow: hidden; display: none; border: 2px solid #38bdf8; }
 
-        .items-results { display: flex; flex-direction: column; gap: 10px; max-height: 350px; overflow-y: auto; }
-        .item-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .item-name { font-size: 16px; font-weight: bold; color: #38bdf8; }
-        .item-details { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; font-size: 14px; text-align: center; background: var(--input-bg); padding: 8px; border-radius: 6px; }
-        .item-details span { color: var(--text-muted); }
-        .item-details b { color: var(--text-color); display: block; margin-top: 3px; }
+        .items-results { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; }
+        .item-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 6px; }
+        .item-name { font-size: 15px; font-weight: bold; color: #38bdf8; }
+        .item-details { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; font-size: 13px; text-align: center; background: var(--input-bg); padding: 6px; border-radius: 6px; }
+        .item-details span { color: var(--text-muted); font-size: 11px; }
+        .item-details b { color: var(--text-color); display: block; margin-top: 2px; }
 
         .hidden { display: none; }
     </style>
@@ -99,15 +152,15 @@
 
     <!-- شاشة تسجيل الدخول -->
     <div id="loginSection">
-        <label style="display:block; margin-bottom: 8px; text-align: right;">اسم المستخدم:</label>
+        <label style="display:block; margin-bottom: 6px; text-align: right; font-size: 13px;">اسم المستخدم:</label>
         <input type="text" id="userInput" placeholder="أدخل اسم المستخدم...">
         
-        <label style="display:block; margin-bottom: 8px; text-align: right;">كلمة المرور:</label>
+        <label style="display:block; margin-bottom: 6px; text-align: right; font-size: 13px;">كلمة المرور:</label>
         <input type="password" id="passInput" placeholder="****">
 
         <button class="btn btn-primary" onclick="cloudLogin()">دخول 🔐</button>
-        <p id="loginError" style="color: #f87171; display: none; margin-top: 10px;">❌ اسم المستخدم أو كلمة المرور غير صحيحة</p>
-        <p id="loginLoading" style="color: #38bdf8; display: none; margin-top: 10px;">⏳ جاري التحقق من قاعدة البيانات...</p>
+        <p id="loginError" style="color: #f87171; display: none; margin-top: 8px; font-size: 13px;">❌ اسم المستخدم أو كلمة المرور غير صحيحة</p>
+        <p id="loginLoading" style="color: #38bdf8; display: none; margin-top: 8px; font-size: 13px;">⏳ جاري التحقق من قاعدة البيانات...</p>
     </div>
 
     <!-- لوحة البيانات الرئيسية والبحث -->
@@ -122,36 +175,46 @@
                 <input type="date" id="endDate">
             </div>
         </div>
-        <button class="btn btn-primary" style="margin-bottom: 15px;" onclick="fetchSalesData()">عرض التقارير 🔍</button>
+        <button class="btn btn-primary" style="margin-bottom: 12px; padding: 9px;" onclick="fetchSalesData()">عرض التقارير 🔍</button>
 
-        <div id="loadingStatus" style="text-align: center; color: var(--text-muted); display: none;">⏳ جاري جلب البيانات من السحابة...</div>
+        <div id="loadingStatus" style="text-align: center; color: var(--text-muted); display: none; font-size: 13px;">⏳ جاري جلب البيانات من السحابة...</div>
 
-        <!-- النوافذ الثلاث للمبيعات -->
+        <!-- الكروت الأربعة للمبيعات (مدمجة وأنيقة) -->
         <div class="stats-container">
+            <!-- 1. المبيعات النقدية -->
             <div class="stat-card cash">
                 <div class="stat-title">💵 إجمالي الفواتير النقدية (الكاش الصافي)</div>
                 <div class="stat-value val-cash" id="cashAmount">0.00 د.ل</div>
             </div>
 
-            <div class="stat-card bank">
+            <!-- 2. المبيعات المصرفية (تفاعلية) -->
+            <div class="stat-card bank" onclick="toggleBankModal(true)">
                 <div class="stat-title">💳 إجمالي فواتير الخدمات المصرفية والبطاقات</div>
                 <div class="stat-value val-bank" id="bankAmount">0.00 د.ل</div>
+                <span class="hint-text" style="color: #3b82f6;">🔍 انقر لعرض تفاصيل الخدمات المصرفية</span>
             </div>
 
+            <!-- 3. مبيعات أخرى (تفاعلية) -->
+            <div class="stat-card other" onclick="toggleOtherModal(true)">
+                <div class="stat-title">📦 مبيعات أخرى (حسابات وأسماء أخرى)</div>
+                <div class="stat-value val-other" id="otherAmount">0.00 د.ل</div>
+                <span class="hint-text" style="color: #a855f7;">🔍 انقر لعرض تفاصيل الحسابات والقيم</span>
+            </div>
+
+            <!-- 4. الإجمالي العام الشامل لكل الخانات -->
             <div class="stat-card total">
-                <div class="stat-title">💰 الإجمالي العام (النقدية + الخدمات المصرفية)</div>
+                <div class="stat-title">💰 الإجمالي العام الشامل (النقدية + المصرفية + أخرى)</div>
                 <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
             </div>
         </div>
 
         <!-- قسم الاستعلام عن المواد ومسح الباركود -->
         <div class="search-section">
-            <h3 style="color: #38bdf8; text-align: right; font-size: 18px; margin-bottom: 10px;">📦 الاستعلام عن المواد والمخزون</h3>
+            <h3 style="color: #38bdf8; text-align: right; font-size: 16px; margin-bottom: 8px;">📦 الاستعلام عن المواد والمخزون</h3>
             
-            <!-- زر اختيار نمط البحث -->
             <div class="search-mode-selector">
-                <label><input type="radio" name="searchMode" value="barcode_only" checked> 🏷️ باركود فقط (مطابقة دقيقة)</label>
-                <label><input type="radio" name="searchMode" value="barcode_and_text"> 🔍 باركود + اسم المادة</label>
+                <label><input type="radio" name="searchMode" value="barcode_only" checked> 🏷️ باركود فقط</label>
+                <label><input type="radio" name="searchMode" value="barcode_and_text"> 🔍 باركود + اسم</label>
             </div>
 
             <div class="search-box-wrapper">
@@ -162,13 +225,42 @@
 
             <div id="reader"></div>
 
-            <div id="itemsLoading" style="text-align: center; color: var(--text-muted); display: none; font-size: 13px; margin-bottom: 10px;">⏳ جاري البحث...</div>
+            <div id="itemsLoading" style="text-align: center; color: var(--text-muted); display: none; font-size: 12px; margin-bottom: 8px;">⏳ جاري البحث...</div>
             <div class="items-results" id="itemsResultsContainer">
-                <div style="text-align: center; color: var(--text-muted); font-size: 14px; padding: 15px;">اختر خيار البحث وادخل القيمة للبدء...</div>
+                <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 10px;">اختر خيار البحث وادخل القيمة للبدء...</div>
             </div>
         </div>
         
-        <button class="btn" style="background: #475569; color: white; margin-top: 25px;" onclick="logout()">تسجيل الخروج 🚪</button>
+        <button class="btn" style="background: #475569; color: white; margin-top: 20px; padding: 10px;" onclick="logout()">تسجيل الخروج 🚪</button>
+    </div>
+</div>
+
+<!-- النافذة المنبثقة لتفاصيل الخدمات المصرفية -->
+<div id="bankModal" class="modal" onclick="handleModalClick(event, 'bankModal')">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>💳 تفاصيل العمليات المصرفية</h3>
+            <button class="close-btn" onclick="toggleBankModal(false)">&times;</button>
+        </div>
+        <ul class="bank-details-list">
+            <li><span>📱 موبي كاش:</span> <strong id="mobiDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+            <li><span>💳 البطاقة المصرفية:</span> <strong id="cardDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+            <li><span>🤝 يسر باي 3:</span> <strong id="yesserDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+            <li><span>🛒 ادفع لي:</span> <strong id="edfaqDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+        </ul>
+    </div>
+</div>
+
+<!-- النافذة المنبثقة لتفاصيل "مبيعات أخرى" -->
+<div id="otherModal" class="modal" onclick="handleModalClick(event, 'otherModal')">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📦 تفاصيل مبيعات أخرى</h3>
+            <button class="close-btn" onclick="toggleOtherModal(false)">&times;</button>
+        </div>
+        <ul class="bank-details-list" id="otherAccountsList">
+            <li><span>لا توجد بيانات</span> <strong>0.00 د.ل</strong></li>
+        </ul>
     </div>
 </div>
 
@@ -178,6 +270,9 @@
     
     let currentStoreId = null;
     let html5QrcodeScanner = null;
+
+    let currentBankBreakdown = { mobi: 0, card: 0, yesser: 0, edfaq: 0 };
+    let currentOtherAccounts = [];
 
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('startDate').value = today;
@@ -206,6 +301,41 @@
             }
         }
     };
+
+    function toggleBankModal(show) {
+        const modal = document.getElementById('bankModal');
+        modal.style.display = show ? 'block' : 'none';
+        if(show) {
+            document.getElementById('mobiDetail').innerText = currentBankBreakdown.mobi.toFixed(2) + " د.ل";
+            document.getElementById('cardDetail').innerText = currentBankBreakdown.card.toFixed(2) + " د.ل";
+            document.getElementById('yesserDetail').innerText = currentBankBreakdown.yesser.toFixed(2) + " د.ل";
+            document.getElementById('edfaqDetail').innerText = currentBankBreakdown.edfaq.toFixed(2) + " د.ل";
+        }
+    }
+
+    function toggleOtherModal(show) {
+        const modal = document.getElementById('otherModal');
+        modal.style.display = show ? 'block' : 'none';
+        if(show) {
+            const listContainer = document.getElementById('otherAccountsList');
+            if (currentOtherAccounts.length > 0) {
+                let html = '';
+                currentOtherAccounts.forEach(acc => {
+                    html += `<li><span>👤 ${acc.name}</span> <strong style="color: #a855f7;">${acc.amount.toFixed(2)} د.ل</strong></li>`;
+                });
+                listContainer.innerHTML = html;
+            } else {
+                listContainer.innerHTML = `<li><span>لا توجد مبيعات أخرى مسجلة</span> <strong>0.00 د.ل</strong></li>`;
+            }
+        }
+    }
+
+    function handleModalClick(event, modalId) {
+        if (event.target.id === modalId) {
+            if(modalId === 'bankModal') toggleBankModal(false);
+            if(modalId === 'otherModal') toggleOtherModal(false);
+        }
+    }
 
     async function cloudLogin() {
         const usernameInput = document.getElementById('userInput').value.trim();
@@ -299,7 +429,13 @@
             const data = await response.json();
 
             let totalCash = 0;
-            let totalBank = 0;
+            let sumCard = 0;
+            let sumMobi = 0;
+            let sumYesser = 0;
+            let sumEdfaq = 0;
+            let sumOther = 0;
+            
+            let otherAccountsMap = {};
             let latestTimestamp = "--:--:--";
 
             if (data && data.length > 0) {
@@ -325,26 +461,54 @@
 
                 Object.values(dailyRecords).forEach(item => {
                     const netCash = Number(item.cash_sales || 0) - Number(item.cash_returns || 0);
-                    
                     const netCard = Number(item.card_sales || 0) - Number(item.card_returns || 0);
                     const netMobi = Number(item.mobicash_sales || 0) - Number(item.mobicash_returns || 0);
                     const netYesser = Number(item.yesserpay_sales || 0) - Number(item.yesserpay_returns || 0);
                     const netEdfaq = Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0);
-
-                    const netBankTotal = netCard + netMobi + netYesser + netEdfaq;
+                    const netOther = Number(item.other_sales || 0) - Number(item.other_returns || 0);
 
                     totalCash += netCash;
-                    totalBank += netBankTotal;
+                    sumCard += netCard;
+                    sumMobi += netMobi;
+                    sumYesser += netYesser;
+                    sumEdfaq += netEdfaq;
+                    sumOther += netOther;
+
+                    if (item.other_accounts_json) {
+                        try {
+                            const accountsObj = typeof item.other_accounts_json === 'string' ? JSON.parse(item.other_accounts_json) : item.other_accounts_json;
+                            for (const [accName, accVal] of Object.entries(accountsObj)) {
+                                otherAccountsMap[accName] = (otherAccountsMap[accName] || 0) + Number(accVal);
+                            }
+                        } catch(e) {}
+                    }
                 });
             }
 
+            const totalBank = sumCard + sumMobi + sumYesser + sumEdfaq;
+            const grandTotal = totalCash + totalBank + sumOther;
+
+            currentBankBreakdown = { 
+                mobi: sumMobi, 
+                card: sumCard, 
+                yesser: sumYesser, 
+                edfaq: sumEdfaq 
+            };
+
+            currentOtherAccounts = Object.keys(otherAccountsMap).map(name => ({
+                name: name,
+                amount: otherAccountsMap[name]
+            }));
+
             document.getElementById('cashAmount').innerText = totalCash.toFixed(2) + " د.ل";
             document.getElementById('bankAmount').innerText = totalBank.toFixed(2) + " د.ل";
-            
-            const grandTotal = totalCash + totalBank;
+            document.getElementById('otherAmount').innerText = sumOther.toFixed(2) + " د.ل";
             document.getElementById('totalAmount').innerText = grandTotal.toFixed(2) + " د.ل";
 
             document.getElementById('lastSyncTime').innerText = `آخر تحديث للبيانات: ${latestTimestamp}`;
+
+            if (document.getElementById('bankModal').style.display === 'block') toggleBankModal(true);
+            if (document.getElementById('otherModal').style.display === 'block') toggleOtherModal(true);
 
         } catch (err) {
             loadingDiv.style.display = 'none';
@@ -360,7 +524,7 @@
         const selectedMode = document.querySelector('input[name="searchMode"]:checked').value;
 
         if (query.length < 1) {
-            resultsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 14px; padding: 15px;">ادخل القيمة للبحث...</div>';
+            resultsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 10px;">ادخل القيمة للبحث...</div>';
             return;
         }
 
@@ -368,12 +532,9 @@
 
         try {
             let fetchUrl = "";
-
             if (selectedMode === "barcode_only") {
-                // نمط الباركود فقط دون أي تدخل للفهرسة النصية لأسماء المواد
                 fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&barcode=eq.${encodeURIComponent(query)}&limit=20&select=*`;
             } else {
-                // نمط البحث الشامل: بالباركود أو اسم المادة
                 fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&or=(barcode.eq.${encodeURIComponent(query)},item_name.ilike.*${encodeURIComponent(query)}*)&limit=20&select=*`;
             }
 
@@ -395,7 +556,7 @@
                     html += `
                         <div class="item-card">
                             <div class="item-name">${item.item_name}</div>
-                            <div style="font-size: 12px; color: var(--text-muted);">الباركود: ${item.barcode || 'بدون باركود'}</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">الباركود: ${item.barcode || 'بدون باركود'}</div>
                             <div class="item-details">
                                 <div><span>سعر الشراء</span><b>${Number(item.buy_price || 0).toFixed(2)} د.ل</b></div>
                                 <div><span>سعر البيع</span><b style="color: #4ade80;">${Number(item.sale_price || 0).toFixed(2)} د.ل</b></div>
@@ -406,7 +567,7 @@
                 });
                 resultsContainer.innerHTML = html;
             } else {
-                resultsContainer.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 14px; padding: 15px;">❌ لم يتم العثور على أي صنف (${selectedMode === 'barcode_only' ? 'الباركود غير موجود' : 'الباركود أو الاسم غير موجود'})</div>`;
+                resultsContainer.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 13px; padding: 10px;">❌ لم يتم العثور على أي صنف</div>`;
             }
 
         } catch (err) {
@@ -424,7 +585,7 @@
             html5QrcodeScanner = new Html5Qrcode("reader");
             html5QrcodeScanner.start(
                 { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 150 } },
+                { fps: 10, qrbox: { width: 220, height: 120 } },
                 (decodedText) => {
                     document.getElementById('itemSearchInput').value = decodedText;
                     searchItems(decodedText);
