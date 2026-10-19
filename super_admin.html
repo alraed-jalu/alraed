@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم الإدارة - معرض سنتر العائلة</title>
-    <!-- مكتبة مسح الباركود عبر الكاميرا -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
@@ -49,96 +48,49 @@
         .date-group label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 3px; }
         .date-group input { margin-bottom: 0; padding: 8px; font-size: 13px; }
 
-        /* تصغير حجم الخانات والكروت الإحصائية لتصبح مدمجة وغير مزعجة */
         .stats-container { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
         .stat-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 12px 15px; border-radius: 10px; text-align: center; }
         .stat-card.cash { border-right: 5px solid #22c55e; }
-        .stat-card.bank { border-right: 5px solid #3b82f6; cursor: pointer; transition: transform 0.2s, background-color 0.2s; }
-        .stat-card.bank:hover { transform: translateY(-1px); background-color: rgba(59, 130, 246, 0.05); }
-        
-        .stat-card.other { border-right: 5px solid #a855f7; cursor: pointer; transition: transform 0.2s, background-color 0.2s; }
-        .stat-card.other:hover { transform: translateY(-1px); background-color: rgba(168, 85, 247, 0.05); }
-
+        .stat-card.bank { border-right: 5px solid #3b82f6; cursor: pointer; }
+        .stat-card.other { border-right: 5px solid #a855f7; cursor: pointer; }
+        .stat-card.daily-acc { border-right: 5px solid #06b6d4; cursor: pointer; }
         .stat-card.total { border-right: 5px solid #eab308; background: var(--container-bg); }
+
+        .ledger-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .ledger-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; text-align: center; cursor: pointer; }
+        .ledger-card.cust { border-top: 4px solid #f43f5e; }
+        .ledger-card.supp { border-top: 4px solid #10b981; }
+        .ledger-card.emp { border-top: 4px solid #f59e0b; }
         
-        .stat-title { font-size: 13px; color: var(--text-muted); margin-bottom: 5px; }
-        .stat-value { font-size: 21px; font-weight: bold; }
+        .stat-title { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+        .stat-value { font-size: 20px; font-weight: bold; }
         .val-cash { color: #22c55e; }
         .val-bank { color: #3b82f6; }
         .val-other { color: #a855f7; }
+        .val-daily { color: #06b6d4; }
         .val-total { color: #eab308; }
-        .hint-text { display: block; font-size: 11px; color: inherit; margin-top: 3px; font-weight: bold; }
+        .hint-text { display: block; font-size: 11px; margin-top: 3px; font-weight: bold; }
 
-        /* تنسيق النوافذ المنبثقة (Modal) */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(3px);
-        }
-        .modal-content {
-            background-color: var(--container-bg);
-            margin: 15% auto;
-            padding: 15px;
-            border-radius: 10px;
-            width: 85%;
-            max-width: 350px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-            text-align: right;
-            max-height: 65vh;
-            overflow-y: auto;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
-            margin-bottom: 10px;
-        }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(3px); }
+        .modal-content { background-color: var(--container-bg); margin: 15% auto; padding: 15px; border-radius: 10px; width: 85%; max-width: 380px; border: 1px solid var(--border-color); box-shadow: 0 8px 20px rgba(0,0,0,0.3); text-align: right; max-height: 65vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 10px; }
         .modal-header h3 { color: #38bdf8; margin: 0; font-size: 15px; }
         .close-btn { background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; }
-        .close-btn:hover { color: var(--text-color); }
-        .bank-details-list { list-style: none; padding: 0; margin: 0; }
-        .bank-details-list li {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 14px;
-        }
-        .bank-details-list li:last-child { border-bottom: none; }
+        .details-list { list-style: none; padding: 0; margin: 0; }
+        .details-list li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 13px; }
 
         .search-section { margin-top: 20px; border-top: 2px solid var(--border-color); padding-top: 15px; }
-        
-        .search-mode-selector { 
-            display: flex; justify-content: center; gap: 15px; margin-bottom: 10px; background: var(--input-bg); padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); 
-        }
+        .search-mode-selector { display: flex; justify-content: center; gap: 15px; margin-bottom: 10px; background: var(--input-bg); padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); }
         .search-mode-selector label { font-size: 13px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; }
-
         .search-box-wrapper { display: flex; gap: 6px; margin-bottom: 10px; }
         .search-box-wrapper input { margin-bottom: 0; text-align: center; flex: 1; font-weight: bold; padding: 10px; font-size: 14px; }
-        
-        .btn-action { background: #0284c7; color: white; border: none; padding: 0 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap; }
-        .btn-action:hover { background: #0369a1; }
-
-        .btn-scan { background: #10b981; color: white; border: none; padding: 0 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap; }
-        .btn-scan:hover { background: #059669; }
-
+        .btn-action { background: #0284c7; color: white; border: none; padding: 0 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
+        .btn-scan { background: #10b981; color: white; border: none; padding: 0 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
         #reader { width: 100%; max-width: 350px; margin: 0 auto 10px auto; border-radius: 10px; overflow: hidden; display: none; border: 2px solid #38bdf8; }
-
-        .items-results { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; }
-        .item-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 6px; }
-        .item-name { font-size: 15px; font-weight: bold; color: #38bdf8; }
-        .item-details { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; font-size: 13px; text-align: center; background: var(--input-bg); padding: 6px; border-radius: 6px; }
-        .item-details span { color: var(--text-muted); font-size: 11px; }
-        .item-details b { color: var(--text-color); display: block; margin-top: 2px; }
+        .items-results { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; }
+        .item-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 5px; }
+        .item-name { font-size: 14px; font-weight: bold; color: #38bdf8; }
+        .item-details { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; font-size: 12px; text-align: center; background: var(--input-bg); padding: 6px; border-radius: 6px; }
 
         .hidden { display: none; }
     </style>
@@ -150,129 +102,134 @@
     <div class="store-tag" id="welcomeStore">تسجيل الدخول مطلوب</div>
     <div class="last-sync-time" id="lastSyncTime">آخر تحديث: --:--:--</div>
 
-    <!-- شاشة تسجيل الدخول -->
     <div id="loginSection">
         <label style="display:block; margin-bottom: 6px; text-align: right; font-size: 13px;">اسم المستخدم:</label>
         <input type="text" id="userInput" placeholder="أدخل اسم المستخدم...">
-        
         <label style="display:block; margin-bottom: 6px; text-align: right; font-size: 13px;">كلمة المرور:</label>
         <input type="password" id="passInput" placeholder="****">
-
         <button class="btn btn-primary" onclick="cloudLogin()">دخول 🔐</button>
-        <p id="loginError" style="color: #f87171; display: none; margin-top: 8px; font-size: 13px;">❌ اسم المستخدم أو كلمة المرور غير صحيحة</p>
-        <p id="loginLoading" style="color: #38bdf8; display: none; margin-top: 8px; font-size: 13px;">⏳ جاري التحقق من قاعدة البيانات...</p>
+        <p id="loginError" style="color: #f87171; display: none; margin-top: 8px; font-size: 13px;">❌ بيانات الدخول غير صحيحة</p>
     </div>
 
-    <!-- لوحة البيانات الرئيسية والبحث -->
     <div id="dashboardSection" class="hidden">
         <div class="date-range-grid">
-            <div class="date-group">
-                <label>من تاريخ:</label>
-                <input type="date" id="startDate">
-            </div>
-            <div class="date-group">
-                <label>إلى تاريخ:</label>
-                <input type="date" id="endDate">
-            </div>
+            <div class="date-group"><label>من تاريخ:</label><input type="date" id="startDate"></div>
+            <div class="date-group"><label>إلى تاريخ:</label><input type="date" id="endDate"></div>
         </div>
         <button class="btn btn-primary" style="margin-bottom: 12px; padding: 9px;" onclick="fetchSalesData()">عرض التقارير 🔍</button>
 
-        <div id="loadingStatus" style="text-align: center; color: var(--text-muted); display: none; font-size: 13px;">⏳ جاري جلب البيانات من السحابة...</div>
-
-        <!-- الكروت الأربعة للمبيعات (مدمجة وأنيقة) -->
         <div class="stats-container">
-            <!-- 1. المبيعات النقدية -->
             <div class="stat-card cash">
-                <div class="stat-title">💵 إجمالي الفواتير النقدية (الكاش الصافي)</div>
+                <div class="stat-title">💵 إجمالي الفواتير النقدية (الكاش)</div>
                 <div class="stat-value val-cash" id="cashAmount">0.00 د.ل</div>
             </div>
 
-            <!-- 2. المبيعات المصرفية (تفاعلية) -->
-            <div class="stat-card bank" onclick="toggleBankModal(true)">
-                <div class="stat-title">💳 إجمالي فواتير الخدمات المصرفية والبطاقات</div>
+            <div class="stat-card bank" onclick="toggleModal('bankModal', true)">
+                <div class="stat-title">💳 إجمالي الخدمات المصرفية</div>
                 <div class="stat-value val-bank" id="bankAmount">0.00 د.ل</div>
-                <span class="hint-text" style="color: #3b82f6;">🔍 انقر لعرض تفاصيل الخدمات المصرفية</span>
+                <span class="hint-text" style="color: #3b82f6;">🔍 تفاصيل الخدمات المصرفية</span>
             </div>
 
-            <!-- 3. مبيعات أخرى (تفاعلية) -->
-            <div class="stat-card other" onclick="toggleOtherModal(true)">
-                <div class="stat-title">📦 مبيعات أخرى (حسابات وأسماء أخرى)</div>
+            <div class="stat-card other" onclick="toggleModal('otherModal', true)">
+                <div class="stat-title">📦 مبيعات أخرى (حسابات وأسماء)</div>
                 <div class="stat-value val-other" id="otherAmount">0.00 د.ل</div>
-                <span class="hint-text" style="color: #a855f7;">🔍 انقر لعرض تفاصيل الحسابات والقيم</span>
+                <span class="hint-text" style="color: #a855f7;">🔍 تفاصيل الحسابات وقيمها</span>
             </div>
 
-            <!-- 4. الإجمالي العام الشامل لكل الخانات -->
+            <div class="stat-card daily-acc" onclick="toggleModal('dailyAccModal', true)">
+                <div class="stat-title">🏛️ أرصدة كافة الحسابات اليومية (الدفع المتعدد)</div>
+                <div class="stat-value val-daily" id="dailyAccountsTotal">0.00 د.ل</div>
+                <span class="hint-text" style="color: #06b6d4;">🔍 تفاصيل أرصدة الحسابات اليومية</span>
+            </div>
+
             <div class="stat-card total">
-                <div class="stat-title">💰 الإجمالي العام الشامل (النقدية + المصرفية + أخرى)</div>
+                <div class="stat-title">💰 الإجمالي العام الشامل</div>
                 <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
             </div>
         </div>
 
-        <!-- قسم الاستعلام عن المواد ومسح الباركود -->
+        <h3 style="color: #38bdf8; font-size: 15px; margin-top: 18px; margin-bottom: 6px;">📑 كشوفات الأرصدة والديون الشاملة</h3>
+        <div class="ledger-grid">
+            <div class="ledger-card cust" onclick="toggleModal('custModal', true)">
+                <div class="stat-title">👥 ديون الزبائن</div>
+                <div style="font-weight: bold; color: #f43f5e;" id="custTotal">0.00</div>
+            </div>
+            <div class="ledger-card supp" onclick="toggleModal('suppModal', true)">
+                <div class="stat-title">🚚 ديون الموردين</div>
+                <div style="font-weight: bold; color: #10b981;" id="suppTotal">0.00</div>
+            </div>
+            <div class="ledger-card emp" onclick="toggleModal('empModal', true)">
+                <div class="stat-title">💼 الموظفين والسلف</div>
+                <div style="font-weight: bold; color: #f59e0b;" id="empTotal">0.00</div>
+            </div>
+        </div>
+
         <div class="search-section">
-            <h3 style="color: #38bdf8; text-align: right; font-size: 16px; margin-bottom: 8px;">📦 الاستعلام عن المواد والمخزون</h3>
-            
+            <h3 style="color: #38bdf8; font-size: 15px; margin-bottom: 8px;">📦 الاستعلام عن المخزون</h3>
             <div class="search-mode-selector">
-                <label><input type="radio" name="searchMode" value="barcode_only" checked> 🏷️ باركود فقط</label>
-                <label><input type="radio" name="searchMode" value="barcode_and_text"> 🔍 باركود + اسم</label>
+                <label><input type="radio" name="searchMode" value="barcode_only" checked> 🏷️ باركود</label>
+                <label><input type="radio" name="searchMode" value="barcode_and_text"> 🔍 اسم + باركود</label>
             </div>
-
             <div class="search-box-wrapper">
-                <input type="text" id="itemSearchInput" placeholder="أدخل نص/رقم البحث هنا..." onkeydown="if(event.key === 'Enter') searchItems()">
+                <input type="text" id="itemSearchInput" placeholder="أدخل للبحث..." onkeydown="if(event.key === 'Enter') searchItems()">
                 <button class="btn-action" onclick="searchItems()">بحث 🔍</button>
-                <button class="btn-scan" onclick="toggleCameraScanner()">كاميرا 📷</button>
+                <button class="btn-scan" onclick="toggleCameraScanner()">📷</button>
             </div>
-
             <div id="reader"></div>
-
-            <div id="itemsLoading" style="text-align: center; color: var(--text-muted); display: none; font-size: 12px; margin-bottom: 8px;">⏳ جاري البحث...</div>
-            <div class="items-results" id="itemsResultsContainer">
-                <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 10px;">اختر خيار البحث وادخل القيمة للبدء...</div>
-            </div>
+            <div class="items-results" id="itemsResultsContainer"></div>
         </div>
         
-        <button class="btn" style="background: #475569; color: white; margin-top: 20px; padding: 10px;" onclick="logout()">تسجيل الخروج 🚪</button>
+        <button class="btn" style="background: #475569; color: white; margin-top: 20px; padding: 9px;" onclick="logout()">تسجيل الخروج 🚪</button>
     </div>
 </div>
 
-<!-- النافذة المنبثقة لتفاصيل الخدمات المصرفية -->
-<div id="bankModal" class="modal" onclick="handleModalClick(event, 'bankModal')">
+<!-- النوافذ المنبثقة -->
+<div id="bankModal" class="modal" onclick="closeModalOutside(event, 'bankModal')">
     <div class="modal-content">
-        <div class="modal-header">
-            <h3>💳 تفاصيل العمليات المصرفية</h3>
-            <button class="close-btn" onclick="toggleBankModal(false)">&times;</button>
-        </div>
-        <ul class="bank-details-list">
-            <li><span>📱 موبي كاش:</span> <strong id="mobiDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
-            <li><span>💳 البطاقة المصرفية:</span> <strong id="cardDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
-            <li><span>🤝 يسر باي 3:</span> <strong id="yesserDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
-            <li><span>🛒 ادفع لي:</span> <strong id="edfaqDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
-        </ul>
+        <div class="modal-header"><h3>💳 تفاصيل الخدمات المصرفية</h3><button class="close-btn" onclick="toggleModal('bankModal', false)">&times;</button></div>
+        <ul class="details-list" id="bankList"></ul>
     </div>
 </div>
 
-<!-- النافذة المنبثقة لتفاصيل "مبيعات أخرى" -->
-<div id="otherModal" class="modal" onclick="handleModalClick(event, 'otherModal')">
+<div id="otherModal" class="modal" onclick="closeModalOutside(event, 'otherModal')">
     <div class="modal-content">
-        <div class="modal-header">
-            <h3>📦 تفاصيل مبيعات أخرى</h3>
-            <button class="close-btn" onclick="toggleOtherModal(false)">&times;</button>
-        </div>
-        <ul class="bank-details-list" id="otherAccountsList">
-            <li><span>لا توجد بيانات</span> <strong>0.00 د.ل</strong></li>
-        </ul>
+        <div class="modal-header"><h3>📦 تفاصيل مبيعات أخرى</h3><button class="close-btn" onclick="toggleModal('otherModal', false)">&times;</button></div>
+        <ul class="details-list" id="otherList"></ul>
+    </div>
+</div>
+
+<div id="dailyAccModal" class="modal" onclick="closeModalOutside(event, 'dailyAccModal')">
+    <div class="modal-content">
+        <div class="modal-header"><h3>🏛️ أرصدة الحسابات اليومية</h3><button class="close-btn" onclick="toggleModal('dailyAccModal', false)">&times;</button></div>
+        <ul class="details-list" id="dailyAccList"></ul>
+    </div>
+</div>
+
+<div id="custModal" class="modal" onclick="closeModalOutside(event, 'custModal')">
+    <div class="modal-content">
+        <div class="modal-header"><h3>👥 كشف ديون الزبائن</h3><button class="close-btn" onclick="toggleModal('custModal', false)">&times;</button></div>
+        <ul class="details-list" id="custList"></ul>
+    </div>
+</div>
+
+<div id="suppModal" class="modal" onclick="closeModalOutside(event, 'suppModal')">
+    <div class="modal-content">
+        <div class="modal-header"><h3>🚚 كشف ديون الموردين</h3><button class="close-btn" onclick="toggleModal('suppModal', false)">&times;</button></div>
+        <ul class="details-list" id="suppList"></ul>
+    </div>
+</div>
+
+<div id="empModal" class="modal" onclick="closeModalOutside(event, 'empModal')">
+    <div class="modal-content">
+        <div class="modal-header"><h3>💼 كشف الموظفين والسلف</h3><button class="close-btn" onclick="toggleModal('empModal', false)">&times;</button></div>
+        <ul class="details-list" id="empList"></ul>
     </div>
 </div>
 
 <script>
     const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
-    
     let currentStoreId = null;
-    let html5QrcodeScanner = null;
-
-    let currentBankBreakdown = { mobi: 0, card: 0, yesser: 0, edfaq: 0 };
-    let currentOtherAccounts = [];
 
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('startDate').value = today;
@@ -280,337 +237,109 @@
 
     window.onload = function() {
         const savedSession = localStorage.getItem('admin_session');
-        const loginTime = localStorage.getItem('admin_login_time');
-
-        if (savedSession && loginTime) {
-            const currentTime = new Date().getTime();
-            const hoursElapsed = (currentTime - Number(loginTime)) / (1000 * 60 * 60);
-
-            if (hoursElapsed < 6) {
-                const storeData = JSON.parse(savedSession);
-                currentStoreId = storeData.store_id;
-                
-                document.getElementById('loginSection').classList.add('hidden');
-                document.getElementById('dashboardSection').classList.remove('hidden');
-                document.getElementById('welcomeStore').innerText = `🏪 ${storeData.store_name}`;
-                
-                fetchSalesData();
-            } else {
-                localStorage.removeItem('admin_session');
-                localStorage.removeItem('admin_login_time');
-            }
+        if (savedSession) {
+            const storeData = JSON.parse(savedSession);
+            currentStoreId = storeData.store_id;
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+            document.getElementById('welcomeStore').innerText = `🏪 ${storeData.store_name}`;
+            fetchSalesData();
         }
     };
 
-    function toggleBankModal(show) {
-        const modal = document.getElementById('bankModal');
-        modal.style.display = show ? 'block' : 'none';
-        if(show) {
-            document.getElementById('mobiDetail').innerText = currentBankBreakdown.mobi.toFixed(2) + " د.ل";
-            document.getElementById('cardDetail').innerText = currentBankBreakdown.card.toFixed(2) + " د.ل";
-            document.getElementById('yesserDetail').innerText = currentBankBreakdown.yesser.toFixed(2) + " د.ل";
-            document.getElementById('edfaqDetail').innerText = currentBankBreakdown.edfaq.toFixed(2) + " د.ل";
-        }
+    function toggleModal(modalId, show) {
+        document.getElementById(modalId).style.display = show ? 'block' : 'none';
     }
 
-    function toggleOtherModal(show) {
-        const modal = document.getElementById('otherModal');
-        modal.style.display = show ? 'block' : 'none';
-        if(show) {
-            const listContainer = document.getElementById('otherAccountsList');
-            if (currentOtherAccounts.length > 0) {
-                let html = '';
-                currentOtherAccounts.forEach(acc => {
-                    html += `<li><span>👤 ${acc.name}</span> <strong style="color: #a855f7;">${acc.amount.toFixed(2)} د.ل</strong></li>`;
-                });
-                listContainer.innerHTML = html;
-            } else {
-                listContainer.innerHTML = `<li><span>لا توجد مبيعات أخرى مسجلة</span> <strong>0.00 د.ل</strong></li>`;
-            }
-        }
-    }
-
-    function handleModalClick(event, modalId) {
-        if (event.target.id === modalId) {
-            if(modalId === 'bankModal') toggleBankModal(false);
-            if(modalId === 'otherModal') toggleOtherModal(false);
-        }
+    function closeModalOutside(event, modalId) {
+        if (event.target.id === modalId) toggleModal(modalId, false);
     }
 
     async function cloudLogin() {
-        const usernameInput = document.getElementById('userInput').value.trim();
-        const passwordInput = document.getElementById('passInput').value.trim();
-        const errorMsg = document.getElementById('loginError');
-        const loadingMsg = document.getElementById('loginLoading');
+        const u = document.getElementById('userInput').value.trim();
+        const p = document.getElementById('passInput').value.trim();
+        if(!u || !p) return;
 
-        if (!usernameInput || !passwordInput) {
-            errorMsg.innerText = "⚠️ الرجاء إدخال اسم المستخدم وكلمة المرور";
-            errorMsg.style.display = 'block';
-            return;
-        }
-
-        errorMsg.style.display = 'none';
-        loadingMsg.style.display = 'block';
-
-        try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/stores?username=eq.${encodeURIComponent(usernameInput)}&password=eq.${encodeURIComponent(passwordInput)}&select=*`, {
-                method: 'GET',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            loadingMsg.style.display = 'none';
-
-            if (!response.ok) {
-                errorMsg.innerText = "❌ خطأ في الاتصال بقاعدة البيانات";
-                errorMsg.style.display = 'block';
-                return;
-            }
-
-            const data = await response.json();
-
-            if (data && data.length > 0) {
-                const store = data[0];
-                currentStoreId = String(store.store_id || store.id || "2");
-                const storeName = store.store_name || 'معرض التجارة';
-
-                const sessionData = { store_id: currentStoreId, store_name: storeName };
-                localStorage.setItem('admin_session', JSON.stringify(sessionData));
-                localStorage.setItem('admin_login_time', new Date().getTime().toString());
-                
-                document.getElementById('loginSection').classList.add('hidden');
-                document.getElementById('dashboardSection').classList.remove('hidden');
-                document.getElementById('welcomeStore').innerText = `🏪 ${storeName}`;
-                
-                fetchSalesData();
-            } else {
-                errorMsg.innerText = "❌ اسم المستخدم أو كلمة المرور غير صحيحة";
-                errorMsg.style.display = 'block';
-            }
-        } catch (err) {
-            loadingMsg.style.display = 'none';
-            errorMsg.innerText = "❌ خطأ في النظام: " + err.message;
-            errorMsg.style.display = 'block';
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/stores?username=eq.${encodeURIComponent(u)}&password=eq.${encodeURIComponent(p)}&select=*`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        });
+        const data = await res.json();
+        if(data && data.length > 0) {
+            currentStoreId = String(data[0].store_id || data[0].id || "2");
+            localStorage.setItem('admin_session', JSON.stringify({ store_id: currentStoreId, store_name: data[0].store_name }));
+            location.reload();
+        } else {
+            document.getElementById('loginError').style.display = 'block';
         }
     }
 
-    function logout() {
-        localStorage.removeItem('admin_session');
-        localStorage.removeItem('admin_login_time');
-        location.reload();
-    }
+    function logout() { localStorage.removeItem('admin_session'); location.reload(); }
 
     async function fetchSalesData() {
         if (!currentStoreId) return;
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${currentStoreId}&order=last_update.desc&limit=1`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        });
+        const data = await res.json();
+        if(!data || data.length === 0) return;
 
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        const loadingDiv = document.getElementById('loadingStatus');
-        
-        loadingDiv.style.display = 'block';
+        const row = data[0];
+        const cash = Number(row.cash_sales || 0) - Number(row.cash_returns || 0);
+        const bank = (Number(row.card_sales || 0) + Number(row.mobicash_sales || 0) + Number(row.yesserpay_sales || 0) + Number(row.edfaqli_sales || 0));
+        const other = Number(row.other_sales || 0) - Number(row.other_returns || 0);
 
-        try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${currentStoreId}&order=last_update.desc&limit=2000&select=*`, {
-                method: 'GET',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+        document.getElementById('cashAmount').innerText = cash.toFixed(2) + " د.ل";
+        document.getElementById('bankAmount').innerText = bank.toFixed(2) + " د.ل";
+        document.getElementById('otherAmount').innerText = other.toFixed(2) + " د.ل";
+        document.getElementById('totalAmount').innerText = (cash + bank + other).toFixed(2) + " د.ل";
 
-            loadingDiv.style.display = 'none';
+        // تفاصيل البنوك
+        document.getElementById('bankList').innerHTML = `
+            <li><span>موبي كاش:</span><strong>${(row.mobicash_sales||0).toFixed(2)} د.ل</strong></li>
+            <li><span>البطاقة المصرفية:</span><strong>${(row.card_sales||0).toFixed(2)} د.ل</strong></li>
+            <li><span>يسر باي 3:</span><strong>${(row.yesserpay_sales||0).toFixed(2)} د.ل</strong></li>
+            <li><span>ادفع لي:</span><strong>${(row.edfaqli_sales||0).toFixed(2)} د.ل</strong></li>
+        `;
 
-            if (!response.ok) return;
+        // الحسابات اليومية
+        renderJsonList(row.other_accounts_json, 'dailyAccList', 'dailyAccountsTotal');
 
-            const data = await response.json();
-
-            let totalCash = 0;
-            let sumCard = 0;
-            let sumMobi = 0;
-            let sumYesser = 0;
-            let sumEdfaq = 0;
-            let sumOther = 0;
-            
-            let otherAccountsMap = {};
-            let latestTimestamp = "--:--:--";
-
-            if (data && data.length > 0) {
-                const dailyRecords = {};
-                
-                data.forEach(item => {
-                    if (!item.last_update) return;
-                    const itemDate = item.last_update.split('T')[0];
-                    
-                    if (itemDate >= startDate && itemDate <= endDate) {
-                        if (!dailyRecords[itemDate]) {
-                            dailyRecords[itemDate] = item;
-                        }
-                    }
-                });
-
-                if (data[0] && data[0].last_update) {
-                    const timePart = data[0].last_update.split('T')[1];
-                    if (timePart) {
-                        latestTimestamp = timePart.substring(0, 8);
-                    }
-                }
-
-                Object.values(dailyRecords).forEach(item => {
-                    const netCash = Number(item.cash_sales || 0) - Number(item.cash_returns || 0);
-                    const netCard = Number(item.card_sales || 0) - Number(item.card_returns || 0);
-                    const netMobi = Number(item.mobicash_sales || 0) - Number(item.mobicash_returns || 0);
-                    const netYesser = Number(item.yesserpay_sales || 0) - Number(item.yesserpay_returns || 0);
-                    const netEdfaq = Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0);
-                    const netOther = Number(item.other_sales || 0) - Number(item.other_returns || 0);
-
-                    totalCash += netCash;
-                    sumCard += netCard;
-                    sumMobi += netMobi;
-                    sumYesser += netYesser;
-                    sumEdfaq += netEdfaq;
-                    sumOther += netOther;
-
-                    if (item.other_accounts_json) {
-                        try {
-                            const accountsObj = typeof item.other_accounts_json === 'string' ? JSON.parse(item.other_accounts_json) : item.other_accounts_json;
-                            for (const [accName, accVal] of Object.entries(accountsObj)) {
-                                otherAccountsMap[accName] = (otherAccountsMap[accName] || 0) + Number(accVal);
-                            }
-                        } catch(e) {}
-                    }
-                });
-            }
-
-            const totalBank = sumCard + sumMobi + sumYesser + sumEdfaq;
-            const grandTotal = totalCash + totalBank + sumOther;
-
-            currentBankBreakdown = { 
-                mobi: sumMobi, 
-                card: sumCard, 
-                yesser: sumYesser, 
-                edfaq: sumEdfaq 
-            };
-
-            currentOtherAccounts = Object.keys(otherAccountsMap).map(name => ({
-                name: name,
-                amount: otherAccountsMap[name]
-            }));
-
-            document.getElementById('cashAmount').innerText = totalCash.toFixed(2) + " د.ل";
-            document.getElementById('bankAmount').innerText = totalBank.toFixed(2) + " د.ل";
-            document.getElementById('otherAmount').innerText = sumOther.toFixed(2) + " د.ل";
-            document.getElementById('totalAmount').innerText = grandTotal.toFixed(2) + " د.ل";
-
-            document.getElementById('lastSyncTime').innerText = `آخر تحديث للبيانات: ${latestTimestamp}`;
-
-            if (document.getElementById('bankModal').style.display === 'block') toggleBankModal(true);
-            if (document.getElementById('otherModal').style.display === 'block') toggleOtherModal(true);
-
-        } catch (err) {
-            loadingDiv.style.display = 'none';
-            console.error("خطأ في جلب المبيعات:", err);
-        }
+        // كشوفات الحسابات الشاملة
+        renderJsonList(row.customers_json, 'custList', 'custTotal');
+        renderJsonList(row.suppliers_json, 'suppList', 'suppTotal');
+        renderJsonList(row.employees_json, 'empList', 'empTotal');
     }
 
-    async function searchItems(overrideQuery = null) {
-        const rawQuery = overrideQuery !== null ? overrideQuery : document.getElementById('itemSearchInput').value;
-        const query = rawQuery.trim();
-        const resultsContainer = document.getElementById('itemsResultsContainer');
-        const loadingIndicator = document.getElementById('itemsLoading');
-        const selectedMode = document.querySelector('input[name="searchMode"]:checked').value;
-
-        if (query.length < 1) {
-            resultsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 10px;">ادخل القيمة للبحث...</div>';
-            return;
-        }
-
-        loadingIndicator.style.display = 'block';
-
-        try {
-            let fetchUrl = "";
-            if (selectedMode === "barcode_only") {
-                fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&barcode=eq.${encodeURIComponent(query)}&limit=20&select=*`;
-            } else {
-                fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&or=(barcode.eq.${encodeURIComponent(query)},item_name.ilike.*${encodeURIComponent(query)}*)&limit=20&select=*`;
-            }
-
-            const response = await fetch(fetchUrl, {
-                method: 'GET',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json'
+    function renderJsonList(jsonStr, listId, totalId) {
+        let total = 0;
+        let html = '';
+        if(jsonStr) {
+            try {
+                const obj = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+                for(const [k, v] of Object.entries(obj)) {
+                    total += Number(v);
+                    html += `<li><span>👤 ${k}</span><strong>${Number(v).toFixed(2)} د.ل</strong></li>`;
                 }
-            });
-
-            const items = await response.json();
-            loadingIndicator.style.display = 'none';
-
-            if (items && items.length > 0) {
-                let html = '';
-                items.forEach(item => {
-                    html += `
-                        <div class="item-card">
-                            <div class="item-name">${item.item_name}</div>
-                            <div style="font-size: 11px; color: var(--text-muted);">الباركود: ${item.barcode || 'بدون باركود'}</div>
-                            <div class="item-details">
-                                <div><span>سعر الشراء</span><b>${Number(item.buy_price || 0).toFixed(2)} د.ل</b></div>
-                                <div><span>سعر البيع</span><b style="color: #4ade80;">${Number(item.sale_price || 0).toFixed(2)} د.ل</b></div>
-                                <div><span>الكمية</span><b style="color: #38bdf8;">${item.available_qty} قطعة</b></div>
-                            </div>
-                        </div>
-                    `;
-                });
-                resultsContainer.innerHTML = html;
-            } else {
-                resultsContainer.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 13px; padding: 10px;">❌ لم يتم العثور على أي صنف</div>`;
-            }
-
-        } catch (err) {
-            loadingIndicator.style.display = 'none';
-            console.error("خطأ في البحث:", err);
+            } catch(e) {}
         }
+        document.getElementById(listId).innerHTML = html || '<li><span>لا توجد بيانات</span><strong>0.00</strong></li>';
+        if(totalId) document.getElementById(totalId).innerText = total.toFixed(2) + " د.ل";
     }
 
-    function toggleCameraScanner() {
-        const readerDiv = document.getElementById('reader');
-        if (readerDiv.style.display === 'block') {
-            stopScanner();
-        } else {
-            readerDiv.style.display = 'block';
-            html5QrcodeScanner = new Html5Qrcode("reader");
-            html5QrcodeScanner.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 220, height: 120 } },
-                (decodedText) => {
-                    document.getElementById('itemSearchInput').value = decodedText;
-                    searchItems(decodedText);
-                    stopScanner();
-                },
-                (errorMessage) => {}
-            ).catch(err => {
-                alert("⚠️ لا يمكن فتح الكاميرا، يرجى التأكد من إعطاء المتصفح صلاحية الكاميرا.");
-                stopScanner();
+    async function searchItems() {
+        const q = document.getElementById('itemSearchInput').value.trim();
+        if(!q) return;
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&barcode=eq.${encodeURIComponent(q)}&limit=10`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        });
+        const items = await res.json();
+        let html = '';
+        if(items && items.length > 0) {
+            items.forEach(i => {
+                html += `<div class="item-card"><div class="item-name">${i.item_name}</div><div class="item-details"><div>شراء<b>${i.buy_price}</b></div><div>بيع<b>${i.sale_price}</b></div><div>كمية<b>${i.available_qty}</b></div></div></div>`;
             });
-        }
-    }
-
-    function stopScanner() {
-        const readerDiv = document.getElementById('reader');
-        if (html5QrcodeScanner) {
-            html5QrcodeScanner.stop().then(() => {
-                html5QrcodeScanner.clear();
-                readerDiv.style.display = 'none';
-            }).catch(() => {
-                readerDiv.style.display = 'none';
-            });
-        } else {
-            readerDiv.style.display = 'none';
-        }
+        } else { html = '<div style="text-align:center; padding:10px;">لم يتم العثور على صنف</div>'; }
+        document.getElementById('itemsResultsContainer').innerHTML = html;
     }
 </script>
 
