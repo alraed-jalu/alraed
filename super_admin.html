@@ -52,7 +52,6 @@
         .stat-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 12px 15px; border-radius: 10px; text-align: center; }
         .stat-card.cash { border-right: 5px solid #22c55e; }
         .stat-card.bank { border-right: 5px solid #3b82f6; cursor: pointer; }
-        .stat-card.other { border-right: 5px solid #a855f7; cursor: pointer; }
         .stat-card.daily-acc { border-right: 5px solid #06b6d4; cursor: pointer; }
         .stat-card.total { border-right: 5px solid #eab308; background: var(--container-bg); }
 
@@ -66,7 +65,6 @@
         .stat-value { font-size: 20px; font-weight: bold; }
         .val-cash { color: #22c55e; }
         .val-bank { color: #3b82f6; }
-        .val-other { color: #a855f7; }
         .val-daily { color: #06b6d4; }
         .val-total { color: #eab308; }
         .hint-text { display: block; font-size: 11px; margin-top: 3px; font-weight: bold; }
@@ -130,12 +128,6 @@
                 <span class="hint-text" style="color: #3b82f6;">🔍 تفاصيل الخدمات المصرفية</span>
             </div>
 
-            <div class="stat-card other" onclick="toggleModal('otherModal', true)">
-                <div class="stat-title">📦 مبيعات أخرى (حسابات وأسماء)</div>
-                <div class="stat-value val-other" id="otherAmount">0.00 د.ل</div>
-                <span class="hint-text" style="color: #a855f7;">🔍 تفاصيل الحسابات وقيمها</span>
-            </div>
-
             <div class="stat-card daily-acc" onclick="toggleModal('dailyAccModal', true)">
                 <div class="stat-title">🏛️ أرصدة كافة الحسابات اليومية (الدفع المتعدد)</div>
                 <div class="stat-value val-daily" id="dailyAccountsTotal">0.00 د.ل</div>
@@ -159,7 +151,7 @@
                 <div style="font-weight: bold; color: #10b981;" id="suppTotal">0.00</div>
             </div>
             <div class="ledger-card emp" onclick="toggleModal('empModal', true)">
-                <div class="stat-title">💼 الموظفين والسلف</div>
+                <div class="stat-title">💼 حركة الموظفين</div>
                 <div style="font-weight: bold; color: #f59e0b;" id="empTotal">0.00</div>
             </div>
         </div>
@@ -191,13 +183,6 @@
     </div>
 </div>
 
-<div id="otherModal" class="modal" onclick="closeModalOutside(event, 'otherModal')">
-    <div class="modal-content">
-        <div class="modal-header"><h3>📦 تفاصيل مبيعات أخرى</h3><button class="close-btn" onclick="toggleModal('otherModal', false)">&times;</button></div>
-        <ul class="details-list" id="otherList"></ul>
-    </div>
-</div>
-
 <div id="dailyAccModal" class="modal" onclick="closeModalOutside(event, 'dailyAccModal')">
     <div class="modal-content">
         <div class="modal-header"><h3>🏛️ أرصدة الحسابات اليومية</h3><button class="close-btn" onclick="toggleModal('dailyAccModal', false)">&times;</button></div>
@@ -221,7 +206,7 @@
 
 <div id="empModal" class="modal" onclick="closeModalOutside(event, 'empModal')">
     <div class="modal-content">
-        <div class="modal-header"><h3>💼 كشف الموظفين والسلف</h3><button class="close-btn" onclick="toggleModal('empModal', false)">&times;</button></div>
+        <div class="modal-header"><h3>💼 كشف حركة الموظفين</h3><button class="close-btn" onclick="toggleModal('empModal', false)">&times;</button></div>
         <ul class="details-list" id="empList"></ul>
     </div>
 </div>
@@ -286,12 +271,10 @@
         const row = data[0];
         const cash = Number(row.cash_sales || 0) - Number(row.cash_returns || 0);
         const bank = (Number(row.card_sales || 0) + Number(row.mobicash_sales || 0) + Number(row.yesserpay_sales || 0) + Number(row.edfaqli_sales || 0));
-        const other = Number(row.other_sales || 0) - Number(row.other_returns || 0);
 
         document.getElementById('cashAmount').innerText = cash.toFixed(2) + " د.ل";
         document.getElementById('bankAmount').innerText = bank.toFixed(2) + " د.ل";
-        document.getElementById('otherAmount').innerText = other.toFixed(2) + " د.ل";
-        document.getElementById('totalAmount').innerText = (cash + bank + other).toFixed(2) + " د.ل";
+        document.getElementById('totalAmount').innerText = (cash + bank).toFixed(2) + " د.ل";
 
         // تفاصيل البنوك
         document.getElementById('bankList').innerHTML = `
