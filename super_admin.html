@@ -215,6 +215,7 @@
     const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
     let currentStoreId = null;
+    let html5QrcodeScanner = null;
 
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('startDate').value = today;
@@ -267,7 +268,7 @@
         const endDate = document.getElementById('endDate').value;
 
         try {
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${currentStoreId}&order=last_update.desc&limit=500`, {
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${currentStoreId}&order=last_update.desc&limit=1000`, {
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
             });
 
@@ -275,40 +276,44 @@
             const data = await res.json();
             if (!data || data.length === 0) return;
 
-            let totalCash = 0;
-            let totalCard = 0;
-            let totalMobi = 0;
-            let totalYesser = 0;
-            let totalEdfaq = 0;
-            
-            let combinedOtherAccounts = {};
-            let combinedCustomers = {};
-            let combinedSuppliers = {};
-            let combinedEmployees = {};
-            let latestTimestamp = "--:--:--";
-            let foundRecord = false;
+            const dailyLatestRecords = {};
 
             data.forEach(item => {
                 if (!item.last_update) return;
                 const itemDate = item.last_update.split('T')[0];
 
                 if (itemDate >= startDate && itemDate <= endDate) {
-                    foundRecord = true;
-                    totalCash += (Number(item.cash_sales || 0) - Number(item.cash_returns || 0));
-                    totalCard += (Number(item.card_sales || 0) - Number(item.card_returns || 0));
-                    totalMobi += (Number(item.mobicash_sales || 0) - Number(item.mobicash_returns || 0));
-                    totalYesser += (Number(item.yesserpay_sales || 0) - Number(item.yesserpay_returns || 0));
-                    totalEdfaq += (Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0));
-
-                    // دمج بيانات الحسابات JSON للفترة المحددة
-                    mergeJsonData(item.other_accounts_json, combinedOtherAccounts);
-                    mergeJsonData(item.customers_json, combinedCustomers);
-                    mergeJsonData(item.suppliers_json, combinedSuppliers);
-                    mergeJsonData(item.employees_json, combinedEmployees);
+                    if (!dailyLatestRecords[itemDate]) {
+                        dailyLatestRecords[itemDate] = item;
+                    }
                 }
             });
 
-            // التقاط أحدث توقيت مزامنة بغض النظر عن التاريخ المعروض
+            let totalCash = 0;
+            let totalCard = 0;
+            let totalMobi = 0;
+            let totalYesser = 0;
+            let totalEdfaq = 0;
+
+            let combinedOtherAccounts = {};
+            let combinedCustomers = {};
+            let combinedSuppliers = {};
+            let combinedEmployees = {};
+
+            Object.values(dailyLatestRecords).forEach(item => {
+                totalCash += (Number(item.cash_sales || 0) - Number(item.cash_returns || 0));
+                totalCard += (Number(item.card_sales || 0) - Number(item.card_returns || 0));
+                totalMobi += (Number(item.mobicash_sales || 0) - Number(item.mobicash_returns || 0));
+                totalYesser += (Number(item.yesserpay_sales || 0) - Number(item.yesserpay_returns || 0));
+                totalEdfaq += (Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0));
+
+                mergeJsonData(item.other_accounts_json, combinedOtherAccounts);
+                mergeJsonData(item.customers_json, combinedCustomers);
+                mergeJsonData(item.suppliers_json, combinedSuppliers);
+                mergeJsonData(item.employees_json, combinedEmployees);
+            });
+
+            let latestTimestamp = "--:--:--";
             if (data[0] && data[0].last_update) {
                 const timePart = data[0].last_update.split('T')[1];
                 if (timePart) latestTimestamp = timePart.substring(0, 8);
@@ -362,8 +367,9 @@
         if (totalId) document.getElementById(totalId).innerText = total.toFixed(2) + " د.ل";
     }
 
-    async function searchItems() {
-        const q = document.getElementById('itemSearchInput').value.trim();
+    async function searchItems(overrideQuery = null) {
+        const rawQuery = overrideQuery !== null ? overrideQuery : document.getElementById('itemSearchInput').value;
+        const q = rawQuery.trim();
         const selectedMode = document.querySelector('input[name="searchMode"]:checked').value;
         const resultsContainer = document.getElementById('itemsResultsContainer');
 
@@ -402,6 +408,43 @@
             resultsContainer.innerHTML = html;
         } catch (err) {
             console.error("خطأ في البحث:", err);
+        }
+    }
+
+    function toggleCameraScanner() {
+        const readerDiv = document.getElementById('reader');
+        if (readerDiv.style.display === 'block') {
+            stopScanner();
+        } else {
+            readerDiv.style.display = 'block';
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 220, height: 120 } },
+                (decodedText) => {
+                    document.getElementById('itemSearchInput').value = decodedText;
+                    searchItems(decodedText);
+                    stopScanner();
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                alert("⚠️ لا يمكن فتح الكاميرا، يرجى التأكد من صلاحيات الكاميرا.");
+                stopScanner();
+            });
+        }
+    }
+
+    function stopScanner() {
+        const readerDiv = document.getElementById('reader');
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.stop().then(() => {
+                html5QrcodeScanner.clear();
+                readerDiv.style.display = 'none';
+            }).catch(() => {
+                readerDiv.style.display = 'none';
+            });
+        } else {
+            readerDiv.style.display = 'none';
         }
     }
 </script>
