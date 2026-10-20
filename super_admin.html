@@ -118,36 +118,36 @@
 
         <div class="stats-container">
             <div class="stat-card cash">
-                <div class="stat-title">💵 إجمالي الفواتير النقدية </div>
+                <div class="stat-title">💵 إجمالي الفواتير النقدية</div>
                 <div class="stat-value val-cash" id="cashAmount">0.00 د.ل</div>
             </div>
 
             <div class="stat-card bank" onclick="toggleModal('bankModal', true)">
-                <div class="stat-title">💳  الخدمات المصرفية</div>
+                <div class="stat-title">💳 الخدمات المصرفية</div>
                 <div class="stat-value val-bank" id="bankAmount">0.00 د.ل</div>
                 <span class="hint-text" style="color: #3b82f6;">🔍 تفاصيل الخدمات المصرفية</span>
             </div>
 
             <div class="stat-card daily-acc" onclick="toggleModal('dailyAccModal', true)">
-                <div class="stat-title">🏛️   ارصدة الحسابات  (الدفع المتعدد)</div>
+                <div class="stat-title">🏛️ أرصدة الحسابات (الدفع المتعدد)</div>
                 <div class="stat-value val-daily" id="dailyAccountsTotal">0.00 د.ل</div>
-                <span class="hint-text" style="color: #06b6d4;">🔍 تفاصيل أرصدة الحسابات </span>
+                <span class="hint-text" style="color: #06b6d4;">🔍 تفاصيل أرصدة الحسابات اليومية</span>
             </div>
 
             <div class="stat-card total">
-                <div class="stat-title">💰 اجمالي المبيعات </div>
+                <div class="stat-title">💰 اجمالي المبيعات</div>
                 <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
             </div>
         </div>
 
-        <h3 style="color: #38bdf8; font-size: 13px; margin-top: 14px; margin-bottom: 4px;">📑  الأرصدة والديون </h3>
+        <h3 style="color: #38bdf8; font-size: 13px; margin-top: 14px; margin-bottom: 4px;">📑 الأرصدة والديون</h3>
         <div class="ledger-grid">
             <div class="ledger-card cust" onclick="toggleModal('custModal', true)">
                 <div class="stat-title">👥 ديون الزبائن</div>
                 <div style="font-weight: bold; color: #f43f5e; font-size: 14px;" id="custTotal">0.00</div>
             </div>
             <div class="ledger-card supp" onclick="toggleModal('suppModal', true)">
-                <div class="stat-title">🚚  الموردين</div>
+                <div class="stat-title">🚚 الموردين</div>
                 <div style="font-weight: bold; color: #10b981; font-size: 14px;" id="suppTotal">0.00</div>
             </div>
             <div class="ledger-card emp" onclick="toggleModal('empModal', true)">
@@ -160,7 +160,7 @@
             <h3 style="color: #38bdf8; font-size: 13px; margin-bottom: 6px;">📦 الاستعلام عن المواد</h3>
             <div class="search-mode-selector">
                 <label><input type="radio" name="searchMode" value="barcode_only" checked> 🏷️ باركود</label>
-                <label><input type="radio" name="searchMode" value="barcode_and_text"> 🔍 اسم المادة </label>
+                <label><input type="radio" name="searchMode" value="barcode_and_text"> 🔍 اسم المادة</label>
             </div>
             <div class="search-box-wrapper">
                 <input type="text" id="itemSearchInput" placeholder="أدخل للبحث..." onkeydown="if(event.key === 'Enter') searchItems()">
@@ -185,28 +185,28 @@
 
 <div id="dailyAccModal" class="modal" onclick="closeModalOutside(event, 'dailyAccModal')">
     <div class="modal-content">
-        <div class="modal-header"><h3>🏛️ أرصدة الحسابات </h3><button class="close-btn" onclick="toggleModal('dailyAccModal', false)">&times;</button></div>
+        <div class="modal-header"><h3>🏛️ أرصدة الحسابات اليومية</h3><button class="close-btn" onclick="toggleModal('dailyAccModal', false)">&times;</button></div>
         <ul class="details-list" id="dailyAccList"></ul>
     </div>
 </div>
 
 <div id="custModal" class="modal" onclick="closeModalOutside(event, 'custModal')">
     <div class="modal-content">
-        <div class="modal-header"><h3>👥  ديون الزبائن</h3><button class="close-btn" onclick="toggleModal('custModal', false)">&times;</button></div>
+        <div class="modal-header"><h3>👥 ديون الزبائن (آخر قراءة)</h3><button class="close-btn" onclick="toggleModal('custModal', false)">&times;</button></div>
         <ul class="details-list" id="custList"></ul>
     </div>
 </div>
 
 <div id="suppModal" class="modal" onclick="closeModalOutside(event, 'suppModal')">
     <div class="modal-content">
-        <div class="modal-header"><h3>🚚  حركة الموردين</h3><button class="close-btn" onclick="toggleModal('suppModal', false)">&times;</button></div>
+        <div class="modal-header"><h3>🚚 حسابات الموردين (آخر قراءة)</h3><button class="close-btn" onclick="toggleModal('suppModal', false)">&times;</button></div>
         <ul class="details-list" id="suppList"></ul>
     </div>
 </div>
 
 <div id="empModal" class="modal" onclick="closeModalOutside(event, 'empModal')">
     <div class="modal-content">
-        <div class="modal-header"><h3>💼  حركة الموظفين</h3><button class="close-btn" onclick="toggleModal('empModal', false)">&times;</button></div>
+        <div class="modal-header"><h3>💼 حركة الموظفين للفترة المحددة</h3><button class="close-btn" onclick="toggleModal('empModal', false)">&times;</button></div>
         <ul class="details-list" id="empList"></ul>
     </div>
 </div>
@@ -217,8 +217,13 @@
     let currentStoreId = null;
     let html5QrcodeScanner = null;
 
+    // ضبط التواريخ الافتراضية: تاريخ اليوم ونهاية الفترة، وللموظفين نبدأ بافتراضي آخر شهر
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('startDate').value = today;
+    const dateObj = new Date();
+    dateObj.setMonth(dateObj.getMonth() - 1);
+    const lastMonthToday = dateObj.toISOString().split('T')[0];
+
+    document.getElementById('startDate').value = lastMonthToday; // افتراضياً آخر شهر لحركة الموظفين
     document.getElementById('endDate').value = today;
 
     window.onload = function() {
@@ -229,6 +234,9 @@
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('dashboardSection').classList.remove('hidden');
             document.getElementById('welcomeStore').innerText = `🏪 ${storeData.store_name}`;
+            
+            // عند الدخول نعيد تعيين تاريخ البداية والنهاية لليوم الحالي لحساب المبيعات اليومية، بينما الموظفين تستخدم نطاق الشهر
+            document.getElementById('startDate').value = today;
             fetchSalesData();
         }
     };
@@ -264,7 +272,7 @@
     async function fetchSalesData() {
         if (!currentStoreId) return;
 
-        const startDate = document.getElementById('startDate').value;
+        const salesStartDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
 
         try {
@@ -282,7 +290,8 @@
                 if (!item.last_update) return;
                 const itemDate = item.last_update.split('T')[0];
 
-                if (itemDate >= startDate && itemDate <= endDate) {
+                // تجميع سجلات المبيعات ضمن الفترة المحددة
+                if (itemDate >= salesStartDate && itemDate <= endDate) {
                     if (!dailyLatestRecords[itemDate]) {
                         dailyLatestRecords[itemDate] = item;
                     }
@@ -296,10 +305,9 @@
             let totalEdfaq = 0;
 
             let combinedOtherAccounts = {};
-            let combinedCustomers = {};
-            let combinedSuppliers = {};
             let combinedEmployees = {};
 
+            // 1. حساب المبيعات وأرصدة الدفع المتعدد للفترة المحددة
             Object.values(dailyLatestRecords).forEach(item => {
                 totalCash += (Number(item.cash_sales || 0) - Number(item.cash_returns || 0));
                 totalCard += (Number(item.card_sales || 0) - Number(item.card_returns || 0));
@@ -308,10 +316,36 @@
                 totalEdfaq += (Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0));
 
                 mergeJsonData(item.other_accounts_json, combinedOtherAccounts);
-                mergeJsonData(item.customers_json, combinedCustomers);
-                mergeJsonData(item.suppliers_json, combinedSuppliers);
-                mergeJsonData(item.employees_json, combinedEmployees);
             });
+
+            // 2. خانة الزبائن والموردين تأخذ "آخر قراءة مسجلة" بغض النظر عن التاريخ القديم (من أحدث سجل متوفر مطلقاً)
+            let latestCustomers = {};
+            let latestSuppliers = {};
+            let latestEmployeesPeriod = {};
+
+            // نبحث في السجلات المرفوعة ضمن نطاق التاريخ المحدد للموظفين، أو نأخذ آخر سجل متاح
+            data.forEach(item => {
+                if (!item.last_update) return;
+                const itemDate = item.last_update.split('T')[0];
+
+                // الزبائن والموردين: نلتقط أحدث قراءة مطلقة مسجلة في أحدث سجل متوفر
+                if (Object.keys(latestCustomers).length === 0 && item.customers_json) {
+                    try { latestCustomers = typeof item.customers_json === 'string' ? JSON.parse(item.customers_json) : item.customers_json; } catch(e){}
+                }
+                if (Object.keys(latestSuppliers).length === 0 && item.suppliers_json) {
+                    try { latestSuppliers = typeof item.suppliers_json === 'string' ? JSON.parse(item.suppliers_json) : item.suppliers_json; } catch(e){}
+                }
+
+                // الموظفين: يتم تجميع حركتهم ضمن فترة البحث المحددة (افتراضياً آخر شهر)
+                if (itemDate >= salesStartDate && itemDate <= endDate) {
+                    mergeJsonData(item.employees_json, latestEmployeesPeriod);
+                }
+            });
+
+            // في حال لم يتم العثور على موظفين في الفترة المحددة، نلتقط أحدث سجل متاح كخيار احتياطي
+            if (Object.keys(latestEmployeesPeriod).length === 0 && data[0] && data[0].employees_json) {
+                try { latestEmployeesPeriod = typeof data[0].employees_json === 'string' ? JSON.parse(data[0].employees_json) : data[0].employees_json; } catch(e){}
+            }
 
             let latestTimestamp = "--:--:--";
             if (data[0] && data[0].last_update) {
@@ -335,9 +369,9 @@
             `;
 
             renderObjectList(combinedOtherAccounts, 'dailyAccList', 'dailyAccountsTotal');
-            renderObjectList(combinedCustomers, 'custList', 'custTotal');
-            renderObjectList(combinedSuppliers, 'suppList', 'suppTotal');
-            renderObjectList(combinedEmployees, 'empList', 'empTotal');
+            renderObjectList(latestCustomers, 'custList', 'custTotal');
+            renderObjectList(latestSuppliers, 'suppList', 'suppTotal');
+            renderObjectList(latestEmployeesPeriod, 'empList', 'empTotal');
 
         } catch (err) {
             console.error("خطأ في جلب التقارير:", err);
