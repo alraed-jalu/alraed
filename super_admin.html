@@ -114,40 +114,40 @@
             <div class="date-group"><label>من تاريخ:</label><input type="date" id="startDate"></div>
             <div class="date-group"><label>إلى تاريخ:</label><input type="date" id="endDate"></div>
         </div>
-        <button class="btn btn-primary" style="margin-bottom: 8px; padding: 7px;" onclick="fetchSalesData()">عرض التقارير 🔍</button>
+        <button class="btn btn-primary" style="margin-bottom: 8px; padding: 7px;" onclick="fetchSalesData()">عرض الفترة 🔍</button>
 
         <div class="stats-container">
             <div class="stat-card cash">
-                <div class="stat-title">💵 إجمالي الفواتير النقدية (الكاش)</div>
+                <div class="stat-title">💵 إجمالي الفواتير النقدية </div>
                 <div class="stat-value val-cash" id="cashAmount">0.00 د.ل</div>
             </div>
 
             <div class="stat-card bank" onclick="toggleModal('bankModal', true)">
-                <div class="stat-title">💳 إجمالي الخدمات المصرفية</div>
+                <div class="stat-title">💳  الخدمات المصرفية</div>
                 <div class="stat-value val-bank" id="bankAmount">0.00 د.ل</div>
                 <span class="hint-text" style="color: #3b82f6;">🔍 تفاصيل الخدمات المصرفية</span>
             </div>
 
             <div class="stat-card daily-acc" onclick="toggleModal('dailyAccModal', true)">
-                <div class="stat-title">🏛️ أرصدة كافة الحسابات اليومية (الدفع المتعدد)</div>
+                <div class="stat-title">🏛️   ارصدة الحسابات  (الدفع المتعدد)</div>
                 <div class="stat-value val-daily" id="dailyAccountsTotal">0.00 د.ل</div>
-                <span class="hint-text" style="color: #06b6d4;">🔍 تفاصيل أرصدة الحسابات اليومية</span>
+                <span class="hint-text" style="color: #06b6d4;">🔍 تفاصيل أرصدة الحسابات </span>
             </div>
 
             <div class="stat-card total">
-                <div class="stat-title">💰 الإجمالي العام الشامل</div>
+                <div class="stat-title">💰 اجمالي المبيعات </div>
                 <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
             </div>
         </div>
 
-        <h3 style="color: #38bdf8; font-size: 13px; margin-top: 14px; margin-bottom: 4px;">📑 كشوفات الأرصدة والديون الشاملة</h3>
+        <h3 style="color: #38bdf8; font-size: 13px; margin-top: 14px; margin-bottom: 4px;">📑  الأرصدة والديون </h3>
         <div class="ledger-grid">
             <div class="ledger-card cust" onclick="toggleModal('custModal', true)">
                 <div class="stat-title">👥 ديون الزبائن</div>
                 <div style="font-weight: bold; color: #f43f5e; font-size: 14px;" id="custTotal">0.00</div>
             </div>
             <div class="ledger-card supp" onclick="toggleModal('suppModal', true)">
-                <div class="stat-title">🚚 ديون الموردين</div>
+                <div class="stat-title">🚚  الموردين</div>
                 <div style="font-weight: bold; color: #10b981; font-size: 14px;" id="suppTotal">0.00</div>
             </div>
             <div class="ledger-card emp" onclick="toggleModal('empModal', true)">
@@ -157,10 +157,10 @@
         </div>
 
         <div class="search-section">
-            <h3 style="color: #38bdf8; font-size: 13px; margin-bottom: 6px;">📦 الاستعلام عن المخزون</h3>
+            <h3 style="color: #38bdf8; font-size: 13px; margin-bottom: 6px;">📦 الاستعلام عن المواد</h3>
             <div class="search-mode-selector">
                 <label><input type="radio" name="searchMode" value="barcode_only" checked> 🏷️ باركود</label>
-                <label><input type="radio" name="searchMode" value="barcode_and_text"> 🔍 اسم + باركود</label>
+                <label><input type="radio" name="searchMode" value="barcode_and_text"> 🔍 اسم المادة </label>
             </div>
             <div class="search-box-wrapper">
                 <input type="text" id="itemSearchInput" placeholder="أدخل للبحث..." onkeydown="if(event.key === 'Enter') searchItems()">
@@ -185,28 +185,28 @@
 
 <div id="dailyAccModal" class="modal" onclick="closeModalOutside(event, 'dailyAccModal')">
     <div class="modal-content">
-        <div class="modal-header"><h3>🏛️ أرصدة الحسابات اليومية</h3><button class="close-btn" onclick="toggleModal('dailyAccModal', false)">&times;</button></div>
+        <div class="modal-header"><h3>🏛️ أرصدة الحسابات </h3><button class="close-btn" onclick="toggleModal('dailyAccModal', false)">&times;</button></div>
         <ul class="details-list" id="dailyAccList"></ul>
     </div>
 </div>
 
 <div id="custModal" class="modal" onclick="closeModalOutside(event, 'custModal')">
     <div class="modal-content">
-        <div class="modal-header"><h3>👥 كشف ديون الزبائن</h3><button class="close-btn" onclick="toggleModal('custModal', false)">&times;</button></div>
+        <div class="modal-header"><h3>👥  ديون الزبائن</h3><button class="close-btn" onclick="toggleModal('custModal', false)">&times;</button></div>
         <ul class="details-list" id="custList"></ul>
     </div>
 </div>
 
 <div id="suppModal" class="modal" onclick="closeModalOutside(event, 'suppModal')">
     <div class="modal-content">
-        <div class="modal-header"><h3>🚚 كشف ديون الموردين</h3><button class="close-btn" onclick="toggleModal('suppModal', false)">&times;</button></div>
+        <div class="modal-header"><h3>🚚  حركة الموردين</h3><button class="close-btn" onclick="toggleModal('suppModal', false)">&times;</button></div>
         <ul class="details-list" id="suppList"></ul>
     </div>
 </div>
 
 <div id="empModal" class="modal" onclick="closeModalOutside(event, 'empModal')">
     <div class="modal-content">
-        <div class="modal-header"><h3>💼 كشف حركة الموظفين</h3><button class="close-btn" onclick="toggleModal('empModal', false)">&times;</button></div>
+        <div class="modal-header"><h3>💼  حركة الموظفين</h3><button class="close-btn" onclick="toggleModal('empModal', false)">&times;</button></div>
         <ul class="details-list" id="empList"></ul>
     </div>
 </div>
