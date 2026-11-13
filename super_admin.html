@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم الإدارة - معرض سنتر العائلة</title>
-    <!-- مكتبة مسح الباركود عبر الكاميرا -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
@@ -77,7 +76,6 @@
         }
         
         #loginSection { text-align: center; padding: 20px 0; }
-        
         label { font-weight: 600; font-size: 13px; color: var(--text-muted); }
         
         input[type="text"], input[type="password"], input[type="date"] { 
@@ -155,6 +153,12 @@
         .stat-card.total { 
             border-right: 6px solid #eab308; 
             background: linear-gradient(to left, rgba(234, 179, 8, 0.03), var(--card-bg)); 
+            cursor: pointer;
+        }
+        .stat-card.total:hover {
+            transform: translateY(-2px);
+            background-color: rgba(234, 179, 8, 0.06);
+            border-color: rgba(234, 179, 8, 0.4);
         }
         
         .stat-title { font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
@@ -206,7 +210,7 @@
         .bank-details-list li {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
+            padding: 11px 0;
             border-bottom: 1px solid var(--border-color);
             font-size: 14px;
             font-weight: 500;
@@ -312,9 +316,11 @@
                 <span class="hint-text" style="color: #3b82f6;">🔍 انقر لعرض تفاصيل الخدمات المصرفية</span>
             </div>
 
-            <div class="stat-card total">
+            <!-- كرت الإجمالي العام التفاعلي الجديد -->
+            <div class="stat-card total" onclick="toggleProfitModal(true)">
                 <div class="stat-title">💰 الإجمالي العام الشامل (النقدية + المصرفية)</div>
                 <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
+                <span class="hint-text" style="color: #eab308;">📊 انقر لعرض تكلفة المبيعات ونسبة الربح</span>
             </div>
         </div>
 
@@ -361,6 +367,20 @@
     </div>
 </div>
 
+<!-- النافذة المنبثقة لتكلفة المواد المباعة ونسبة الربح -->
+<div id="profitModal" class="modal" onclick="handleModalClick(event, 'profitModal')">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="color: #eab308;">📊 تحليل التكلفة والربحية</h3>
+            <button class="close-btn" onclick="toggleProfitModal(false)">&times;</button>
+        </div>
+        <ul class="bank-details-list">
+            <li><span>📦 تكلفة المواد المباعة:</span> <strong id="costDetail" style="color: #f87171;">0.00 د.ل</strong></li>
+            <li><span>📈 نسبة الربح من المبيعات:</span> <strong id="profitMarginDetail" style="color: #22c55e; font-size: 16px;">0.00%</strong></li>
+        </ul>
+    </div>
+</div>
+
 <script>
     const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
@@ -369,6 +389,7 @@
     let html5QrcodeScanner = null;
 
     let currentBankBreakdown = { mobi: 0, card: 0, yesser: 0, edfaq: 0 };
+    let currentFinancialStats = { totalSales: 0, totalCost: 0 };
 
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('startDate').value = today;
@@ -409,9 +430,24 @@
         }
     }
 
+    function toggleProfitModal(show) {
+        const modal = document.getElementById('profitModal');
+        modal.style.display = show ? 'block' : 'none';
+        if(show) {
+            const sales = currentFinancialStats.totalSales;
+            const cost = currentFinancialStats.totalCost;
+            const netProfit = sales - cost;
+            const profitMargin = sales > 0 ? ((netProfit / sales) * 100) : 0;
+
+            document.getElementById('costDetail').innerText = cost.toFixed(2) + " د.ل";
+            document.getElementById('profitMarginDetail').innerText = profitMargin.toFixed(2) + "%";
+        }
+    }
+
     function handleModalClick(event, modalId) {
         if (event.target.id === modalId) {
             if(modalId === 'bankModal') toggleBankModal(false);
+            if(modalId === 'profitModal') toggleProfitModal(false);
         }
     }
 
@@ -511,6 +547,7 @@
             let sumMobi = 0;
             let sumYesser = 0;
             let sumEdfaq = 0;
+            let sumCost = 0;
             
             let latestFormattedDateTime = "--/--/---- --:--:--";
 
@@ -546,12 +583,14 @@
                     const netMobi = Number(item.mobicash_sales || 0) - Number(item.mobicash_returns || 0);
                     const netYesser = Number(item.yesserpay_sales || 0) - Number(item.yesserpay_returns || 0);
                     const netEdfaq = Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0);
+                    const dayCost = Number(item.total_cost || 0);
 
                     totalCash += netCash;
                     sumCard += netCard;
                     sumMobi += netMobi;
                     sumYesser += netYesser;
                     sumEdfaq += netEdfaq;
+                    sumCost += dayCost;
                 });
             }
 
@@ -565,6 +604,11 @@
                 edfaq: sumEdfaq 
             };
 
+            currentFinancialStats = {
+                totalSales: grandTotal,
+                totalCost: sumCost
+            };
+
             document.getElementById('cashAmount').innerText = totalCash.toFixed(2) + " د.ل";
             document.getElementById('bankAmount').innerText = totalBank.toFixed(2) + " د.ل";
             document.getElementById('totalAmount').innerText = grandTotal.toFixed(2) + " د.ل";
@@ -572,6 +616,7 @@
             document.getElementById('lastSyncTime').innerText = `آخر تحديث للبيانات: ${latestFormattedDateTime}`;
 
             if (document.getElementById('bankModal').style.display === 'block') toggleBankModal(true);
+            if (document.getElementById('profitModal').style.display === 'block') toggleProfitModal(true);
 
         } catch (err) {
             loadingDiv.style.display = 'none';
