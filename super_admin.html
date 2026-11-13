@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم الإدارة - معرض سنتر العائلة</title>
+    <!-- مكتبة مسح الباركود عبر الكاميرا -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
@@ -28,68 +29,116 @@
             }
         }
 
-        body { font-family: Tahoma, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 8px; transition: 0.3s; }
-        .container { max-width: 520px; margin: auto; background: var(--container-bg); padding: 12px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
-        h2 { text-align: center; color: #38bdf8; margin-top: 0; margin-bottom: 4px; font-size: 18px; }
-        .store-tag { text-align: center; color: #e67e22; font-size: 13px; font-weight: bold; margin-bottom: 2px; }
-        .last-sync-time { text-align: center; color: var(--text-muted); font-size: 11px; margin-bottom: 10px; }
+        body { font-family: Tahoma, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 10px; transition: 0.3s; }
+        .container { max-width: 600px; margin: auto; background: var(--container-bg); padding: 15px; border-radius: 14px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+        h2 { text-align: center; color: #38bdf8; margin-top: 0; margin-bottom: 5px; font-size: 20px; }
+        .store-tag { text-align: center; color: #e67e22; font-size: 15px; font-weight: bold; margin-bottom: 3px; }
+        .last-sync-time { text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 12px; }
         
-        #loginSection { text-align: center; padding: 10px 0; }
+        #loginSection { text-align: center; padding: 15px 0; }
         input[type="text"], input[type="password"], input[type="date"] { 
-            width: 100%; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); box-sizing: border-box; margin-bottom: 8px; text-align: center; 
+            width: 100%; padding: 10px; font-size: 14px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); box-sizing: border-box; margin-bottom: 12px; text-align: center; 
         }
         
-        .btn { width: 100%; padding: 8px; font-size: 13px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; }
+        .btn { width: 100%; padding: 10px; font-size: 15px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; transition: 0.2s; }
         .btn-primary { background: #0284c7; color: white; }
         .btn-primary:hover { background: #0369a1; }
         
-        .date-range-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+        .date-range-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
         .date-group { text-align: right; }
-        .date-group label { font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 2px; }
-        .date-group input { margin-bottom: 0; padding: 6px; font-size: 12px; }
+        .date-group label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 3px; }
+        .date-group input { margin-bottom: 0; padding: 8px; font-size: 13px; }
 
-        .stats-container { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
-        .stat-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 8px; text-align: center; }
-        .stat-card.cash { border-right: 4px solid #22c55e; }
-        .stat-card.bank { border-right: 4px solid #3b82f6; cursor: pointer; }
-        .stat-card.daily-acc { border-right: 4px solid #06b6d4; cursor: pointer; }
-        .stat-card.total { border-right: 4px solid #eab308; background: var(--container-bg); }
+        /* تصغير حجم الخانات والكروت الإحصائية لتصبح مدمجة وغير مزعجة */
+        .stats-container { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 12px 15px; border-radius: 10px; text-align: center; }
+        .stat-card.cash { border-right: 5px solid #22c55e; }
+        .stat-card.bank { border-right: 5px solid #3b82f6; cursor: pointer; transition: transform 0.2s, background-color 0.2s; }
+        .stat-card.bank:hover { transform: translateY(-1px); background-color: rgba(59, 130, 246, 0.05); }
+        
+        .stat-card.other { border-right: 5px solid #a855f7; cursor: pointer; transition: transform 0.2s, background-color 0.2s; }
+        .stat-card.other:hover { transform: translateY(-1px); background-color: rgba(168, 85, 247, 0.05); }
 
-        .stat-title { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
-        .stat-value { font-size: 17px; font-weight: bold; }
+        .stat-card.total { border-right: 5px solid #eab308; background: var(--container-bg); }
+        
+        .stat-title { font-size: 13px; color: var(--text-muted); margin-bottom: 5px; }
+        .stat-value { font-size: 21px; font-weight: bold; }
         .val-cash { color: #22c55e; }
         .val-bank { color: #3b82f6; }
-        .val-daily { color: #06b6d4; }
+        .val-other { color: #a855f7; }
         .val-total { color: #eab308; }
-        .hint-text { display: block; font-size: 10px; margin-top: 2px; font-weight: bold; }
+        .hint-text { display: block; font-size: 11px; color: inherit; margin-top: 3px; font-weight: bold; }
 
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px); }
-        .modal-content { background-color: var(--container-bg); margin: 15% auto; padding: 12px; border-radius: 8px; width: 85%; max-width: 320px; border: 1px solid var(--border-color); box-shadow: 0 6px 16px rgba(0,0,0,0.3); text-align: right; max-height: 60vh; overflow-y: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 8px; }
-        .modal-header h3 { color: #38bdf8; margin: 0; font-size: 13px; }
-        .close-btn { background: none; border: none; font-size: 18px; color: var(--text-muted); cursor: pointer; }
-        .details-list { list-style: none; padding: 0; margin: 0; }
-        .details-list li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border-color); font-size: 12px; }
+        /* تنسيق النوافذ المنبثقة (Modal) */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
+        }
+        .modal-content {
+            background-color: var(--container-bg);
+            margin: 15% auto;
+            padding: 15px;
+            border-radius: 10px;
+            width: 85%;
+            max-width: 350px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            text-align: right;
+            max-height: 65vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+        .modal-header h3 { color: #38bdf8; margin: 0; font-size: 15px; }
+        .close-btn { background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; }
+        .close-btn:hover { color: var(--text-color); }
+        .bank-details-list { list-style: none; padding: 0; margin: 0; }
+        .bank-details-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+        .bank-details-list li:last-child { border-bottom: none; }
 
-        /* قسم البحث الشامل عن الحسابات */
-        .account-search-section { margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 10px; }
-        .account-results { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; margin-top: 8px; }
-        .account-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; display: flex; flex-direction: column; gap: 4px; }
-        .account-name { font-size: 13px; font-weight: bold; color: #38bdf8; }
-        .account-balances { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px; text-align: center; background: var(--input-bg); padding: 6px; border-radius: 5px; }
+        .search-section { margin-top: 20px; border-top: 2px solid var(--border-color); padding-top: 15px; }
+        
+        .search-mode-selector { 
+            display: flex; justify-content: center; gap: 15px; margin-bottom: 10px; background: var(--input-bg); padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); 
+        }
+        .search-mode-selector label { font-size: 13px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; }
 
-        .search-section { margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 10px; }
-        .search-mode-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 8px; background: var(--input-bg); padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); }
-        .search-mode-selector label { font-size: 11px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 4px; }
-        .search-box-wrapper { display: flex; gap: 5px; margin-bottom: 8px; }
-        .search-box-wrapper input { margin-bottom: 0; text-align: center; flex: 1; font-weight: bold; padding: 7px; font-size: 12px; }
-        .btn-action { background: #0284c7; color: white; border: none; padding: 0 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
-        .btn-scan { background: #10b981; color: white; border: none; padding: 0 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
-        #reader { width: 100%; max-width: 300px; margin: 0 auto 8px auto; border-radius: 8px; overflow: hidden; display: none; border: 2px solid #38bdf8; }
-        .items-results { display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto; }
-        .item-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; display: flex; flex-direction: column; gap: 4px; }
-        .item-name { font-size: 13px; font-weight: bold; color: #38bdf8; }
-        .item-details { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px; font-size: 11px; text-align: center; background: var(--input-bg); padding: 5px; border-radius: 5px; }
+        .search-box-wrapper { display: flex; gap: 6px; margin-bottom: 10px; }
+        .search-box-wrapper input { margin-bottom: 0; text-align: center; flex: 1; font-weight: bold; padding: 10px; font-size: 14px; }
+        
+        .btn-action { background: #0284c7; color: white; border: none; padding: 0 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap; }
+        .btn-action:hover { background: #0369a1; }
+
+        .btn-scan { background: #10b981; color: white; border: none; padding: 0 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap; }
+        .btn-scan:hover { background: #059669; }
+
+        #reader { width: 100%; max-width: 350px; margin: 0 auto 10px auto; border-radius: 10px; overflow: hidden; display: none; border: 2px solid #38bdf8; }
+
+        .items-results { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; }
+        .item-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 6px; }
+        .item-name { font-size: 15px; font-weight: bold; color: #38bdf8; }
+        .item-details { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; font-size: 13px; text-align: center; background: var(--input-bg); padding: 6px; border-radius: 6px; }
+        .item-details span { color: var(--text-muted); font-size: 11px; }
+        .item-details b { color: var(--text-color); display: block; margin-top: 2px; }
 
         .hidden { display: none; }
     </style>
@@ -99,108 +148,131 @@
 <div class="container">
     <h2>📊 لوحة تحكم الإدارة</h2>
     <div class="store-tag" id="welcomeStore">تسجيل الدخول مطلوب</div>
-    <div class="last-sync-time" id="lastSyncTime">آخر تحديث: --:--:--</div>
+    <div class="last-sync-time" id="lastSyncTime">آخر تحديث للبيانات: --/--/---- --:--:--</div>
 
+    <!-- شاشة تسجيل الدخول -->
     <div id="loginSection">
-        <label style="display:block; margin-bottom: 4px; text-align: right; font-size: 12px;">اسم المستخدم:</label>
+        <label style="display:block; margin-bottom: 6px; text-align: right; font-size: 13px;">اسم المستخدم:</label>
         <input type="text" id="userInput" placeholder="أدخل اسم المستخدم...">
-        <label style="display:block; margin-bottom: 4px; text-align: right; font-size: 12px;">كلمة المرور:</label>
+        
+        <label style="display:block; margin-bottom: 6px; text-align: right; font-size: 13px;">كلمة المرور:</label>
         <input type="password" id="passInput" placeholder="****">
+
         <button class="btn btn-primary" onclick="cloudLogin()">دخول 🔐</button>
-        <p id="loginError" style="color: #f87171; display: none; margin-top: 6px; font-size: 12px;">❌ بيانات الدخول غير صحيحة</p>
+        <p id="loginError" style="color: #f87171; display: none; margin-top: 8px; font-size: 13px;">❌ اسم المستخدم أو كلمة المرور غير صحيحة</p>
+        <p id="loginLoading" style="color: #38bdf8; display: none; margin-top: 8px; font-size: 13px;">⏳ جاري التحقق من قاعدة البيانات...</p>
     </div>
 
+    <!-- لوحة البيانات الرئيسية والبحث -->
     <div id="dashboardSection" class="hidden">
         <div class="date-range-grid">
-            <div class="date-group"><label>من تاريخ:</label><input type="date" id="startDate"></div>
-            <div class="date-group"><label>إلى تاريخ:</label><input type="date" id="endDate"></div>
+            <div class="date-group">
+                <label>من تاريخ:</label>
+                <input type="date" id="startDate">
+            </div>
+            <div class="date-group">
+                <label>إلى تاريخ:</label>
+                <input type="date" id="endDate">
+            </div>
         </div>
-        <button class="btn btn-primary" style="margin-bottom: 8px; padding: 7px;" onclick="fetchSalesData()">عرض الفترة 🔍</button>
+        <button class="btn btn-primary" style="margin-bottom: 12px; padding: 9px;" onclick="fetchSalesData()">عرض التقارير 🔍</button>
 
+        <div id="loadingStatus" style="text-align: center; color: var(--text-muted); display: none; font-size: 13px;">⏳ جاري جلب البيانات من السحابة...</div>
+
+        <!-- الكروت الأربعة للمبيعات (مدمجة وأنيقة) -->
         <div class="stats-container">
+            <!-- 1. المبيعات النقدية -->
             <div class="stat-card cash">
-                <div class="stat-title">💵 إجمالي الفواتير النقدية</div>
+                <div class="stat-title">💵 إجمالي الفواتير النقدية (الكاش الصافي)</div>
                 <div class="stat-value val-cash" id="cashAmount">0.00 د.ل</div>
             </div>
 
-            <div class="stat-card bank" onclick="toggleModal('bankModal', true)">
-                <div class="stat-title">💳 الخدمات المصرفية</div>
+            <!-- 2. المبيعات المصرفية (تفاعلية) -->
+            <div class="stat-card bank" onclick="toggleBankModal(true)">
+                <div class="stat-title">💳 إجمالي فواتير الخدمات المصرفية والبطاقات</div>
                 <div class="stat-value val-bank" id="bankAmount">0.00 د.ل</div>
-                <span class="hint-text" style="color: #3b82f6;">🔍 تفاصيل الخدمات المصرفية</span>
+                <span class="hint-text" style="color: #3b82f6;">🔍 انقر لعرض تفاصيل الخدمات المصرفية</span>
             </div>
 
-            <div class="stat-card daily-acc" onclick="toggleModal('dailyAccModal', true)">
-                <div class="stat-title">🏛️ أرصدة الحسابات (الدفع المتعدد)</div>
-                <div class="stat-value val-daily" id="dailyAccountsTotal">0.00 د.ل</div>
-                <span class="hint-text" style="color: #06b6d4;">🔍 تفاصيل أرصدة الحسابات اليومية</span>
+            <!-- 3. مبيعات أخرى (تفاعلية) -->
+            <div class="stat-card other" onclick="toggleOtherModal(true)">
+                <div class="stat-title">📦 مبيعات أخرى (حسابات وأسماء أخرى)</div>
+                <div class="stat-value val-other" id="otherAmount">0.00 د.ل</div>
+                <span class="hint-text" style="color: #a855f7;">🔍 انقر لعرض تفاصيل الحسابات والقيم</span>
             </div>
 
+            <!-- 4. الإجمالي العام الشامل لكل الخانات -->
             <div class="stat-card total">
-                <div class="stat-title">💰 اجمالي المبيعات</div>
+                <div class="stat-title">💰 الإجمالي العام الشامل (النقدية + المصرفية + أخرى)</div>
                 <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
             </div>
         </div>
 
-        <!-- خانة البحث الشامل عن الحسابات -->
-        <div class="account-search-section">
-            <h3 style="color: #38bdf8; font-size: 13px; margin-bottom: 6px;">🔍 الاستعلام عن الحسابات (كم له وكم عليه)</h3>
-            <div class="search-box-wrapper">
-                <input type="text" id="accountSearchInput" placeholder="أدخل اسم الحساب للبحث..." onkeydown="if(event.key === 'Enter') searchAccounts()">
-                <button class="btn-action" onclick="searchAccounts()">بحث 🔍</button>
-            </div>
-            <div class="account-results" id="accountResultsContainer">
-                <div style="text-align: center; color: var(--text-muted); font-size: 11px; padding: 6px;">اكتب اسم الحساب واضغط بحث لعرض القيمة المسجلة...</div>
-            </div>
-        </div>
-
+        <!-- قسم الاستعلام عن المواد ومسح الباركود -->
         <div class="search-section">
-            <h3 style="color: #38bdf8; font-size: 13px; margin-bottom: 6px;">📦 الاستعلام عن المواد</h3>
+            <h3 style="color: #38bdf8; text-align: right; font-size: 16px; margin-bottom: 8px;">📦 الاستعلام عن المواد والمخزون</h3>
+            
             <div class="search-mode-selector">
-                <label><input type="radio" name="searchMode" value="barcode_only" checked> 🏷️ باركود</label>
-                <label><input type="radio" name="searchMode" value="barcode_and_text"> 🔍 اسم المادة</label>
+                <label><input type="radio" name="searchMode" value="barcode_only" checked> 🏷️ باركود فقط</label>
+                <label><input type="radio" name="searchMode" value="barcode_and_text"> 🔍 باركود + اسم</label>
             </div>
+
             <div class="search-box-wrapper">
-                <input type="text" id="itemSearchInput" placeholder="أدخل للبحث..." onkeydown="if(event.key === 'Enter') searchItems()">
+                <input type="text" id="itemSearchInput" placeholder="أدخل نص/رقم البحث هنا..." onkeydown="if(event.key === 'Enter') searchItems()">
                 <button class="btn-action" onclick="searchItems()">بحث 🔍</button>
-                <button class="btn-scan" onclick="toggleCameraScanner()">📷</button>
+                <button class="btn-scan" onclick="toggleCameraScanner()">كاميرا 📷</button>
             </div>
+
             <div id="reader"></div>
-            <div class="items-results" id="itemsResultsContainer"></div>
+
+            <div id="itemsLoading" style="text-align: center; color: var(--text-muted); display: none; font-size: 12px; margin-bottom: 8px;">⏳ جاري البحث...</div>
+            <div class="items-results" id="itemsResultsContainer">
+                <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 10px;">اختر خيار البحث وادخل القيمة للبدء...</div>
+            </div>
         </div>
         
-        <button class="btn" style="background: #475569; color: white; margin-top: 15px; padding: 7px;" onclick="logout()">تسجيل الخروج 🚪</button>
+        <button class="btn" style="background: #475569; color: white; margin-top: 20px; padding: 10px;" onclick="logout()">تسجيل الخروج 🚪</button>
     </div>
 </div>
 
-<!-- نافذة تفاصيل الخدمات المصرفية -->
-<div id="bankModal" class="modal" onclick="closeModalOutside(event, 'bankModal')">
+<!-- النافذة المنبثقة لتفاصيل الخدمات المصرفية -->
+<div id="bankModal" class="modal" onclick="handleModalClick(event, 'bankModal')">
     <div class="modal-content">
-        <div class="modal-header"><h3>💳 تفاصيل الخدمات المصرفية</h3><button class="close-btn" onclick="toggleModal('bankModal', false)">&times;</button></div>
-        <ul class="details-list" id="bankList"></ul>
+        <div class="modal-header">
+            <h3>💳 تفاصيل العمليات المصرفية</h3>
+            <button class="close-btn" onclick="toggleBankModal(false)">&times;</button>
+        </div>
+        <ul class="bank-details-list">
+            <li><span>📱 موبي كاش:</span> <strong id="mobiDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+            <li><span>💳 البطاقة المصرفية:</span> <strong id="cardDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+            <li><span>🤝 يسر باي 3:</span> <strong id="yesserDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+            <li><span>🛒 ادفع لي:</span> <strong id="edfaqDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+        </ul>
     </div>
 </div>
 
-<!-- نافذة تفاصيل أرصدة الحسابات اليومية -->
-<div id="dailyAccModal" class="modal" onclick="closeModalOutside(event, 'dailyAccModal')">
+<!-- النافذة المنبثقة لتفاصيل "مبيعات أخرى" -->
+<div id="otherModal" class="modal" onclick="handleModalClick(event, 'otherModal')">
     <div class="modal-content">
-        <div class="modal-header"><h3>🏛️ أرصدة الحسابات اليومية</h3><button class="close-btn" onclick="toggleModal('dailyAccModal', false)">&times;</button></div>
-        <ul class="details-list" id="dailyAccList"></ul>
-    </div>
-</div>
-
-<!-- نافذة منبثقة لنتيجة البحث عن الحساب -->
-<div id="accountModal" class="modal" onclick="closeModalOutside(event, 'accountModal')">
-    <div class="modal-content">
-        <div class="modal-header"><h3>👤 تفاصيل رصيد الحساب</h3><button class="close-btn" onclick="toggleModal('accountModal', false)">&times;</button></div>
-        <div id="modalAccountDetails" style="text-align: right; font-size: 12px; line-height: 1.6;"></div>
+        <div class="modal-header">
+            <h3>📦 تفاصيل مبيعات أخرى</h3>
+            <button class="close-btn" onclick="toggleOtherModal(false)">&times;</button>
+        </div>
+        <ul class="bank-details-list" id="otherAccountsList">
+            <li><span>لا توجد بيانات</span> <strong>0.00 د.ل</strong></li>
+        </ul>
     </div>
 </div>
 
 <script>
     const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
+    
     let currentStoreId = null;
     let html5QrcodeScanner = null;
+
+    let currentBankBreakdown = { mobi: 0, card: 0, yesser: 0, edfaq: 0 };
+    let currentOtherAccounts = [];
 
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('startDate').value = today;
@@ -208,269 +280,305 @@
 
     window.onload = function() {
         const savedSession = localStorage.getItem('admin_session');
-        if (savedSession) {
-            const storeData = JSON.parse(savedSession);
-            currentStoreId = storeData.store_id;
-            document.getElementById('loginSection').classList.add('hidden');
-            document.getElementById('dashboardSection').classList.remove('hidden');
-            document.getElementById('welcomeStore').innerText = `🏪 ${storeData.store_name}`;
-            fetchSalesData();
+        const loginTime = localStorage.getItem('admin_login_time');
+
+        if (savedSession && loginTime) {
+            const currentTime = new Date().getTime();
+            const hoursElapsed = (currentTime - Number(loginTime)) / (1000 * 60 * 60);
+
+            if (hoursElapsed < 6) {
+                const storeData = JSON.parse(savedSession);
+                currentStoreId = storeData.store_id;
+                
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                document.getElementById('welcomeStore').innerText = `🏪 ${storeData.store_name}`;
+                
+                fetchSalesData();
+            } else {
+                localStorage.removeItem('admin_session');
+                localStorage.removeItem('admin_login_time');
+            }
         }
     };
 
-    function toggleModal(modalId, show) {
-        document.getElementById(modalId).style.display = show ? 'block' : 'none';
-    }
-
-    function closeModalOutside(event, modalId) {
-        if (event.target.id === modalId) toggleModal(modalId, false);
-    }
-
-    async function cloudLogin() {
-        const u = document.getElementById('userInput').value.trim();
-        const p = document.getElementById('passInput').value.trim();
-        if(!u || !p) return;
-
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/stores?username=eq.${encodeURIComponent(u)}&password=eq.${encodeURIComponent(p)}&select=*`, {
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-        });
-        const data = await res.json();
-        if(data && data.length > 0) {
-            currentStoreId = String(data[0].store_id || data[0].id || "2");
-            localStorage.setItem('admin_session', JSON.stringify({ store_id: currentStoreId, store_name: data[0].store_name }));
-            location.reload();
-        } else {
-            document.getElementById('loginError').style.display = 'block';
+    function toggleBankModal(show) {
+        const modal = document.getElementById('bankModal');
+        modal.style.display = show ? 'block' : 'none';
+        if(show) {
+            document.getElementById('mobiDetail').innerText = currentBankBreakdown.mobi.toFixed(2) + " د.ل";
+            document.getElementById('cardDetail').innerText = currentBankBreakdown.card.toFixed(2) + " د.ل";
+            document.getElementById('yesserDetail').innerText = currentBankBreakdown.yesser.toFixed(2) + " د.ل";
+            document.getElementById('edfaqDetail').innerText = currentBankBreakdown.edfaq.toFixed(2) + " د.ل";
         }
     }
 
-    function logout() { localStorage.removeItem('admin_session'); location.reload(); }
+    function toggleOtherModal(show) {
+        const modal = document.getElementById('otherModal');
+        modal.style.display = show ? 'block' : 'none';
+        if(show) {
+            const listContainer = document.getElementById('otherAccountsList');
+            if (currentOtherAccounts.length > 0) {
+                let html = '';
+                currentOtherAccounts.forEach(acc => {
+                    html += `<li><span>👤 ${acc.name}</span> <strong style="color: #a855f7;">${acc.amount.toFixed(2)} د.ل</strong></li>`;
+                });
+                listContainer.innerHTML = html;
+            } else {
+                listContainer.innerHTML = `<li><span>لا توجد مبيعات أخرى مسجلة</span> <strong>0.00 د.ل</strong></li>`;
+            }
+        }
+    }
+
+    function handleModalClick(event, modalId) {
+        if (event.target.id === modalId) {
+            if(modalId === 'bankModal') toggleBankModal(false);
+            if(modalId === 'otherModal') toggleOtherModal(false);
+        }
+    }
+
+    async function cloudLogin() {
+        const usernameInput = document.getElementById('userInput').value.trim();
+        const passwordInput = document.getElementById('passInput').value.trim();
+        const errorMsg = document.getElementById('loginError');
+        const loadingMsg = document.getElementById('loginLoading');
+
+        if (!usernameInput || !passwordInput) {
+            errorMsg.innerText = "⚠️ الرجاء إدخال اسم المستخدم وكلمة المرور";
+            errorMsg.style.display = 'block';
+            return;
+        }
+
+        errorMsg.style.display = 'none';
+        loadingMsg.style.display = 'block';
+
+        try {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/stores?username=eq.${encodeURIComponent(usernameInput)}&password=eq.${encodeURIComponent(passwordInput)}&select=*`, {
+                method: 'GET',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            loadingMsg.style.display = 'none';
+
+            if (!response.ok) {
+                errorMsg.innerText = "❌ خطأ في الاتصال بقاعدة البيانات";
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            const data = await response.json();
+
+            if (data && data.length > 0) {
+                const store = data[0];
+                currentStoreId = String(store.store_id || store.id || "2");
+                const storeName = store.store_name || 'معرض التجارة';
+
+                const sessionData = { store_id: currentStoreId, store_name: storeName };
+                localStorage.setItem('admin_session', JSON.stringify(sessionData));
+                localStorage.setItem('admin_login_time', new Date().getTime().toString());
+                
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                document.getElementById('welcomeStore').innerText = `🏪 ${storeName}`;
+                
+                fetchSalesData();
+            } else {
+                errorMsg.innerText = "❌ اسم المستخدم أو كلمة المرور غير صحيحة";
+                errorMsg.style.display = 'block';
+            }
+        } catch (err) {
+            loadingMsg.style.display = 'none';
+            errorMsg.innerText = "❌ خطأ في النظام: " + err.message;
+            errorMsg.style.display = 'block';
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('admin_session');
+        localStorage.removeItem('admin_login_time');
+        location.reload();
+    }
 
     async function fetchSalesData() {
         if (!currentStoreId) return;
 
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
+        const loadingDiv = document.getElementById('loadingStatus');
+        
+        loadingDiv.style.display = 'block';
 
         try {
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${currentStoreId}&order=last_update.desc&limit=1000`, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-            });
-
-            if (!res.ok) return;
-            const data = await res.json();
-            if (!data || data.length === 0) return;
-
-            const dailyLatestRecords = {};
-
-            data.forEach(item => {
-                if (!item.last_update) return;
-                const itemDate = item.last_update.split('T')[0];
-
-                if (itemDate >= startDate && itemDate <= endDate) {
-                    if (!dailyLatestRecords[itemDate]) {
-                        dailyLatestRecords[itemDate] = item;
-                    }
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${currentStoreId}&order=last_update.desc&limit=2000&select=*`, {
+                method: 'GET',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
                 }
             });
 
+            loadingDiv.style.display = 'none';
+
+            if (!response.ok) return;
+
+            const data = await response.json();
+
             let totalCash = 0;
-            let totalCard = 0;
-            let totalMobi = 0;
-            let totalYesser = 0;
-            let totalEdfaq = 0;
-
-            let combinedOtherAccounts = {};
-
-            Object.values(dailyLatestRecords).forEach(item => {
-                totalCash += (Number(item.cash_sales || 0) - Number(item.cash_returns || 0));
-                totalCard += (Number(item.card_sales || 0) - Number(item.card_returns || 0));
-                totalMobi += (Number(item.mobicash_sales || 0) - Number(item.mobicash_returns || 0));
-                totalYesser += (Number(item.yesserpay_sales || 0) - Number(item.yesserpay_returns || 0));
-                totalEdfaq += (Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0));
-
-                mergeJsonData(item.other_accounts_json, combinedOtherAccounts);
-            });
-
-            let latestTimestamp = "--:--:--";
-            if (data[0] && data[0].last_update) {
-                const timePart = data[0].last_update.split('T')[1];
-                if (timePart) latestTimestamp = timePart.substring(0, 8);
-            }
-
-            const bankTotal = totalCard + totalMobi + totalYesser + totalEdfaq;
-            const grandTotal = totalCash + bankTotal;
-
-            document.getElementById('cashAmount').innerText = totalCash.toFixed(2) + " د.ل";
-            document.getElementById('bankAmount').innerText = bankTotal.toFixed(2) + " د.ل";
-            document.getElementById('totalAmount').innerText = grandTotal.toFixed(2) + " د.ل";
-            document.getElementById('lastSyncTime').innerText = `آخر تحديث للبيانات: ${latestTimestamp}`;
-
-            document.getElementById('bankList').innerHTML = `
-                <li><span>📱 موبي كاش:</span><strong>${totalMobi.toFixed(2)} د.ل</strong></li>
-                <li><span>💳 البطاقة المصرفية:</span><strong>${totalCard.toFixed(2)} د.ل</strong></li>
-                <li><span>🤝 يسر باي 3:</span><strong>${totalYesser.toFixed(2)} د.ل</strong></li>
-                <li><span>🛒 ادفع لي:</span><strong>${totalEdfaq.toFixed(2)} د.ل</strong></li>
-            `;
-
-            renderObjectList(combinedOtherAccounts, 'dailyAccList', 'dailyAccountsTotal');
-
-        } catch (err) {
-            console.error("خطأ في جلب التقارير:", err);
-        }
-    }
-
-    // وظيفة البحث الشامل عن الحسابات بدون التأثر بالهمزات
-    async function searchAccounts() {
-        const rawInput = document.getElementById('accountSearchInput').value.trim();
-        const resultsContainer = document.getElementById('accountResultsContainer');
-
-        if (!rawInput) {
-            resultsContainer.innerHTML = '<div style="text-align: center; color: #f87171; font-size: 11px; padding: 6px;">الرجاء إدخال اسم الحساب للبحث...</div>';
-            return;
-        }
-
-        const cleanQuery = rawInput.replace(/[أإآ]/g, 'ا').toLowerCase();
-
-        try {
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${currentStoreId}&order=last_update.desc&limit=10`, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-            });
-            const data = await res.json();
+            let sumCard = 0;
+            let sumMobi = 0;
+            let sumYesser = 0;
+            let sumEdfaq = 0;
+            let sumOther = 0;
             
-            if (!data || data.length === 0) {
-                resultsContainer.innerHTML = '<div style="text-align: center; color: #f87171; font-size: 11px; padding: 6px;">لا توجد بيانات مسجلة</div>';
-                return;
-            }
+            let otherAccountsMap = {};
+            let latestFormattedDateTime = "--/--/---- --:--:--";
 
-            let foundAccounts = {};
+            if (data && data.length > 0) {
+                const dailyRecords = {};
+                
+                data.forEach(item => {
+                    if (!item.last_update) return;
+                    const itemDate = item.last_update.split('T')[0];
+                    
+                    if (itemDate >= startDate && itemDate <= endDate) {
+                        if (!dailyRecords[itemDate]) {
+                            dailyRecords[itemDate] = item;
+                        }
+                    }
+                });
 
-            data.forEach(item => {
-                ['customers_json', 'suppliers_json', 'employees_json', 'other_accounts_json'].forEach(field => {
-                    if (item[field]) {
+                // معالجة عرض التاريخ والوقت لأحدث عملية مزامنة مسجلة
+                if (data[0] && data[0].last_update) {
+                    const rawIsoString = data[0].last_update; // مثال: 2026-06-07T15:30:00
+                    const parsedDate = new Date(rawIsoString);
+                    if (!isNaN(parsedDate)) {
+                        const year = parsedDate.getFullYear();
+                        const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(parsedDate.getDate()).padStart(2, '0');
+                        const timeString = parsedDate.toTimeString().substring(0, 8); // استخراج HH:MM:SS
+                        latestFormattedDateTime = `${year}/${month}/${day} - ${timeString}`;
+                    }
+                }
+
+                Object.values(dailyRecords).forEach(item => {
+                    const netCash = Number(item.cash_sales || 0) - Number(item.cash_returns || 0);
+                    const netCard = Number(item.card_sales || 0) - Number(item.card_returns || 0);
+                    const netMobi = Number(item.mobicash_sales || 0) - Number(item.mobicash_returns || 0);
+                    const netYesser = Number(item.yesserpay_sales || 0) - Number(item.yesserpay_returns || 0);
+                    const netEdfaq = Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0);
+                    const netOther = Number(item.other_sales || 0) - Number(item.other_returns || 0);
+
+                    totalCash += netCash;
+                    sumCard += netCard;
+                    sumMobi += netMobi;
+                    sumYesser += netYesser;
+                    sumEdfaq += netEdfaq;
+                    sumOther += netOther;
+
+                    if (item.other_accounts_json) {
                         try {
-                            const obj = typeof item[field] === 'string' ? JSON.parse(item[field]) : item[field];
-                            for (const [accName, balance] of Object.entries(obj)) {
-                                const cleanAccName = accName.replace(/[أإآ]/g, 'ا').toLowerCase();
-                                if (cleanAccName.includes(cleanQuery)) {
-                                    if (foundAccounts[accName] === undefined) {
-                                        foundAccounts[accName] = Number(balance);
-                                    }
-                                }
+                            const accountsObj = typeof item.other_accounts_json === 'string' ? JSON.parse(item.other_accounts_json) : item.other_accounts_json;
+                            for (const [accName, accVal] of Object.entries(accountsObj)) {
+                                otherAccountsMap[accName] = (otherAccountsMap[accName] || 0) + Number(accVal);
                             }
                         } catch(e) {}
                     }
                 });
+            }
+
+            const totalBank = sumCard + sumMobi + sumYesser + sumEdfaq;
+            const grandTotal = totalCash + totalBank + sumOther;
+
+            currentBankBreakdown = { 
+                mobi: sumMobi, 
+                card: sumCard, 
+                yesser: sumYesser, 
+                edfaq: sumEdfaq 
+            };
+
+            currentOtherAccounts = Object.keys(otherAccountsMap).map(name => ({
+                name: name,
+                amount: otherAccountsMap[name]
+            }));
+
+            document.getElementById('cashAmount').innerText = totalCash.toFixed(2) + " د.ل";
+            document.getElementById('bankAmount').innerText = totalBank.toFixed(2) + " د.ل";
+            document.getElementById('otherAmount').innerText = sumOther.toFixed(2) + " د.ل";
+            document.getElementById('totalAmount').innerText = grandTotal.toFixed(2) + " د.ل";
+
+            // تحديث العنصر في واجهة المستخدم ليظهر التاريخ والوقت معاً
+            document.getElementById('lastSyncTime').innerText = `آخر تحديث للبيانات: ${latestFormattedDateTime}`;
+
+            if (document.getElementById('bankModal').style.display === 'block') toggleBankModal(true);
+            if (document.getElementById('otherModal').style.display === 'block') toggleOtherModal(true);
+
+        } catch (err) {
+            loadingDiv.style.display = 'none';
+            console.error("خطأ في جلب المبيعات:", err);
+        }
+    }
+
+    async function searchItems(overrideQuery = null) {
+        const rawQuery = overrideQuery !== null ? overrideQuery : document.getElementById('itemSearchInput').value;
+        const query = rawQuery.trim();
+        const resultsContainer = document.getElementById('itemsResultsContainer');
+        const loadingIndicator = document.getElementById('itemsLoading');
+        const selectedMode = document.querySelector('input[name="searchMode"]:checked').value;
+
+        if (query.length < 1) {
+            resultsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 10px;">ادخل القيمة للبحث...</div>';
+            return;
+        }
+
+        loadingIndicator.style.display = 'block';
+
+        try {
+            let fetchUrl = "";
+            if (selectedMode === "barcode_only") {
+                fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&barcode=eq.${encodeURIComponent(query)}&limit=20&select=*`;
+            } else {
+                fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&or=(barcode.eq.${encodeURIComponent(query)},item_name.ilike.*${encodeURIComponent(query)}*)&limit=20&select=*`;
+            }
+
+            const response = await fetch(fetchUrl, {
+                method: 'GET',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                }
             });
 
-            let matchedNames = Object.keys(foundAccounts);
+            const items = await response.json();
+            loadingIndicator.style.display = 'none';
 
-            if (matchedNames.length > 0) {
+            if (items && items.length > 0) {
                 let html = '';
-                matchedNames.forEach(name => {
-                    const val = foundAccounts[name];
-                    const statusText = val > 0 ? "عليه (مدين)" : val < 0 ? "له (دائن)" : "متوازن";
-                    const statusColor = val > 0 ? "#f43f5e" : val < 0 ? "#22c55e" : "#94a3b8";
-
+                items.forEach(item => {
                     html += `
-                        <div class="account-card" onclick="showAccountPopup('${name}', ${val})" style="cursor: pointer; margin-bottom: 6px;">
-                            <div class="account-name">👤 ${name}</div>
-                            <div class="account-balances">
-                                <div>القيمة: <b>${Math.abs(val).toFixed(2)} د.ل</b></div>
-                                <div>الحالة: <b style="color: ${statusColor};">${statusText}</b></div>
+                        <div class="item-card">
+                            <div class="item-name">${item.item_name}</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">الباركود: ${item.barcode || 'بدون باركود'}</div>
+                            <div class="item-details">
+                                <div><span>سعر الشراء</span><b>${Number(item.buy_price || 0).toFixed(2)} د.ل</b></div>
+                                <div><span>سعر البيع</span><b style="color: #4ade80;">${Number(item.sale_price || 0).toFixed(2)} د.ل</b></div>
+                                <div><span>الكمية</span><b style="color: #38bdf8;">${item.available_qty} قطعة</b></div>
                             </div>
                         </div>
                     `;
                 });
                 resultsContainer.innerHTML = html;
-
-                if (matchedNames.length === 1) {
-                    showAccountPopup(matchedNames[0], foundAccounts[matchedNames[0]]);
-                }
             } else {
-                resultsContainer.innerHTML = '<div style="text-align: center; color: #f87171; font-size: 11px; padding: 6px;">❌ لم يتم العثور على حساب بهذا الاسم</div>';
+                resultsContainer.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 13px; padding: 10px;">❌ لم يتم العثور على أي صنف</div>`;
             }
 
         } catch (err) {
-            console.error("خطأ في البحث عن الحسابات:", err);
-        }
-    }
-
-    function showAccountPopup(name, val) {
-        const statusText = val > 0 ? "المبلغ المستحق على الحساب (عليه - مدين)" : val < 0 ? "المبلغ المستحق لصالح الحساب (له - دائن)" : "الحساب مسدد بالكامل (متوازن)";
-        const statusColor = val > 0 ? "#f43f5e" : val < 0 ? "#22c55e" : "#94a3b8";
-
-        document.getElementById('modalAccountDetails').innerHTML = `
-            <div style="font-size: 14px; font-weight: bold; color: #38bdf8; margin-bottom: 8px;">اسم الحساب: ${name}</div>
-            <div style="margin-bottom: 6px;">القيمة المسجلة: <strong style="font-size: 16px; color: #facc15;">${Math.abs(val).toFixed(2)} د.ل</strong></div>
-            <div>الحالة المالية: <strong style="color: ${statusColor};">${statusText}</strong></div>
-        `;
-        toggleModal('accountModal', true);
-    }
-
-    function mergeJsonData(jsonStr, targetObj) {
-        if (!jsonStr) return;
-        try {
-            const obj = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
-            for (const [k, v] of Object.entries(obj)) {
-                targetObj[k] = (targetObj[k] || 0) + Number(v);
-            }
-        } catch(e) {}
-    }
-
-    function renderObjectList(obj, listId, totalId) {
-        let total = 0;
-        let html = '';
-        for (const [k, v] of Object.entries(obj)) {
-            if (Number(v) !== 0) {
-                total += Number(v);
-                html += `<li><span>👤 ${k}</span><strong>${Number(v).toFixed(2)} د.ل</strong></li>`;
-            }
-        }
-        document.getElementById(listId).innerHTML = html || '<li><span>لا توجد بيانات</span><strong>0.00</strong></li>';
-        if (totalId) document.getElementById(totalId).innerText = total.toFixed(2) + " د.ل";
-    }
-
-    async function searchItems(overrideQuery = null) {
-        const rawQuery = overrideQuery !== null ? overrideQuery : document.getElementById('itemSearchInput').value;
-        const q = rawQuery.trim();
-        const selectedMode = document.querySelector('input[name="searchMode"]:checked').value;
-        const resultsContainer = document.getElementById('itemsResultsContainer');
-
-        if (!q) return;
-
-        try {
-            let fetchUrl = "";
-            if (selectedMode === "barcode_only") {
-                fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&barcode=eq.${encodeURIComponent(q)}&limit=20&select=*`;
-            } else {
-                fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&or=(barcode.eq.${encodeURIComponent(q)},item_name.ilike.*${encodeURIComponent(q)}*)&limit=20&select=*`;
-            }
-
-            const res = await fetch(fetchUrl, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-            });
-            const items = await res.json();
-            
-            let html = '';
-            if (items && items.length > 0) {
-                items.forEach(i => {
-                    html += `
-                        <div class="item-card">
-                            <div class="item-name">${i.item_name}</div>
-                            <div style="font-size: 11px; color: var(--text-muted);">الباركود: ${i.barcode || 'بدون'}</div>
-                            <div class="item-details">
-                                <div>شراء<b>${Number(i.buy_price||0).toFixed(2)}</b></div>
-                                <div>بيع<b style="color: #4ade80;">${Number(i.sale_price||0).toFixed(2)}</b></div>
-                                <div>كمية<b style="color: #38bdf8;">${i.available_qty}</b></div>
-                            </div>
-                        </div>`;
-                });
-            } else {
-                html = '<div style="text-align:center; padding:10px; color: #f87171; font-size:12px;">❌ لم يتم العثور على الصنف</div>';
-            }
-            resultsContainer.innerHTML = html;
-        } catch (err) {
+            loadingIndicator.style.display = 'none';
             console.error("خطأ في البحث:", err);
         }
     }
@@ -485,14 +593,14 @@
             html5QrcodeScanner.start(
                 { facingMode: "environment" },
                 { fps: 10, qrbox: { width: 220, height: 120 } },
-                (decodedTest) => {
-                    document.getElementById('itemSearchInput').value = decodedTest;
-                    searchItems(decodedTest);
+                (decodedText) => {
+                    document.getElementById('itemSearchInput').value = decodedText;
+                    searchItems(decodedText);
                     stopScanner();
                 },
                 (errorMessage) => {}
             ).catch(err => {
-                alert("⚠️ لا يمكن فتح الكاميرا، يرجى التأكد من صلاحيات الكاميرا.");
+                alert("⚠️ لا يمكن فتح الكاميرا، يرجى التأكد من إعطاء المتصفح صلاحية الكاميرا.");
                 stopScanner();
             });
         }
