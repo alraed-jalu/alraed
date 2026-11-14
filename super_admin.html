@@ -116,7 +116,7 @@
         }
         
         .btn-primary:hover { 
-            background: linear-gradient(135deg, #0369a1 0%, #075985 100%); 
+            background: linear-gradient(135deg, #0369a1 100%, #075985 100%); 
             transform: translateY(-1px);
             box-shadow: 0 6px 15px rgba(2, 132, 199, 0.35);
         }
@@ -177,15 +177,15 @@
         }
         .modal-content {
             background-color: var(--container-bg);
-            margin: 18% auto;
+            margin: 15% auto;
             padding: 20px;
             border-radius: 14px;
             width: 85%;
-            max-width: 360px;
+            max-width: 380px;
             border: 1px solid var(--border-color);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
             text-align: right;
-            max-height: 65vh;
+            max-height: 70vh;
             overflow-y: auto;
         }
         .modal-header {
@@ -244,7 +244,6 @@
         
         .item-name { font-size: 15px; font-weight: 800; color: #38bdf8; }
         
-        /* تعديل شبكة التفاصيل لتصبح 4 خانات مدمجة ومنسقة */
         .item-details { 
             display: grid; 
             grid-template-columns: repeat(4, 1fr); 
@@ -306,13 +305,13 @@
             </div>
 
             <div class="stat-card bank" onclick="toggleBankModal(true)">
-                <div class="stat-title">💳فواتير الخدمات المصرفية </div>
+                <div class="stat-title">💳 الخدمات المصرفية والبطاقات</div>
                 <div class="stat-value val-bank" id="bankAmount">0.00 د.ل</div>
                 <span class="hint-text" style="color: #3b82f6;">🔍 انقر لعرض تفاصيل الخدمات المصرفية</span>
             </div>
 
             <div class="stat-card total">
-                <div class="stat-title">💰 اجمالي (النقدية + الخدمات المصرفية)</div>
+                <div class="stat-title">💰 اجمالي (النقدية + المصرفية)</div>
                 <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
             </div>
         </div>
@@ -344,11 +343,11 @@
     </div>
 </div>
 
-<!-- النافذة المنبثقة لتفاصيل الخدمات المصرفية -->
+<!-- النافذة المنبثقة لتفاصيل الخدمات المصرفية وكاش دفع متعدد -->
 <div id="bankModal" class="modal" onclick="handleModalClick(event, 'bankModal')">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>💳 تفاصيل العمليات المصرفية</h3>
+            <h3>💳 تفاصيل الخدمات المصرفية والدفع</h3>
             <button class="close-btn" onclick="toggleBankModal(false)">&times;</button>
         </div>
         <ul class="bank-details-list">
@@ -356,6 +355,7 @@
             <li><span>💳 البطاقة المصرفية:</span> <strong id="cardDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
             <li><span>🤝 يسر باي:</span> <strong id="yesserDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
             <li><span>🛒 ادفع لي:</span> <strong id="edfaqDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+            <li><span>🔀 كاش دفع متعدد:</span> <strong id="multiCashDetail" style="color: #fb923c;">0.00 د.ل</strong></li>
         </ul>
     </div>
 </div>
@@ -367,7 +367,7 @@
     let currentStoreId = null;
     let html5QrcodeScanner = null;
 
-    let currentBankBreakdown = { mobi: 0, card: 0, yesser: 0, edfaq: 0 };
+    let currentBankBreakdown = { mobi: 0, card: 0, yesser: 0, edfaq: 0, multiCash: 0 };
 
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('startDate').value = today;
@@ -405,6 +405,7 @@
             document.getElementById('cardDetail').innerText = currentBankBreakdown.card.toFixed(2) + " د.ل";
             document.getElementById('yesserDetail').innerText = currentBankBreakdown.yesser.toFixed(2) + " د.ل";
             document.getElementById('edfaqDetail').innerText = currentBankBreakdown.edfaq.toFixed(2) + " د.ل";
+            document.getElementById('multiCashDetail').innerText = currentBankBreakdown.multiCash.toFixed(2) + " د.ل";
         }
     }
 
@@ -510,6 +511,7 @@
             let sumMobi = 0;
             let sumYesser = 0;
             let sumEdfaq = 0;
+            let sumMultiCash = 0;
             
             let latestFormattedDateTime = "--/--/---- --:--:--";
 
@@ -545,23 +547,26 @@
                     const netMobi = Number(item.mobicash_sales || 0) - Number(item.mobicash_returns || 0);
                     const netYesser = Number(item.yesserpay_sales || 0) - Number(item.yesserpay_returns || 0);
                     const netEdfaq = Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0);
+                    const netMultiCash = Number(item.multi_cash_sales || 0) - Number(item.multi_cash_returns || 0);
 
                     totalCash += netCash;
                     sumCard += netCard;
                     sumMobi += netMobi;
                     sumYesser += netYesser;
                     sumEdfaq += netEdfaq;
+                    sumMultiCash += netMultiCash;
                 });
             }
 
-            const totalBank = sumCard + sumMobi + sumYesser + sumEdfaq;
+            const totalBank = sumCard + sumMobi + sumYesser + sumEdfaq + sumMultiCash;
             const grandTotal = totalCash + totalBank;
 
             currentBankBreakdown = { 
                 mobi: sumMobi, 
                 card: sumCard, 
                 yesser: sumYesser, 
-                edfaq: sumEdfaq 
+                edfaq: sumEdfaq,
+                multiCash: sumMultiCash
             };
 
             document.getElementById('cashAmount').innerText = totalCash.toFixed(2) + " د.ل";
@@ -615,9 +620,6 @@
             if (items && items.length > 0) {
                 let html = '';
                 items.forEach(item => {
-                    // تم إضافة خانة الكمية المباعة / الابتدائية (initial_qty أو sold_qty)
-                    const soldOrInitialQty = item.initial_qty !== undefined ? item.initial_qty : (item.sold_qty !== undefined ? item.sold_qty : 0);
-
                     html += `
                         <div class="item-card">
                             <div class="item-name">${item.item_name}</div>
@@ -626,7 +628,7 @@
                                 <div><span>سعر الشراء</span><b>${Number(item.buy_price || 0).toFixed(2)} د.ل</b></div>
                                 <div><span>سعر البيع</span><b style="color: #4ade80;">${Number(item.sale_price || 0).toFixed(2)} د.ل</b></div>
                                 <div><span>المتوفرة</span><b style="color: #38bdf8;">${item.available_qty}</b></div>
-                                <div><span>المباعة/الابتدائية</span><b style="color: #fb923c;">${soldOrInitialQty}</b></div>
+                                <div><span>المباعة/الابتدائية</span><b style="color: #fb923c;">${item.sold_qty !== undefined && item.sold_qty !== null ? item.sold_qty : 0}</b></div>
                             </div>
                         </div>
                     `;
