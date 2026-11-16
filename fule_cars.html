@@ -15,12 +15,6 @@
 </head>
 <body class="bg-gray-100 font-sans">
 
-    <!-- شاشة التحميل الأولية -->
-    <div id="loading-screen" class="max-w-md mx-auto min-h-screen bg-white shadow-lg flex flex-col justify-center items-center p-6 text-center">
-        <span class="text-4xl animate-bounce mb-3">⛽</span>
-        <h1 class="text-lg font-bold text-blue-600">جاري التحقق من النظام والأمان...</h1>
-    </div>
-
     <!-- شاشة انتظار الموافقة على الجهاز -->
     <div id="device-pending-screen" class="max-w-md mx-auto min-h-screen bg-white shadow-lg flex flex-col justify-center p-6 text-center hidden">
         <span class="text-5xl mb-3">🔒</span>
@@ -33,16 +27,16 @@
     </div>
 
     <!-- شاشة تسجيل الدخول -->
-    <div id="login-screen" class="max-w-md mx-auto min-h-screen bg-white shadow-lg flex flex-col justify-center p-6 hidden">
+    <div id="login-screen" class="max-w-md mx-auto min-h-screen bg-white shadow-lg flex flex-col justify-center p-6">
         <div class="text-center mb-6">
             <span class="text-4xl">⛽</span>
             <h1 class="text-2xl font-bold text-blue-600 mt-2">منظومة توزيع الوقود</h1>
-            <p class="text-gray-500 text-sm">تم اعتماد هذا الجهاز. الرجاء تسجيل الدخول</p>
+            <p class="text-gray-500 text-sm">الرجاء تسجيل الدخول للبدء</p>
         </div>
         <div class="space-y-4">
             <div>
                 <label class="block text-sm text-gray-600 mb-1">حساب المستخدم</label>
-                <select id="login-user" class="w-full border p-3 rounded focus:ring-2 focus:ring-blue-500 text-sm">
+                <select id="login-user" class="w-full border p-3 rounded focus:ring-2 focus:ring-blue-500 text-sm bg-white">
                     <option value="developer">المبرمج (المدير) - صلاحيات كاملة</option>
                     <option value="manager">مدير لجنة الوقود - إدارة وتعديل</option>
                     <option value="operator">موظف التعبئة - فحص، تعبئة وإضافة سيارات</option>
@@ -52,8 +46,8 @@
                 <label class="block text-sm text-gray-600 mb-1">كلمة المرور</label>
                 <input type="password" id="login-pass" placeholder="أدخل كلمة المرور..." class="w-full border p-3 rounded focus:ring-2 focus:ring-blue-500 text-sm">
             </div>
-            <button onclick="handleLogin()" class="w-full bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-700 transition text-sm">دخول للمنظومة</button>
-            <p id="login-error" class="text-red-500 text-center text-sm hidden">كلمة المرور غير صحيحة!</p>
+            <button type="button" onclick="handleLogin()" class="w-full bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-700 transition text-sm cursor-pointer">دخول للمنظومة</button>
+            <p id="login-error" class="text-red-500 text-center text-sm hidden font-bold mt-2">كلمة المرور غير صحيحة!</p>
         </div>
     </div>
 
@@ -213,34 +207,30 @@
         const myDeviceFp = getDeviceFingerprint();
         document.getElementById('my-device-id').textContent = myDeviceFp;
 
-        function hideAllScreens() {
-            document.getElementById('loading-screen').classList.add('hidden');
-            document.getElementById('device-pending-screen').classList.add('hidden');
+        function showPendingScreen() {
+            document.getElementById('device-pending-screen').classList.remove('hidden');
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-screen').classList.add('hidden');
         }
 
-        function showPendingScreen() {
-            hideAllScreens();
-            document.getElementById('device-pending-screen').classList.remove('hidden');
-        }
-
         function showLoginScreen() {
-            hideAllScreens();
+            document.getElementById('device-pending-screen').classList.add('hidden');
             document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('app-screen').classList.add('hidden');
         }
 
         async function checkDeviceApproval() {
-            try {
-                if (!navigator.onLine) {
-                    if (localStorage.getItem('device_approved') === 'true') {
-                        showLoginScreen();
-                    } else {
-                        showPendingScreen();
-                    }
-                    return;
-                }
+            if (localStorage.getItem('device_approved') === 'true') {
+                showLoginScreen();
+                return;
+            }
 
+            if (!navigator.onLine) {
+                showLoginScreen();
+                return;
+            }
+
+            try {
                 const { data, error } = await supabase.from('approved_devices').select('*').eq('device_fingerprint', myDeviceFp).single();
 
                 if (error || !data) {
@@ -257,13 +247,11 @@
                     showPendingScreen();
                 }
             } catch (err) {
-                // في حال حدوث أي خطأ في الشبكة، يتم تجاوز القفل وفتح شاشة الدخول لمنع الشاشة البيضاء
                 showLoginScreen();
             }
         }
 
-        // تنفيذ فحص الجهاز بعد تحميل الصفحة مباشرة
-        setTimeout(checkDeviceApproval, 300);
+        checkDeviceApproval();
 
         function handleLogin() {
             const userType = document.getElementById('login-user').value;
@@ -272,7 +260,8 @@
 
             if (ACCOUNTS[userType] && ACCOUNTS[userType].pass === pass) {
                 currentUser = userType;
-                hideAllScreens();
+                errorEl.classList.add('hidden');
+                document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app-screen').classList.remove('hidden');
                 setupPermissions();
             } else {
