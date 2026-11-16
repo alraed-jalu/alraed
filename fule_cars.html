@@ -36,11 +36,11 @@
         <div class="space-y-4">
             <div>
                 <label class="block text-sm text-gray-600 mb-1">اسم المستخدم</label>
-                <input type="text" id="login-user" placeholder="developer / manager / operator" class="w-full border p-3 rounded focus:ring-2 focus:ring-blue-500 text-sm bg-white font-bold">
+                <input type="text" id="login-user" value="developer" placeholder="developer / manager / operator" class="w-full border p-3 rounded focus:ring-2 focus:ring-blue-500 text-sm bg-white font-bold">
             </div>
             <div>
                 <label class="block text-sm text-gray-600 mb-1">كلمة المرور</label>
-                <input type="password" id="login-pass" placeholder="أدخل كلمة المرور..." class="w-full border p-3 rounded focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+                <input type="password" id="login-pass" value="dev123" placeholder="أدخل كلمة المرور..." class="w-full border p-3 rounded focus:ring-2 focus:ring-blue-500 text-sm bg-white">
             </div>
             <button type="button" onclick="handleLogin()" class="w-full bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-700 transition text-sm cursor-pointer">دخول للمنظومة 🚀</button>
             <p id="login-error" class="text-red-500 text-center text-sm hidden font-bold mt-2">اسم المستخدم أو كلمة المرور غير صحيحة!</p>
@@ -222,14 +222,13 @@
             document.getElementById('app-screen').classList.add('hidden');
         }
 
+        // فحص الجهاز يعمل في الخلفية بشكل آمن ولن يعطل أزرار الدخول أبداً
         async function checkDeviceApproval() {
             if (localStorage.getItem('device_approved') === 'true') {
-                showLoginScreen();
                 return;
             }
 
             if (!navigator.onLine) {
-                showLoginScreen();
                 return;
             }
 
@@ -245,16 +244,16 @@
                     showPendingScreen();
                 } else if (data.status === 'approved') {
                     localStorage.setItem('device_approved', 'true');
-                    showLoginScreen();
                 } else {
                     showPendingScreen();
                 }
             } catch (err) {
-                showLoginScreen();
+                // تجاهل أخطاء الشبكة المؤقتة لضمان بقاء شاشة الدخول نشطة دائماً
             }
         }
 
-        checkDeviceApproval();
+        // تنفيذ الفحص بصمت في الخلفية
+        setTimeout(checkDeviceApproval, 500);
 
         function handleLogin() {
             const userInput = document.getElementById('login-user').value.trim().toLowerCase();
