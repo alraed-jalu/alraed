@@ -3,326 +3,568 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>استعلام الأسعار - معرض سنتر العائلة</title>
-    <!-- مكتبة مسح الباركود عبر الكاميرا -->
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        :root {
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            --container-bg: rgba(30, 41, 59, 0.85);
-            --text-color: #f8fafc;
-            --text-muted: #94a3b8;
-            --input-bg: #0b0f19;
-            --border-color: #334155;
-            --card-bg: linear-gradient(145deg, #1e293b, #0f172a);
-            --accent-color: #38bdf8;
-        }
-
-        @media (prefers-color-scheme: light) {
-            :root {
-                --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #f1f5f9 100%);
-                --container-bg: rgba(255, 255, 255, 0.95);
-                --text-color: #0f172a;
-                --text-muted: #64748b;
-                --input-bg: #f8fafc;
-                --border-color: #cbd5e1;
-                --card-bg: linear-gradient(145deg, #ffffff, #f1f5f9);
-                --accent-color: #0284c7;
-            }
-        }
-
-        body { 
-            font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif; 
-            background: var(--bg-gradient); 
-            background-attachment: fixed;
-            color: var(--text-color); 
-            margin: 0; 
-            padding: 20px; 
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .container { 
-            width: 100%;
-            max-width: 600px; 
-            background: var(--container-bg); 
-            backdrop-filter: blur(12px);
-            padding: 30px; 
-            border-radius: 20px; 
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25); 
-            border: 1px solid var(--border-color);
-        }
-
-        h2 { 
-            text-align: center; 
-            color: var(--accent-color); 
-            margin-top: 0; 
-            font-size: 24px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-        }
-
-        .store-tag { 
-            text-align: center; 
-            color: #fb923c; 
-            font-size: 16px; 
-            font-weight: 700; 
-            margin-bottom: 25px; 
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        /* أزرار تحديد نمط البحث بتصميم تفاعلي جذاب */
-        .search-mode-selector { 
-            display: flex; 
-            justify-content: center; 
-            gap: 15px; 
-            margin-bottom: 16px; 
-            background: var(--input-bg); 
-            padding: 10px; 
-            border-radius: 12px; 
-            border: 1px solid var(--border-color); 
-        }
-        .search-mode-selector label { 
-            font-size: 14px; 
-            cursor: pointer; 
-            font-weight: 700; 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-            transition: color 0.2s;
-        }
-        .search-mode-selector label:hover { color: var(--accent-color); }
-
-        .search-box-wrapper { display: flex; gap: 10px; margin-bottom: 20px; }
-        
-        input[type="text"] { 
-            width: 100%; 
-            padding: 16px; 
-            font-size: 16px; 
-            border-radius: 12px; 
-            border: 2px solid var(--border-color); 
-            background: var(--input-bg); 
-            color: var(--text-color); 
-            box-sizing: border-box; 
-            text-align: center; 
-            font-weight: 800; 
-            flex: 1; 
-            transition: all 0.2s ease;
-        }
-        
-        input[type="text"]:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15);
-        }
-        
-        .btn-action { 
-            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); 
-            color: white; 
-            border: none; 
-            padding: 0 22px; 
-            border-radius: 12px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            font-size: 15px; 
-            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
-            transition: transform 0.2s, box-shadow 0.2s; 
-            white-space: nowrap; 
-        }
-        .btn-action:hover { 
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(2, 132, 199, 0.4); 
-        }
-
-        .btn-scan { 
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
-            color: white; 
-            border: none; 
-            padding: 0 22px; 
-            border-radius: 12px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            font-size: 15px; 
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-            transition: transform 0.2s, box-shadow 0.2s; 
-            white-space: nowrap; 
-        }
-        .btn-scan:hover { 
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4); 
-        }
-
-        #reader { width: 100%; max-width: 400px; margin: 0 auto 20px auto; border-radius: 14px; overflow: hidden; display: none; border: 3px solid var(--accent-color); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-
-        .items-results { display: flex; flex-direction: column; gap: 15px; max-height: 480px; overflow-y: auto; margin-top: 15px; }
-        
-        .item-card { 
-            background: var(--card-bg); 
-            border: 1px solid var(--border-color); 
-            padding: 24px; 
-            border-radius: 16px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 15px; 
-            text-align: center; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .item-name { font-size: 20px; font-weight: 800; color: var(--accent-color); letter-spacing: -0.3px; }
-        
-        /* مربع عرض سعر البيع المميز للزبائن */
-        .price-box { 
-            background: rgba(74, 222, 128, 0.08); 
-            padding: 18px; 
-            border-radius: 12px; 
-            border: 2px dashed rgba(74, 222, 128, 0.4); 
-        }
-        .price-label { font-size: 14px; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; }
-        .price-value { font-size: 34px; font-weight: 900; color: #22c55e; letter-spacing: -0.5px; }
-    </style>
+    <title>منظومة توزيع الوقود الذكية</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Barcode & QR Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- QR Code Generator Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
-<body>
+<body class="bg-gray-100 font-sans">
 
-<div class="container">
-    <h2>🏷️ معرض سنتر العائلة</h2>
-    <div class="store-tag">الأستعلام عن السعر </div>
-
-    <!-- خيارات تحديد طريقة البحث -->
-    <div class="search-mode-selector">
-        <label><input type="radio" name="searchMode" value="barcode_only" checked> 🏷️بحث باركود </label>
-        <label><input type="radio" name="searchMode" value="barcode_and_text"> 🔍 بحث باسم المادة</label>
+    <!-- شاشة انتظار الموافقة على الجهاز -->
+    <div id="device-pending-screen" class="max-w-md mx-auto min-h-screen bg-white shadow-lg flex flex-col justify-center p-6 text-center hidden">
+        <span class="text-5xl mb-3">🔒</span>
+        <h1 class="text-xl font-bold text-red-600 mb-2">الجهاز غير مصرح به</h1>
+        <p class="text-gray-600 text-sm mb-4">هذا الهاتف غير مسجل في قائمة الأجهزة المعتمدة. يرجى إبلاغ المبرمج (أحمد) لاعتماده.</p>
+        <div class="bg-gray-50 p-3 rounded border text-xs text-gray-500 mb-4 break-all">
+            معرف الجهاز: <span id="my-device-id" class="font-mono font-bold text-black">جاري الجلب...</span>
+        </div>
+        <button onclick="checkDeviceApproval()" class="bg-blue-600 text-white py-2 rounded font-bold text-sm">التحقق من حالة الاعتماد 🔄</button>
     </div>
 
-    <!-- مربع البحث والماسح -->
-    <div class="search-box-wrapper">
-        <input type="text" id="itemSearchInput" placeholder="أدخل رقم الباركود أو النص..." onkeydown="if(event.key === 'Enter') searchItems()">
-        <button class="btn-action" onclick="searchItems()">بحث 🔍</button>
-        <button class="btn-scan" onclick="toggleCameraScanner()">كاميرا 📷</button>
+    <!-- شاشة تسجيل الدخول -->
+    <div id="login-screen" class="max-w-md mx-auto min-h-screen bg-white shadow-lg flex flex-col justify-center p-6 hidden">
+        <div class="text-center mb-6">
+            <span class="text-4xl">⛽</span>
+            <h1 class="text-2xl font-bold text-blue-600 mt-2">منظومة توزيع الوقود</h1>
+            <p class="text-gray-500 text-sm">تم اعتماد هذا الجهاز. الرجاء تسجيل الدخول</p>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm text-gray-600 mb-1">حساب المستخدم</label>
+                <select id="login-user" class="w-full border p-3 rounded focus:ring-2 focus:ring-blue-500 text-sm">
+                    <option value="developer">المبرمج (المدير) - صلاحيات كاملة</option>
+                    <option value="manager">مدير لجنة الوقود - إدارة وتعديل</option>
+                    <option value="operator">موظف التعبئة - فحص، تعبئة وإضافة سيارات</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm text-gray-600 mb-1">كلمة المرور</label>
+                <input type="password" id="login-pass" placeholder="أدخل كلمة المرور..." class="w-full border p-3 rounded focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <button onclick="handleLogin()" class="w-full bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-700 transition text-sm">دخول للمنظومة</button>
+            <p id="login-error" class="text-red-500 text-center text-sm hidden">كلمة المرور غير صحيحة!</p>
+        </div>
     </div>
 
-    <!-- نافذة الكاميرا -->
-    <div id="reader"></div>
+    <!-- التطبيق الرئيسي -->
+    <div id="app-screen" class="max-w-md mx-auto min-h-screen bg-white shadow-lg flex flex-col hidden">
+        <header class="bg-blue-600 text-white p-4 flex justify-between items-center shadow">
+            <div>
+                <span id="user-role-badge" class="text-xs bg-blue-800 px-2 py-0.5 rounded font-bold">مستخدم</span>
+                <h2 class="font-bold text-lg mt-1">منظومة الوقود</h2>
+            </div>
+            <div class="flex items-center gap-2">
+                <span id="connection-status" class="text-xs px-2 py-1 rounded bg-green-500 font-bold">متصل</span>
+                <button onclick="logout()" class="text-xs bg-red-500 text-white px-2 py-1 rounded">خروج</button>
+            </div>
+        </header>
 
-    <div id="itemsLoading" style="text-align: center; color: var(--text-muted); display: none; font-size: 14px; font-weight: 700; margin-bottom: 12px;">⏳ جاري جلب السعر...</div>
-    
-    <div class="items-results" id="itemsResultsContainer">
-        <div style="text-align: center; color: var(--text-muted); font-size: 15px; padding: 25px; font-weight: 500;">امسح أو أدخل الباركود لمعرفة سعر البيع الفوري...</div>
+        <!-- شريط العمليات المعلقة في الأوفلاين -->
+        <div id="sync-bar" class="bg-yellow-100 text-yellow-800 px-4 py-2 text-xs flex justify-between items-center hidden">
+            <span id="sync-text">⚠️ توجد عمليات معلقة بانتظار الاتصال</span>
+            <button onclick="syncOfflineData()" class="bg-yellow-600 text-white px-2 py-1 rounded">مزامنة</button>
+        </div>
+
+        <!-- الأزرار الرئيسية للتبديل -->
+        <div class="flex border-b text-sm" id="tabs-container">
+            <button onclick="switchTab('scan')" id="btn-scan" class="flex-1 py-3 text-center font-bold text-blue-600 border-b-2 border-blue-600">فحص وتعبئة</button>
+            <button onclick="switchTab('add')" id="btn-add" class="flex-1 py-3 text-center font-bold text-gray-500">إضافة سيارة</button>
+            <button onclick="switchTab('report')" id="btn-report" class="flex-1 py-3 text-center font-bold text-gray-500">التقرير</button>
+            <button onclick="switchTab('devices')" id="btn-devices" class="flex-1 py-3 text-center font-bold text-gray-500 hidden">الأجهزة</button>
+        </div>
+
+        <!-- المحتوى -->
+        <main class="p-4 flex-1">
+            
+            <!-- تبويب الفحص والتعبئة -->
+            <div id="tab-scan" class="space-y-4">
+                <div class="bg-blue-50 p-3 rounded border border-blue-200">
+                    <label class="block text-xs font-bold text-blue-900 mb-1">📍 تحديد المحطة الحالية:</label>
+                    <input type="text" id="station-name-input" value="محطة التوزيع المركزية - رقم (1)" class="w-full border p-2 rounded text-sm bg-white" placeholder="اكتب اسم ورقم المحطة...">
+                </div>
+
+                <h2 class="text-gray-700 font-semibold text-sm">مسح الـ QR Code أو الإدخال اليدوي</h2>
+                <div id="reader" class="w-full rounded overflow-hidden border"></div>
+                <div class="flex gap-2 mt-2">
+                    <input type="text" id="barcode-input" placeholder="رقم الكود..." class="flex-1 border p-2 rounded text-sm">
+                    <button onclick="checkCar()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold text-sm">بحث</button>
+                </div>
+                <div id="result-box" class="mt-4 p-4 rounded hidden"></div>
+            </div>
+
+            <!-- تبويب إضافة سيارة مع توليد QR -->
+            <div id="tab-add" class="space-y-4 hidden">
+                <h2 class="text-gray-700 font-semibold text-sm">تسجيل سيارة جديدة وتوليد QR</h2>
+                <div>
+                    <label class="block text-xs text-gray-600 mb-1">رقم لوحة السيارة</label>
+                    <input type="text" id="car-plate" placeholder="مثال: بنغازي 12345" class="w-full border p-2 rounded text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-600 mb-1">اسم المالك (حسب الأوراق)</label>
+                    <input type="text" id="owner-name" placeholder="اسم المالك" class="w-full border p-2 rounded text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-600 mb-1">نوع الوقود</label>
+                    <select id="fuel-type" class="w-full border p-2 rounded text-sm">
+                        <option value="بنزين">بنزين</option>
+                        <option value="نافته">نافته</option>
+                    </select>
+                </div>
+                <button onclick="addNewCar()" class="w-full bg-green-600 text-white py-2 rounded font-bold mt-2 text-sm">حفظ وتوليد QR Code</button>
+                
+                <div id="add-result" class="mt-2 text-center font-bold text-sm"></div>
+
+                <!-- حاوية عرض QR Code الناتج للطباعة -->
+                <div id="qrcode-container" class="mt-4 flex flex-col items-center hidden bg-gray-50 p-3 rounded border">
+                    <p class="text-xs text-gray-600 mb-2 font-bold">QR Code الخاص بالسيارة (جاهز للطباعة):</p>
+                    <div id="qrcode" class="p-2 bg-white border rounded"></div>
+                    <button onclick="window.print()" class="mt-2 bg-gray-800 text-white text-xs px-3 py-1 rounded">🖨️ طباعة الملصق</button>
+                </div>
+            </div>
+
+            <!-- تبويب التقرير اليومي -->
+            <div id="tab-report" class="space-y-4 hidden">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-gray-700 font-semibold text-sm">التقرير اليومي لعمليات التعبئة</h2>
+                    <button onclick="window.print()" class="bg-gray-800 text-white text-xs px-3 py-1 rounded">🖨️ طباعة</button>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-blue-50 p-3 rounded border text-center">
+                        <span class="block text-xs text-gray-500">إجمالي المعَبأ اليوم</span>
+                        <span id="today-count" class="text-xl font-bold text-blue-600">0</span>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded border text-center">
+                        <span class="block text-xs text-gray-500">فترة الانتظار</span>
+                        <span id="current-period-label" class="text-xl font-bold text-green-600">5 أيام</span>
+                    </div>
+                </div>
+
+                <div id="admin-settings" class="bg-gray-50 p-3 rounded border hidden">
+                    <h3 class="font-bold text-xs text-gray-700 mb-2">⚙️ إعدادات النظام</h3>
+                    <div class="flex gap-2">
+                        <input type="number" id="waiting-days-input" value="5" min="1" max="30" class="border p-1 w-20 rounded text-center text-sm">
+                        <span class="text-xs self-center">أيام الحظر بين التعبئات</span>
+                        <button onclick="updateWaitingDays()" class="bg-blue-600 text-white px-3 py-1 rounded text-xs">تحديث</button>
+                    </div>
+                </div>
+
+                <div class="border rounded overflow-hidden">
+                    <table class="w-full text-right text-xs">
+                        <thead class="bg-gray-100 border-b">
+                            <tr>
+                                <th class="p-2">اللوحة</th>
+                                <th class="p-2">المالك</th>
+                                <th class="p-2">النوع</th>
+                                <th class="p-2">المحطة</th>
+                                <th class="p-2">الوقت</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- تبويب إدارة الأجهزة والموافقات (للمبرمج فقط) -->
+            <div id="tab-devices" class="space-y-4 hidden">
+                <h2 class="text-gray-700 font-semibold text-sm">📱 إدارة الأجهزة والموافقات الأمنية</h2>
+                <p class="text-xs text-gray-500">الموافقة على الهواتف الجديدة أو حظرها.</p>
+                <button onclick="loadDevicesList()" class="bg-blue-600 text-white text-xs px-3 py-1.5 rounded mb-2">🔄 تحديث القائمة</button>
+                <div id="devices-list" class="space-y-2"></div>
+            </div>
+
+        </main>
     </div>
-</div>
 
-<script>
-    const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
-    
-    const storeId = "2"; 
-    let html5QrcodeScanner = null;
+    <script>
+        const SUPABASE_URL = "https://juuxykjfesqodofzcarg.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_6HPGqXM6fhBvitIzhZv8bA_gUNbSXd6";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    async function searchItems(overrideQuery = null) {
-        const rawQuery = overrideQuery !== null ? overrideQuery : document.getElementById('itemSearchInput').value;
-        const query = rawQuery.trim();
-        const resultsContainer = document.getElementById('itemsResultsContainer');
-        const loadingIndicator = document.getElementById('itemsLoading');
-        const selectedMode = document.querySelector('input[name="searchMode"]:checked').value;
+        let currentUser = null;
+        let currentBarcode = "";
+        let waitingDaysLimit = parseInt(localStorage.getItem('waiting_days') || '5');
 
-        if (query.length < 1) {
-            resultsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 15px; padding: 25px;">ادخل القيمة للبحث...</div>';
-            return;
+        const ACCOUNTS = {
+            developer: { pass: "dev123", role: "المبرمج (المدير)" },
+            manager: { pass: "mng123", role: "مدير لجنة الوقود" },
+            operator: { pass: "op123", role: "موظف التعبئة" }
+        };
+
+        function getDeviceFingerprint() {
+            let fp = localStorage.getItem('device_fp');
+            if (!fp) {
+                fp = 'DEV-' + Math.random().toString(36).substring(2, 10).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
+                localStorage.setItem('device_fp', fp);
+            }
+            return fp;
         }
 
-        loadingIndicator.style.display = 'block';
+        const myDeviceFp = getDeviceFingerprint();
+        document.getElementById('my-device-id').textContent = myDeviceFp;
 
-        try {
-            let fetchUrl = "";
-
-            if (selectedMode === "barcode_only") {
-                fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${storeId}&barcode=eq.${encodeURIComponent(query)}&limit=20&select=*`;
-            } else {
-                fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${storeId}&or=(barcode.eq.${encodeURIComponent(query)},item_name.ilike.*${encodeURIComponent(query)}*)&limit=20&select=*`;
-            }
-
-            const response = await fetch(fetchUrl, {
-                method: 'GET',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json'
+        async function checkDeviceApproval() {
+            if (!navigator.onLine) {
+                if (localStorage.getItem('device_approved') === 'true') {
+                    showLoginScreen();
+                } else {
+                    alert("لا يمكن التحقق من اعتماد الجهاز بدون إنترنت في المرة الأولى.");
                 }
-            });
-
-            const items = await response.json();
-            loadingIndicator.style.display = 'none';
-
-            if (items && items.length > 0) {
-                let html = '';
-                items.forEach(item => {
-                    html += `
-                        <div class="item-card">
-                            <div class="item-name">${item.item_name}</div>
-                            <div style="font-size: 16px; color: var(--text-muted); font-weight: 700;">الباركود: ${item.barcode || 'بدون باركود'}</div>
-                            <div class="price-box">
-                                <div class="price-label">  </div>
-                                <div class="price-value">${Number(item.sale_price || 0).toFixed(2)} د.ل</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                resultsContainer.innerHTML = html;
-            } else {
-                resultsContainer.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 15px; padding: 25px; font-weight: 700;">❌ لا توجد مادة مطابقة للبحث (${selectedMode === 'barcode_only' ? 'الباركود غير موجود' : 'الباركود أو الاسم غير موجود'})</div>`;
+                return;
             }
 
-        } catch (err) {
-            loadingIndicator.style.display = 'none';
-            console.error("خطأ في البحث:", err);
-        }
-    }
+            const { data, error } = await supabase.from('approved_devices').select('*').eq('device_fingerprint', myDeviceFp).single();
 
-    function toggleCameraScanner() {
-        const readerDiv = document.getElementById('reader');
-        if (readerDiv.style.display === 'block') {
-            stopScanner();
-        } else {
-            readerDiv.style.display = 'block';
-            html5QrcodeScanner = new Html5Qrcode("reader");
-            html5QrcodeScanner.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 150 } },
-                (decodedText) => {
-                    document.getElementById('itemSearchInput').value = decodedText;
-                    searchItems(decodedText);
-                    stopScanner();
-                },
-                (errorMessage) => {}
-            ).catch(err => {
-                alert("⚠️ لا يمكن فتح الكاميرا، يرجى التأكد من إعطاء المتصفح صلاحية الكاميرا.");
-                stopScanner();
+            if (error || !data) {
+                await supabase.from('approved_devices').insert([{
+                    device_fingerprint: myDeviceFp,
+                    device_name: navigator.userAgent.substring(0, 40) + "...",
+                    status: 'pending'
+                }]);
+                showPendingScreen();
+            } else if (data.status === 'approved') {
+                localStorage.setItem('device_approved', 'true');
+                showLoginScreen();
+            } else {
+                showPendingScreen();
+            }
+        }
+
+        function showPendingScreen() {
+            document.getElementById('device-pending-screen').classList.remove('hidden');
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.add('hidden');
+        }
+
+        function showLoginScreen() {
+            document.getElementById('device-pending-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('app-screen').classList.add('hidden');
+        }
+
+        checkDeviceApproval();
+
+        function handleLogin() {
+            const userType = document.getElementById('login-user').value;
+            const pass = document.getElementById('login-pass').value;
+            const errorEl = document.getElementById('login-error');
+
+            if (ACCOUNTS[userType] && ACCOUNTS[userType].pass === pass) {
+                currentUser = userType;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-screen').classList.remove('hidden');
+                setupPermissions();
+            } else {
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('login-pass').value = "";
+            document.getElementById('app-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+        }
+
+        function setupPermissions() {
+            const roleBadge = document.getElementById('user-role-badge');
+            const btnAdd = document.getElementById('btn-add');
+            const btnDevices = document.getElementById('btn-devices');
+            const adminSettings = document.getElementById('admin-settings');
+
+            roleBadge.textContent = ACCOUNTS[currentUser].role;
+
+            // إظهار زر إضافة سيارة للجميع (المبرمج، المدير، وموظف التعبئة)
+            btnAdd.classList.remove('hidden');
+
+            if (currentUser === 'operator') {
+                btnDevices.classList.add('hidden');
+                adminSettings.classList.add('hidden');
+            } else if (currentUser === 'manager') {
+                btnDevices.classList.add('hidden');
+                adminSettings.classList.remove('hidden');
+            } else if (currentUser === 'developer') {
+                btnDevices.classList.remove('hidden');
+                adminSettings.classList.remove('hidden');
+            }
+
+            document.getElementById('waiting-days-input').value = waitingDaysLimit;
+            document.getElementById('current-period-label').textContent = `${waitingDaysLimit} أيام`;
+            loadDailyReport();
+            if (currentUser === 'developer') loadDevicesList();
+        }
+
+        async function loadDevicesList() {
+            const container = document.getElementById('devices-list');
+            container.innerHTML = "جاري التحميل...";
+            const { data, error } = await supabase.from('approved_devices').select('*').order('created_at', { ascending: false });
+            
+            if (error || !data) { container.innerHTML = "خطأ في الجلب."; return; }
+
+            container.innerHTML = "";
+            data.forEach(dev => {
+                let statusColor = dev.status === 'approved' ? 'text-green-600 bg-green-50' : (dev.status === 'blocked' ? 'text-red-600 bg-red-50' : 'text-yellow-600 bg-yellow-50');
+                let statusText = dev.status === 'approved' ? 'معتمد ✅' : (dev.status === 'blocked' ? 'محظور ❌' : 'قيد الانتظار ⏳');
+
+                container.innerHTML += `
+                    <div class="p-3 border rounded text-xs space-y-1 ${statusColor}">
+                        <div><b>البصمة:</b> <span class="font-mono">${dev.device_fingerprint}</span></div>
+                        <div><b>الجهاز:</b> ${dev.device_name}</div>
+                        <div><b>الحالة:</b> ${statusText}</div>
+                        <div class="flex gap-2 mt-2">
+                            <button onclick="updateDeviceStatus('${dev.device_fingerprint}', 'approved')" class="bg-green-600 text-white px-2 py-1 rounded">اعتماد</button>
+                            <button onclick="updateDeviceStatus('${dev.device_fingerprint}', 'blocked')" class="bg-red-600 text-white px-2 py-1 rounded">حظر</button>
+                        </div>
+                    </div>
+                `;
             });
         }
-    }
 
-    function stopScanner() {
-        const readerDiv = document.getElementById('reader');
-        if (html5QrcodeScanner) {
-            html5QrcodeScanner.stop().then(() => {
-                html5QrcodeScanner.clear();
-                readerDiv.style.display = 'none';
-            }).catch(() => {
-                readerDiv.style.display = 'none';
-            });
-        } else {
-            readerDiv.style.display = 'none';
+        async function updateDeviceStatus(fp, newStatus) {
+            const { error } = await supabase.from('approved_devices').update({ status: newStatus }).eq('device_fingerprint', fp);
+            if (!error) { alert("تم التحديث!"); loadDevicesList(); } else { alert("خطأ في التحديث."); }
         }
-    }
-</script>
 
+        function updateWaitingDays() {
+            const val = parseInt(document.getElementById('waiting-days-input').value);
+            if(val > 0) {
+                waitingDaysLimit = val;
+                localStorage.setItem('waiting_days', val);
+                document.getElementById('current-period-label').textContent = `${val} أيام`;
+                alert("تم التحديث!");
+            }
+        }
+
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        function updateOnlineStatus() {
+            const statusBadge = document.getElementById('connection-status');
+            if (navigator.onLine) {
+                statusBadge.textContent = "متصل";
+                statusBadge.className = "text-xs px-2 py-1 rounded bg-green-500 font-bold";
+                syncOfflineData();
+            } else {
+                statusBadge.textContent = "أوفلاين";
+                statusBadge.className = "text-xs px-2 py-1 rounded bg-red-500 font-bold";
+            }
+        }
+        updateOnlineStatus();
+
+        async function cacheCarsData() {
+            if (!navigator.onLine) return;
+            const { data, error } = await supabase.from('cars').select('*');
+            if (!error && data) localStorage.setItem('cached_cars', JSON.stringify(data));
+        }
+        cacheCarsData();
+
+        function switchTab(tab) {
+            ['scan', 'add', 'report', 'devices'].forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                const btn = document.getElementById(`btn-${t}`);
+                if(el) el.classList.add('hidden');
+                if(btn) btn.className = "flex-1 py-3 text-center font-bold text-gray-500";
+            });
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            document.getElementById(`btn-${tab}`).className = "flex-1 py-3 text-center font-bold text-blue-600 border-b-2 border-blue-600";
+            if(tab === 'report') loadDailyReport();
+            if(tab === 'devices') loadDevicesList();
+        }
+
+        function onScanSuccess(decodedText) {
+            document.getElementById('barcode-input').value = decodedText;
+            checkCar(decodedText);
+        }
+        try {
+            let html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess).catch(() => {});
+        } catch(e) {}
+
+        async function checkCar(code = null) {
+            const barcode = code || document.getElementById('barcode-input').value.trim();
+            const resultBox = document.getElementById('result-box');
+            if(!barcode) { alert("أدخل الكود أولاً"); return; }
+
+            resultBox.classList.remove('hidden');
+            resultBox.innerHTML = "جاري البحث...";
+
+            let car = null;
+            if (navigator.onLine) {
+                const { data } = await supabase.from('cars').select('*').eq('barcode_id', barcode).single();
+                if (data) car = data;
+            }
+            if (!car) {
+                const cached = JSON.parse(localStorage.getItem('cached_cars') || '[]');
+                car = cached.find(c => c.barcode_id === barcode);
+            }
+
+            if (!car) {
+                resultBox.className = "mt-4 p-4 rounded bg-red-100 text-red-700 font-bold text-sm";
+                resultBox.innerHTML = "❌ الكود غير مسجل في المنظومة!";
+                return;
+            }
+
+            currentBarcode = barcode;
+            const lastRefuel = new Date(car.last_refuel_date);
+            const now = new Date();
+            const diffDays = Math.floor((now - lastRefuel) / (1000 * 60 * 60 * 24));
+
+            let html = `<div class="mb-1 text-sm">🚗 <b>اللوحة:</b> ${car.car_plate} | <b>المالك:</b> ${car.owner_name}</div>`;
+            html += `<div class="mb-2 text-sm">⛽ <b>النوع:</b> ${car.fuel_type} | <b>آخر تعبئة:</b> قبل ${diffDays} يوم</div>`;
+
+            if (diffDays < waitingDaysLimit) {
+                const remaining = waitingDaysLimit - diffDays;
+                resultBox.className = "mt-4 p-4 rounded bg-yellow-100 text-yellow-800 font-bold text-sm";
+                html += `⚠️ <b>غير مسموح بالتعبئة!</b> متبقي ${remaining} يوم على موعد التعبئة القادم.`;
+            } else {
+                resultBox.className = "mt-4 p-4 rounded bg-green-100 text-green-800 font-bold text-sm";
+                html += `✅ <b>مسموح بالتعبئة!</b> انقضت فترة الانتظار.<br>`;
+                html += `<button onclick="confirmRefuel('${car.car_plate}', '${car.owner_name}', '${car.fuel_type}')" class="mt-3 w-full bg-blue-600 text-white py-2 rounded font-bold text-sm">تأكيد التعبئة الآن</button>`;
+            }
+            resultBox.innerHTML = html;
+        }
+
+        async function confirmRefuel(plate, owner, fuel) {
+            const nowIso = new Date().toISOString();
+            const stationName = document.getElementById('station-name-input').value.trim() || "محطة غير محددة";
+            
+            let cached = JSON.parse(localStorage.getItem('cached_cars') || '[]');
+            cached = cached.map(c => {
+                if (c.barcode_id === currentBarcode) c.last_refuel_date = nowIso;
+                return c;
+            });
+            localStorage.setItem('cached_cars', JSON.stringify(cached));
+
+            let queue = JSON.parse(localStorage.getItem('offline_queue') || '[]');
+            queue.push({ 
+                type: 'REFUEL', 
+                barcode: currentBarcode, 
+                date: nowIso, 
+                station: stationName,
+                plate: plate,
+                owner: owner,
+                fuel: fuel
+            });
+            localStorage.setItem('offline_queue', JSON.stringify(queue));
+
+            let history = JSON.parse(localStorage.getItem('refuel_history') || '[]');
+            history.unshift({ plate, owner, fuel, station: stationName, date: new Date().toLocaleString() });
+            localStorage.setItem('refuel_history', JSON.stringify(history));
+
+            checkSyncBar();
+            alert(`🎉 تم تسجيل التعبئة بنجاح في (${stationName})!`);
+            checkCar(currentBarcode);
+        }
+
+        function addNewCar() {
+            const plate = document.getElementById('car-plate').value.trim();
+            const owner = document.getElementById('owner-name').value.trim();
+            const fuel = document.getElementById('fuel-type').value;
+            const addResult = document.getElementById('add-result');
+
+            if(!plate || !owner) { alert("أدخل رقم اللوحة واسم المالك"); return; }
+
+            const newBarcode = 'BAR-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+            const pastDate = new Date();
+            pastDate.setDate(pastDate.getDate() - (waitingDaysLimit + 1));
+
+            const newCarObj = {
+                barcode_id: newBarcode,
+                car_plate: plate,
+                owner_name: owner,
+                fuel_type: fuel,
+                last_refuel_date: pastDate.toISOString()
+            };
+
+            let cached = JSON.parse(localStorage.getItem('cached_cars') || '[]');
+            cached.push(newCarObj);
+            localStorage.setItem('cached_cars', JSON.stringify(cached));
+
+            let queue = JSON.parse(localStorage.getItem('offline_queue') || '[]');
+            queue.push({ type: 'ADD_CAR', data: newCarObj });
+            localStorage.setItem('offline_queue', JSON.stringify(queue));
+
+            checkSyncBar();
+
+            addResult.className = "mt-2 text-green-600 font-bold text-sm";
+            addResult.innerHTML = `✅ تمت الإضافة بنجاح! كود السيارة: <span class="font-mono">${newBarcode}</span>`;
+
+            const qrContainer = document.getElementById('qrcode-container');
+            const qrElement = document.getElementById('qrcode');
+            qrElement.innerHTML = "";
+            qrContainer.classList.remove('hidden');
+            
+            new QRCode(qrElement, {
+                text: newBarcode,
+                width: 128,
+                height: 128,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+
+            document.getElementById('car-plate').value = "";
+            document.getElementById('owner-name').value = "";
+        }
+
+        function loadDailyReport() {
+            let history = JSON.parse(localStorage.getItem('refuel_history') || '[]');
+            document.getElementById('today-count').textContent = history.length;
+            
+            let tbody = document.getElementById('report-table-body');
+            tbody.innerHTML = "";
+            if(history.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-gray-400">لا توجد عمليات تعبئة مسجلة</td></tr>`;
+                return;
+            }
+            history.forEach(item => {
+                tbody.innerHTML += `<tr class="border-b"><td class="p-2">${item.plate}</td><td class="p-2">${item.owner}</td><td class="p-2">${item.fuel}</td><td class="p-2 text-blue-600 font-bold">${item.station || '-'}</td><td class="p-2">${item.date}</td></tr>`;
+            });
+        }
+
+        function checkSyncBar() {
+            let queue = JSON.parse(localStorage.getItem('offline_queue') || '[]');
+            const syncBar = document.getElementById('sync-bar');
+            if (queue.length > 0) {
+                syncBar.classList.remove('hidden');
+                document.getElementById('sync-text').textContent = `⚠️ توجد ${queue.length} عمليات معلقة بانتظار الاتصال`;
+            } else {
+                syncBar.classList.add('hidden');
+            }
+        }
+        checkSyncBar();
+
+        async function syncOfflineData() {
+            if (!navigator.onLine) return;
+            let queue = JSON.parse(localStorage.getItem('offline_queue') || '[]');
+            if (queue.length === 0) return;
+            let remaining = [];
+            
+            for (let item of queue) {
+                if (item.type === 'REFUEL') {
+                    const { error: err1 } = await supabase.from('cars').update({ last_refuel_date: item.date }).eq('barcode_id', item.barcode);
+                    const { error: err2 } = await supabase.from('refuel_logs').insert([{
+                        car_plate: item.plate,
+                        owner_name: item.owner,
+                        fuel_type: item.fuel,
+                        station_name: item.station,
+                        refueled_at: item.date
+                    }]);
+                    if (err1 || err2) remaining.push(item);
+                } else if (item.type === 'ADD_CAR') {
+                    const { error } = await supabase.from('cars').insert([item.data]);
+                    if (error) remaining.push(item);
+                }
+            }
+            localStorage.setItem('offline_queue', JSON.stringify(remaining));
+            checkSyncBar();
+            cacheCarsData();
+            if(remaining.length === 0) alert("تمت مزامنة العمليات المعلقة بنجاح!");
+        }
+    </script>
 </body>
 </html>
