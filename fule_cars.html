@@ -15,6 +15,12 @@
 </head>
 <body class="bg-gray-100 font-sans">
 
+    <!-- شاشة التحميل الأولية -->
+    <div id="loading-screen" class="max-w-md mx-auto min-h-screen bg-white shadow-lg flex flex-col justify-center items-center p-6 text-center">
+        <span class="text-4xl animate-bounce mb-3">⛽</span>
+        <h1 class="text-lg font-bold text-blue-600">جاري التحقق من النظام والأمان...</h1>
+    </div>
+
     <!-- شاشة انتظار الموافقة على الجهاز -->
     <div id="device-pending-screen" class="max-w-md mx-auto min-h-screen bg-white shadow-lg flex flex-col justify-center p-6 text-center hidden">
         <span class="text-5xl mb-3">🔒</span>
@@ -207,46 +213,57 @@
         const myDeviceFp = getDeviceFingerprint();
         document.getElementById('my-device-id').textContent = myDeviceFp;
 
-        async function checkDeviceApproval() {
-            if (!navigator.onLine) {
-                if (localStorage.getItem('device_approved') === 'true') {
-                    showLoginScreen();
-                } else {
-                    alert("لا يمكن التحقق من اعتماد الجهاز بدون إنترنت في المرة الأولى.");
-                }
-                return;
-            }
-
-            const { data, error } = await supabase.from('approved_devices').select('*').eq('device_fingerprint', myDeviceFp).single();
-
-            if (error || !data) {
-                await supabase.from('approved_devices').insert([{
-                    device_fingerprint: myDeviceFp,
-                    device_name: navigator.userAgent.substring(0, 40) + "...",
-                    status: 'pending'
-                }]);
-                showPendingScreen();
-            } else if (data.status === 'approved') {
-                localStorage.setItem('device_approved', 'true');
-                showLoginScreen();
-            } else {
-                showPendingScreen();
-            }
-        }
-
-        function showPendingScreen() {
-            document.getElementById('device-pending-screen').classList.remove('hidden');
+        function hideAllScreens() {
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('device-pending-screen').classList.add('hidden');
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-screen').classList.add('hidden');
         }
 
-        function showLoginScreen() {
-            document.getElementById('device-pending-screen').classList.add('hidden');
-            document.getElementById('login-screen').classList.remove('hidden');
-            document.getElementById('app-screen').classList.add('hidden');
+        function showPendingScreen() {
+            hideAllScreens();
+            document.getElementById('device-pending-screen').classList.remove('hidden');
         }
 
-        checkDeviceApproval();
+        function showLoginScreen() {
+            hideAllScreens();
+            document.getElementById('login-screen').classList.remove('hidden');
+        }
+
+        async function checkDeviceApproval() {
+            try {
+                if (!navigator.onLine) {
+                    if (localStorage.getItem('device_approved') === 'true') {
+                        showLoginScreen();
+                    } else {
+                        showPendingScreen();
+                    }
+                    return;
+                }
+
+                const { data, error } = await supabase.from('approved_devices').select('*').eq('device_fingerprint', myDeviceFp).single();
+
+                if (error || !data) {
+                    await supabase.from('approved_devices').insert([{
+                        device_fingerprint: myDeviceFp,
+                        device_name: navigator.userAgent.substring(0, 40) + "...",
+                        status: 'pending'
+                    }]);
+                    showPendingScreen();
+                } else if (data.status === 'approved') {
+                    localStorage.setItem('device_approved', 'true');
+                    showLoginScreen();
+                } else {
+                    showPendingScreen();
+                }
+            } catch (err) {
+                // في حال حدوث أي خطأ في الشبكة، يتم تجاوز القفل وفتح شاشة الدخول لمنع الشاشة البيضاء
+                showLoginScreen();
+            }
+        }
+
+        // تنفيذ فحص الجهاز بعد تحميل الصفحة مباشرة
+        setTimeout(checkDeviceApproval, 300);
 
         function handleLogin() {
             const userType = document.getElementById('login-user').value;
@@ -255,7 +272,7 @@
 
             if (ACCOUNTS[userType] && ACCOUNTS[userType].pass === pass) {
                 currentUser = userType;
-                document.getElementById('login-screen').classList.add('hidden');
+                hideAllScreens();
                 document.getElementById('app-screen').classList.remove('hidden');
                 setupPermissions();
             } else {
@@ -266,8 +283,7 @@
         function logout() {
             currentUser = null;
             document.getElementById('login-pass').value = "";
-            document.getElementById('app-screen').classList.add('hidden');
-            document.getElementById('login-screen').classList.remove('hidden');
+            showLoginScreen();
         }
 
         function setupPermissions() {
@@ -277,8 +293,6 @@
             const adminSettings = document.getElementById('admin-settings');
 
             roleBadge.textContent = ACCOUNTS[currentUser].role;
-
-            // إظهار زر إضافة سيارة للجميع (المبرمج، المدير، وموظف التعبئة)
             btnAdd.classList.remove('hidden');
 
             if (currentUser === 'operator') {
