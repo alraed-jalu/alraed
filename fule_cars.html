@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منظومة توزيع الوقود الذكية</title>
+    <title>منظومة توزيع الوقود الذكية - وضع المبرمج</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS Client -->
@@ -15,56 +15,15 @@
 </head>
 <body class="bg-gray-100 font-sans">
 
-    <!-- شاشة انتظار الموافقة على الجهاز -->
-    <div id="device-pending-screen" class="max-w-md mx-auto min-h-screen bg-white shadow-lg flex flex-col justify-center p-6 text-center hidden">
-        <span class="text-5xl mb-3">🔒</span>
-        <h1 class="text-xl font-bold text-red-600 mb-2">الجهاز غير مصرح به</h1>
-        <p class="text-gray-600 text-sm mb-4">هذا الهاتف غير مسجل في قائمة الأجهزة المعتمدة. يرجى إبلاغ المبرمج (أحمد) لاعتماده.</p>
-        <div class="bg-gray-50 p-3 rounded border text-xs text-gray-500 mb-4 break-all">
-            معرف الجهاز: <span id="my-device-id" class="font-mono font-bold text-black">جاري الجلب...</span>
-        </div>
-        <button id="btn-check-device" class="bg-blue-600 text-white py-2 rounded font-bold text-sm">التحقق من حالة الاعتماد 🔄</button>
-    </div>
-
-    <!-- شاشة تسجيل الدخول المباشر -->
-    <div id="login-screen" class="max-w-md mx-auto min-h-screen bg-white shadow-lg flex flex-col justify-center p-6">
-        <div class="text-center mb-6">
-            <span class="text-4xl">⛽</span>
-            <h1 class="text-2xl font-bold text-blue-600 mt-2">منظومة توزيع الوقود</h1>
-            <p class="text-gray-500 text-sm">أدخل اسم المستخدم وكلمة المرور للبدء</p>
-        </div>
-        <div class="space-y-4">
-            <div>
-                <label class="block text-sm text-gray-600 mb-1">اسم المستخدم</label>
-                <input type="text" id="login-user" value="developer" placeholder="developer / manager / operator" class="w-full border p-3 rounded focus:ring-2 focus:ring-blue-500 text-sm bg-white font-bold">
-            </div>
-            <div>
-                <label class="block text-sm text-gray-600 mb-1">كلمة المرور</label>
-                <input type="password" id="login-pass" value="dev123" placeholder="أدخل كلمة المرور..." class="w-full border p-3 rounded focus:ring-2 focus:ring-blue-500 text-sm bg-white">
-            </div>
-            <!-- تم إزالة الاعتماد على onclick واستبداله بـ id ومعالجة برمجية مباشرة -->
-            <button type="button" id="login-btn" class="w-full bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-700 transition text-sm cursor-pointer shadow-md">دخول للمنظومة 🚀</button>
-            <p id="login-error" class="text-red-500 text-center text-sm hidden font-bold mt-2">اسم المستخدم أو كلمة المرور غير صحيحة!</p>
-            
-            <div class="mt-4 p-3 bg-gray-50 rounded border text-xs text-gray-600 space-y-1">
-                <p class="font-bold text-gray-700">💡 بيانات الدخول السريعة:</p>
-                <p>• المبرمج: <span class="font-mono font-bold text-black">developer</span> / <span class="font-mono font-bold text-black">dev123</span></p>
-                <p>• المدير: <span class="font-mono font-bold text-black">manager</span> / <span class="font-mono font-bold text-black">mng123</span></p>
-                <p>• الموظف: <span class="font-mono font-bold text-black">operator</span> / <span class="font-mono font-bold text-black">op123</span></p>
-            </div>
-        </div>
-    </div>
-
-    <!-- التطبيق الرئيسي -->
-    <div id="app-screen" class="max-w-md mx-auto min-h-screen bg-white shadow-lg flex flex-col hidden">
+    <!-- التطبيق الرئيسي (مباشر بصلاحيات المبرمج الكاملة) -->
+    <div id="app-screen" class="max-w-md mx-auto min-h-screen bg-white shadow-lg flex flex-col">
         <header class="bg-blue-600 text-white p-4 flex justify-between items-center shadow">
             <div>
-                <span id="user-role-badge" class="text-xs bg-blue-800 px-2 py-0.5 rounded font-bold">مستخدم</span>
-                <h2 class="font-bold text-lg mt-1">منظومة الوقود</h2>
+                <span id="user-role-badge" class="text-xs bg-blue-800 px-2 py-0.5 rounded font-bold">المبرمج (أحمد) - صلاحيات كاملة 🚀</span>
+                <h2 class="font-bold text-lg mt-1">منظومة الوقود الذكية</h2>
             </div>
             <div class="flex items-center gap-2">
                 <span id="connection-status" class="text-xs px-2 py-1 rounded bg-green-500 font-bold">متصل</span>
-                <button id="logout-btn" class="text-xs bg-red-500 text-white px-2 py-1 rounded">خروج</button>
             </div>
         </header>
 
@@ -74,12 +33,12 @@
             <button id="sync-btn" class="bg-yellow-600 text-white px-2 py-1 rounded">مزامنة الآن</button>
         </div>
 
-        <!-- الأزرار الرئيسية للتبديل بين الأقسام -->
+        <!-- الأزرار الرئيسية للتبديل بين الأقسام (تتضمن تبويب الأجهزة للمبرمج) -->
         <div class="flex border-b text-sm" id="tabs-container">
             <button id="btn-tab-scan" class="flex-1 py-3 text-center font-bold text-blue-600 border-b-2 border-blue-600">فحص وتعبئة</button>
             <button id="btn-tab-add" class="flex-1 py-3 text-center font-bold text-gray-500">إضافة سيارة</button>
             <button id="btn-tab-report" class="flex-1 py-3 text-center font-bold text-gray-500">التقرير</button>
-            <button id="btn-tab-devices" class="flex-1 py-3 text-center font-bold text-gray-500 hidden">الأجهزة</button>
+            <button id="btn-tab-devices" class="flex-1 py-3 text-center font-bold text-gray-500">الأجهزة</button>
         </div>
 
         <!-- المحتوى -->
@@ -148,7 +107,7 @@
                     </div>
                 </div>
 
-                <div id="admin-settings" class="bg-gray-50 p-3 rounded border hidden">
+                <div id="admin-settings" class="bg-gray-50 p-3 rounded border">
                     <h3 class="font-bold text-xs text-gray-700 mb-2">⚙️ إعدادات النظام</h3>
                     <div class="flex gap-2">
                         <input type="number" id="waiting-days-input" value="5" min="1" max="30" class="border p-1 w-20 rounded text-center text-sm">
@@ -173,7 +132,7 @@
                 </div>
             </div>
 
-            <!-- تبويب إدارة الأجهزة والموافقات (للمبرمج فقط) -->
+            <!-- تبويب إدارة الأجهزة والموافقات (للمبرمج) -->
             <div id="tab-devices" class="space-y-4 hidden">
                 <h2 class="text-gray-700 font-semibold text-sm">📱 إدارة الأجهزة والموافقات الأمنية</h2>
                 <p class="text-xs text-gray-500">الموافقة على الهواتف الجديدة أو حظرها.</p>
@@ -189,81 +148,16 @@
         const SUPABASE_KEY = "sb_publishable_6HPGqXM6fhBvitIzhZv8bA_gUNbSXd6";
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUser = null;
         let currentBarcode = "";
         let waitingDaysLimit = parseInt(localStorage.getItem('waiting_days') || '5');
 
-        const ACCOUNTS = {
-            developer: { pass: "dev123", role: "المبرمج (أحمد) - صلاحيات كاملة" },
-            manager: { pass: "mng123", role: "مدير لجنة الوقود" },
-            operator: { pass: "op123", role: "موظف التعبئة" }
-        };
-
-        function getDeviceFingerprint() {
-            let fp = localStorage.getItem('device_fp');
-            if (!fp) {
-                fp = 'DEV-' + Math.random().toString(36).substring(2, 10).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
-                localStorage.setItem('device_fp', fp);
-            }
-            return fp;
-        }
-
-        const myDeviceFp = getDeviceFingerprint();
-        document.getElementById('my-device-id').textContent = myDeviceFp;
-
-        function showPendingScreen() {
-            document.getElementById('device-pending-screen').classList.remove('hidden');
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('app-screen').classList.add('hidden');
-        }
-
-        function showLoginScreen() {
-            document.getElementById('device-pending-screen').classList.add('hidden');
-            document.getElementById('login-screen').classList.remove('hidden');
-            document.getElementById('app-screen').classList.add('hidden');
-        }
-
-        async function checkDeviceApproval() {
-            if (localStorage.getItem('device_approved') === 'true') return;
-            if (!navigator.onLine) return;
-
-            try {
-                const { data, error } = await supabase.from('approved_devices').select('*').eq('device_fingerprint', myDeviceFp).single();
-                if (error || !data) {
-                    await supabase.from('approved_devices').insert([{
-                        device_fingerprint: myDeviceFp,
-                        device_name: navigator.userAgent.substring(0, 40) + "...",
-                        status: 'pending'
-                    }]);
-                    showPendingScreen();
-                } else if (data.status === 'approved') {
-                    localStorage.setItem('device_approved', 'true');
-                } else {
-                    showPendingScreen();
-                }
-            } catch (err) {}
-        }
-
-        setTimeout(checkDeviceApproval, 500);
-
-        // ربط الأحداث برمجياً لضمان الاستجابة الفورية 100%
+        // تهيئة الواجهة بصلاحيات المبرمج فوراً عند التحميل
         document.addEventListener('DOMContentLoaded', () => {
-            // زر تسجيل الدخول
-            document.getElementById('login-btn').addEventListener('click', () => {
-                const userInput = document.getElementById('login-user').value.trim().toLowerCase();
-                const passInput = document.getElementById('login-pass').value.trim();
-                const errorEl = document.getElementById('login-error');
-
-                if (ACCOUNTS[userInput] && ACCOUNTS[userInput].pass === passInput) {
-                    currentUser = userInput;
-                    errorEl.classList.add('hidden');
-                    document.getElementById('login-screen').classList.add('hidden');
-                    document.getElementById('app-screen').classList.remove('hidden');
-                    setupPermissions();
-                } else {
-                    errorEl.classList.remove('hidden');
-                }
-            });
+            document.getElementById('waiting-days-input').value = waitingDaysLimit;
+            document.getElementById('current-period-label').textContent = `${waitingDaysLimit} أيام`;
+            loadDailyReport();
+            loadDevicesList();
+            cacheCarsData();
 
             // أزرار التبويبات
             document.getElementById('btn-tab-scan').addEventListener('click', () => switchTab('scan'));
@@ -271,48 +165,13 @@
             document.getElementById('btn-tab-report').addEventListener('click', () => switchTab('report'));
             document.getElementById('btn-tab-devices').addEventListener('click', () => switchTab('devices'));
 
-            // الأزرار التفاعلية الأخرى
-            document.getElementById('logout-btn').addEventListener('click', logout);
+            // الأزرار التفاعلية
             document.getElementById('sync-btn').addEventListener('click', syncOfflineData);
             document.getElementById('search-car-btn').addEventListener('click', () => checkCar());
             document.getElementById('add-car-btn').addEventListener('click', addNewCar);
             document.getElementById('update-days-btn').addEventListener('click', updateWaitingDays);
             document.getElementById('refresh-devices-btn').addEventListener('click', loadDevicesList);
-            document.getElementById('btn-check-device').addEventListener('click', checkDeviceApproval);
         });
-
-        function logout() {
-            currentUser = null;
-            document.getElementById('login-pass').value = "";
-            document.getElementById('login-user').value = "";
-            showLoginScreen();
-        }
-
-        function setupPermissions() {
-            const roleBadge = document.getElementById('user-role-badge');
-            const btnAdd = document.getElementById('btn-add');
-            const btnDevices = document.getElementById('btn-devices');
-            const adminSettings = document.getElementById('admin-settings');
-
-            roleBadge.textContent = ACCOUNTS[currentUser].role;
-            btnAdd.classList.remove('hidden');
-
-            if (currentUser === 'operator') {
-                btnDevices.classList.add('hidden');
-                adminSettings.classList.add('hidden');
-            } else if (currentUser === 'manager') {
-                btnDevices.classList.add('hidden');
-                adminSettings.classList.remove('hidden');
-            } else if (currentUser === 'developer') {
-                btnDevices.classList.remove('hidden');
-                adminSettings.classList.remove('hidden');
-            }
-
-            document.getElementById('waiting-days-input').value = waitingDaysLimit;
-            document.getElementById('current-period-label').textContent = `${waitingDaysLimit} أيام`;
-            loadDailyReport();
-            if (currentUser === 'developer') loadDevicesList();
-        }
 
         async function loadDevicesList() {
             const container = document.getElementById('devices-list');
@@ -376,7 +235,6 @@
             const { data, error } = await supabase.from('cars').select('*');
             if (!error && data) localStorage.setItem('cached_cars', JSON.stringify(data));
         }
-        cacheCarsData();
 
         function switchTab(tab) {
             ['scan', 'add', 'report', 'devices'].forEach(t => {
@@ -443,7 +301,6 @@
             }
             resultBox.innerHTML = html;
             
-            // ربط زر تأكيد التعبئة برمجياً لضمان استجابته
             const confirmBtn = document.getElementById('confirm-refuel-btn');
             if(confirmBtn) {
                 confirmBtn.onclick = () => confirmRefuel(car.car_plate, car.owner_name, car.fuel_type);
