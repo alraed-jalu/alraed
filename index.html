@@ -376,7 +376,7 @@
     </div>
 </div>
 
-<!-- النافذة المنبثقة لتفاصيل الدفع المتعدد -->
+<!-- النافذة المنبثقة لتفاصيل الدفع المتعدد (بعد خصم حساب 625 من العام) -->
 <div id="multiModal" class="modal" onclick="handleModalClick(event, 'multiModal')">
     <div class="modal-content">
         <div class="modal-header">
@@ -385,7 +385,7 @@
         </div>
         <ul class="bank-details-list">
             <li><span>💵 كاش دفع متعدد (625):</span> <strong id="multiSpecialDetail" style="color: #a855f7;">0.00 د.ل</strong></li>
-            <li><span>🔀 حساب الدفع المتعدد:</span> <strong id="multiGeneralDetail" style="color: #a855f7;">0.00 د.ل</strong></li>
+            <li><span>🔀 حساب الدفع المتعدد (صافي):</span> <strong id="multiGeneralDetail" style="color: #a855f7;">0.00 د.ل</strong></li>
         </ul>
     </div>
 </div>
@@ -551,7 +551,7 @@
             let sumMobi = 0;
             let sumYesser = 0;
             let sumEdfaq = 0;
-            let sumMultiGeneral = 0;
+            let sumMultiGeneralRaw = 0;
             let sumMultiSpecial = 0;
             
             let latestFormattedDateTime = "--/--/---- --:--:--";
@@ -590,7 +590,6 @@
                     const netEdfaq = Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0);
                     const netMultiGeneral = Number(item.multi_cash_sales || 0) - Number(item.multi_cash_returns || 0);
                     
-                    // قراءة قيمة حساب 625 (كاش دفع متعدد) المحدثة من السحابة
                     const netMultiSpecial = Number(item.multi_cash_special_sales || 0);
 
                     totalCash += netCash;
@@ -598,13 +597,17 @@
                     sumMobi += netMobi;
                     sumYesser += netYesser;
                     sumEdfaq += netEdfaq;
-                    sumMultiGeneral += netMultiGeneral;
+                    sumMultiGeneralRaw += netMultiGeneral;
                     sumMultiSpecial += netMultiSpecial;
                 });
             }
 
+            // تطبيق طلبك: طرح قيمة حساب 625 (multiSpecial) من قيمة حساب الدفع المتعدد العام (multiGeneralRaw)
+            let netMultiGeneral = sumMultiGeneralRaw - sumMultiSpecial;
+            if (netMultiGeneral < 0) netMultiGeneral = 0; // لضمان عدم ظهور أرقام سالبة
+
             const totalBank = sumCard + sumMobi + sumYesser + sumEdfaq;
-            const totalMulti = sumMultiGeneral + sumMultiSpecial;
+            const totalMulti = netMultiGeneral + sumMultiSpecial;
             const grandTotal = totalCash + totalBank + totalMulti;
 
             currentBankBreakdown = { 
@@ -616,7 +619,7 @@
 
             currentMultiBreakdown = {
                 multiSpecial: sumMultiSpecial,
-                multiGeneral: sumMultiGeneral
+                multiGeneral: netMultiGeneral
             };
 
             document.getElementById('cashAmount').innerText = totalCash.toFixed(2) + " د.ل";
