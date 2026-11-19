@@ -7,42 +7,350 @@
     <!-- مكتبة قراءة الباركود بالكاميرا -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: Tahoma, sans-serif; background-color: #f4f6f7; margin: 0; padding: 15px; color: #333; }
-        .container { max-width: 500px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
-        .store-title { text-align: center; color: #e67e22; font-size: 16px; font-weight: bold; margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { font-weight: bold; display: block; margin-bottom: 5px; }
-        input { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-        #reader { width: 100%; max-width: 400px; margin: 15px auto; border-radius: 8px; overflow: hidden; display: none; }
-        .btn-cam { background: #3498db; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; font-weight: bold; }
-        .btn-cam:hover { background: #2980b9; }
-        .btn-search { background: #27ae60; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; border-radius: 8px; cursor: pointer; margin-top: 10px; font-weight: bold; }
-        .btn-search:hover { background: #219653; }
-        .item-card { background: #f8f9fa; border: 1px solid #dcdde1; padding: 15px; border-radius: 8px; margin-top: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .item-name { font-size: 18px; color: #2c3e50; font-weight: bold; margin-bottom: 8px; }
-        .info-row { display: flex; justify-content: space-between; font-size: 16px; margin-top: 5px; }
-        .price { color: #27ae60; font-weight: bold; font-size: 19px; }
-        .qty { color: #2980b9; font-weight: bold; font-size: 19px; }
+        :root {
+            --bg-gradient: linear-gradient(135deg, #eef2f7 0%, #dbe4f0 100%);
+            --card-bg: #ffffff;
+            --header-gradient: linear-gradient(135deg, #162447 0%, #1f4068 60%, #1b6ca8 100%);
+            --accent-gold: #ffb703;
+            --primary-blue: #1b6ca8;
+            --primary-blue-hover: #145382;
+            --success-green: #16a34a;
+            --success-green-hover: #15803d;
+            --success-soft: #ecfdf5;
+            --border-color: #cbd5e1;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --danger-bg: #fef2f2;
+            --danger-text: #dc2626;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Tahoma, "Segoe UI", sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            margin: 0;
+            padding: 18px 14px;
+            color: var(--text-main);
+        }
+
+        .container {
+            max-width: 520px;
+            margin: auto;
+            background: var(--card-bg);
+            border-radius: 18px;
+            box-shadow: 0 14px 35px rgba(22, 36, 71, 0.14);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .hero-header {
+            background: var(--header-gradient);
+            color: #ffffff;
+            padding: 22px 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero-header h2 {
+            margin: 0 0 8px 0;
+            font-size: 22px;
+            letter-spacing: 0.2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .store-badge {
+            display: inline-block;
+            background: rgba(255, 183, 3, 0.18);
+            border: 1px solid rgba(255, 183, 3, 0.55);
+            color: var(--accent-gold);
+            font-size: 15px;
+            font-weight: bold;
+            padding: 5px 14px;
+            border-radius: 999px;
+        }
+
+        .content-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 7px;
+            color: var(--text-main);
+            font-size: 14.5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 13px 14px 13px 38px;
+            font-size: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 11px;
+            background-color: #f8fafc;
+            color: var(--text-main);
+            transition: all 0.22s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            background-color: #ffffff;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 4px rgba(27, 108, 168, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .clear-btn {
+            position: absolute;
+            left: 10px;
+            background: #e2e8f0;
+            color: #475569;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 14px;
+            line-height: 1;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.18s ease;
+        }
+
+        .clear-btn:hover {
+            background: #cbd5e1;
+            color: #0f172a;
+        }
+
+        .barcode-row {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+
+        .barcode-row .input-wrapper {
+            flex: 1;
+        }
+
+        .btn-cam {
+            background: linear-gradient(135deg, #1b6ca8, #0ea5e9);
+            color: #ffffff;
+            border: none;
+            padding: 0 16px;
+            font-size: 15px;
+            border-radius: 11px;
+            cursor: pointer;
+            font-weight: bold;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(27, 108, 168, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .btn-cam:hover {
+            background: linear-gradient(135deg, #145382, #0284c7);
+            transform: translateY(-1px);
+        }
+
+        .btn-cam:active {
+            transform: scale(0.98);
+        }
+
+        #reader {
+            width: 100%;
+            max-width: 420px;
+            margin: 14px auto;
+            border-radius: 12px;
+            overflow: hidden;
+            display: none;
+            border: 2px solid var(--primary-blue);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+        }
+
+        .btn-search {
+            background: linear-gradient(135deg, #16a34a, #22c55e);
+            color: #ffffff;
+            border: none;
+            padding: 14px;
+            width: 100%;
+            font-size: 17px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 6px;
+            font-weight: bold;
+            box-shadow: 0 6px 16px rgba(22, 163, 74, 0.28);
+            transition: all 0.2s ease;
+        }
+
+        .btn-search:hover {
+            background: linear-gradient(135deg, #15803d, #16a34a);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(22, 163, 74, 0.34);
+        }
+
+        .btn-search:active {
+            transform: scale(0.985);
+        }
+
+        .results-count {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--primary-blue);
+            background: #eff6ff;
+            border-right: 4px solid var(--primary-blue);
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .item-card {
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+            border-right: 5px solid var(--success-green);
+            padding: 16px;
+            border-radius: 14px;
+            margin-top: 12px;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            animation: cardAppear 0.28s ease-out;
+        }
+
+        .item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.1);
+        }
+
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .item-name {
+            font-size: 18px;
+            color: var(--text-main);
+            font-weight: bold;
+            margin-bottom: 6px;
+            line-height: 1.45;
+        }
+
+        .barcode-tag {
+            display: inline-block;
+            font-size: 12.5px;
+            color: var(--text-muted);
+            background: #f1f5f9;
+            padding: 3px 9px;
+            border-radius: 6px;
+            font-weight: normal;
+            margin-bottom: 12px;
+        }
+
+        .price-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--success-soft);
+            border: 1px solid #bbf7d0;
+            padding: 11px 14px;
+            border-radius: 10px;
+        }
+
+        .price-label {
+            font-size: 15px;
+            font-weight: bold;
+            color: #166534;
+        }
+
+        .price {
+            color: var(--success-green);
+            font-weight: bold;
+            font-size: 22px;
+        }
+
+        .status-msg {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14.5px;
+            animation: cardAppear 0.22s ease-out;
+        }
+
+        .status-loading {
+            background: #eff6ff;
+            color: var(--primary-blue);
+            border: 1px solid #bfdbfe;
+        }
+
+        .status-error {
+            background: var(--danger-bg);
+            color: var(--danger-text);
+            border: 1px solid #fecaca;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🔍 استعلام الأسعار السريع</h2>
-    <div class="store-title">🏪 معرض سنتر العائلة </div>
-
-    <button class="btn-cam" onclick="toggleCamera()">📷 فتح / إغلاق كاميرا المسح</button>
-    <div id="reader"></div>
-
-    <div class="form-group">
-        <label>ابحث باسم الصنف أو الباركود:</label>
-        <input type="text" id="searchInput" placeholder="اكتب اسم الصنف أو امسح الباركود...">
+    <div class="hero-header">
+        <h2>🔍 استعلام الأسعار السريع</h2>
+        <div class="store-badge">🏪 معرض سنتر العائلة</div>
     </div>
 
-    <button class="btn-search" onclick="searchItem()">بحث فوراً 🔍</button>
+    <div class="content-body">
+        <!-- المربع الأول: البحث باسم المادة أو رقم الصنف -->
+        <div class="form-group">
+            <label for="nameOrIdInput">1. البحث باسم المادة أو رقم الصنف</label>
+            <div class="input-wrapper">
+                <input type="text" id="nameOrIdInput" placeholder="اكتب اسم المادة أو رقم الصنف..." oninput="toggleClearButton('nameOrIdInput', 'clearNameBtn')">
+                <button type="button" id="clearNameBtn" class="clear-btn" onclick="clearField('nameOrIdInput', 'clearNameBtn')" title="مسح">×</button>
+            </div>
+        </div>
 
-    <div id="results"></div>
+        <!-- المربع الثاني: كتابة الباركود أو قراءته بالكاميرا -->
+        <div class="form-group">
+            <label for="barcodeInput">2. البحث بالباركود أو الكاميرا</label>
+            <div class="barcode-row">
+                <div class="input-wrapper">
+                    <input type="text" id="barcodeInput" placeholder="اكتب الباركود أو امسحه بالكاميرا..." oninput="toggleClearButton('barcodeInput', 'clearBarcodeBtn')">
+                    <button type="button" id="clearBarcodeBtn" class="clear-btn" onclick="clearField('barcodeInput', 'clearBarcodeBtn')" title="مسح">×</button>
+                </div>
+                <button type="button" class="btn-cam" onclick="toggleCamera()">📷 كاميرا</button>
+            </div>
+        </div>
+
+        <div id="reader"></div>
+
+        <button type="button" class="btn-search" onclick="searchItem()">بحث فوراً 🔍</button>
+
+        <div id="results"></div>
+    </div>
 </div>
 
 <script>
@@ -53,98 +361,148 @@
     let html5QrCode;
     let cameraIsRunning = false;
 
-    function toggleCamera() {
+    function toggleClearButton(inputId, btnId) {
+        const input = document.getElementById(inputId);
+        const btn = document.getElementById(btnId);
+        btn.style.display = input.value.length > 0 ? "flex" : "none";
+    }
+
+    function clearField(inputId, btnId) {
+        const input = document.getElementById(inputId);
+        input.value = "";
+        toggleClearButton(inputId, btnId);
+        input.focus();
+    }
+
+    function playScanBeep() {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            gain.gain.setValueAtTime(0.08, ctx.currentTime);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.12);
+        } catch (e) {
+            // تجاهل أي قيود صوتية في المتصفح
+        }
+    }
+
+    async function stopCamera() {
+        const readerDiv = document.getElementById('reader');
+        if (cameraIsRunning && html5QrCode) {
+            try {
+                await html5QrCode.stop();
+                await html5QrCode.clear();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        readerDiv.style.display = 'none';
+        cameraIsRunning = false;
+    }
+
+    async function toggleCamera() {
         const readerDiv = document.getElementById('reader');
         if (!cameraIsRunning) {
             readerDiv.style.display = 'block';
             html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 100 } },
-                (decodedText) => {
-                    document.getElementById('searchInput').value = decodedText;
-                    toggleCamera(); 
-                    searchItem();   
-                }
-            ).catch(err => { console.error(err); });
-            cameraIsRunning = true;
-        } else {
-            html5QrCode.stop().then(() => {
+            try {
+                await html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 100 } },
+                    async (decodedText) => {
+                        const cleanCode = decodedText.trim();
+                        playScanBeep();
+                        document.getElementById('barcodeInput').value = cleanCode;
+                        toggleClearButton('barcodeInput', 'clearBarcodeBtn');
+                        document.getElementById('nameOrIdInput').value = "";
+                        toggleClearButton('nameOrIdInput', 'clearNameBtn');
+                        await stopCamera();
+                        searchItem('barcode');
+                    }
+                );
+                cameraIsRunning = true;
+            } catch (err) {
+                console.error(err);
                 readerDiv.style.display = 'none';
                 cameraIsRunning = false;
-            }).catch(err => { console.error(err); });
+            }
+        } else {
+            await stopCamera();
         }
     }
 
-    async function searchItem() {
-        const queryText = document.getElementById('searchInput').value.trim();
+    async function searchItem(preferredField = null) {
+        const nameOrIdVal = document.getElementById('nameOrIdInput').value.trim();
+        const barcodeVal = document.getElementById('barcodeInput').value.trim();
         const resultsDiv = document.getElementById('results');
 
-        if (!queryText) {
-            resultsDiv.innerHTML = "<p style='color: #e74c3c; text-align: center; margin-top: 15px;'>⚠️ الرجاء إدخال اسم الصنف أو الباركود أولاً.</p>";
+        let activeQuery = "";
+        let searchMode = "";
+
+        if (preferredField === 'barcode' && barcodeVal) {
+            activeQuery = barcodeVal;
+            searchMode = "barcode";
+        } else if (preferredField === 'nameOrId' && nameOrIdVal) {
+            activeQuery = nameOrIdVal;
+            searchMode = "nameOrId";
+        } else if (nameOrIdVal) {
+            activeQuery = nameOrIdVal;
+            searchMode = "nameOrId";
+        } else if (barcodeVal) {
+            activeQuery = barcodeVal;
+            searchMode = "barcode";
+        }
+
+        if (!activeQuery) {
+            resultsDiv.innerHTML = "<div class='status-msg status-error'>⚠️ الرجاء إدخال اسم المادة، رقم الصنف، أو الباركود أولاً.</div>";
             return;
         }
 
-        resultsDiv.innerHTML = "<p style='text-align: center; color: #7f8c8d; margin-top: 15px;'>⏳ جاري البحث...</p>";
+        resultsDiv.innerHTML = "<div class='status-msg status-loading'>⏳ جاري البحث في قائمة الأسعار...</div>";
 
         try {
-            let apiUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&select=*`;
-
-            // توجيه البحث مباشرة للخادم بناءً على نوع المدخل (باركود، رقم صنف، أو اسم)
-            if (!isNaN(queryText) && queryText !== "") {
-                apiUrl += `&or=(barcode.eq.${queryText},item_id.eq.${queryText})`;
+            let apiUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&select=*`;  if (searchMode === "barcode") { apiUrl += `&barcode=eq.${encodeURIComponent(activeQuery)}`;
             } else {
-                apiUrl += `&item_name=ilike.*${queryText}*`;
-            }
-
-            const response = await fetch(apiUrl, {
-                method: 'GET',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                if (!isNaN(activeQuery)) {
+                    apiUrl += `&or=(item_id.eq.${encodeURIComponent(activeQuery)},barcode.eq.${encodeURIComponent(activeQuery)})`;
+                } else {
+                    const safeName = activeQuery.replace(/[%_*]/g, "");
+                    apiUrl += `&item_name=ilike.*${encodeURIComponent(safeName)}*`; } }  const response = await fetch(apiUrl, { method: 'GET', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
                     'Content-Type': 'application/json'
                 }
             });
 
             if (!response.ok) {
-                resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center;">❌ خطأ في الاتصال بالسحابة: ${response.statusText}</p>`;
+                resultsDiv.innerHTML = `<div class='status-msg status-error'>❌ خطأ في الاتصال بالسحابة: ${response.statusText}</div>`;
                 return;
             }
 
             const data = await response.json();
 
             if (data && data.length > 0) {
-                let html = `<p style="color: #27ae60; font-weight: bold; margin-top: 15px;">تم العثور على ${data.length} صنف:</p>`;
+                let html = `<div class="results-count">✨ تم العثور على ${data.length} صنف</div>`;
                 data.forEach(item => {
                     html += `
                         <div class="item-card">
-                            <div class="item-name">📦 ${item.item_name || 'بدون اسم'} <span style="font-size: 13px; color: #7f8c8d;">(${item.barcode || 'بدون باركود'})</span></div>
-                            <div class="info-row">
-                                <span>سعر البيع:</span>
+                            <div class="item-name">📦 ${item.item_name || 'بدون اسم'}</div>
+                            <div class="barcode-tag">الباركود: ${item.barcode || 'غير متوفر'}</div>
+                            <div class="price-box">
+                                <span class="price-label">سعر البيع</span>
                                 <span class="price">${item.sale_price !== undefined ? item.sale_price : 0} د.ل</span>
-                            </div>
-                            <div class="info-row">
-                                <span>الكمية المتاحة:</span>
-                                <span class="qty">${item.available_qty !== undefined ? item.available_qty : 0}</span>
                             </div>
                         </div>
                     `;
                 });
                 resultsDiv.innerHTML = html;
             } else {
-                resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center; margin-top: 15px;">⚠️ لم يتم العثور على أي صنف مطابق في معرض سنتر العائلة.</p>`;
+                resultsDiv.innerHTML = `<div class='status-msg status-error'>⚠️ لم يتم العثور على أي صنف مطابق في معرض سنتر العائلة.</div>`;
             }
         } catch (err) {
-            resultsDiv.innerHTML = `<p style="color: #e74c3c; text-align: center;">❌ خطأ في النظام: ${err.message}</p>`;
-        }
-    }
-    
-    document.getElementById('searchInput').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            searchItem();
-        }
-    });
-</script>
-
-</body>
-</html>
+            resultsDiv.innerHTML = `<div class='status-msg status-error'>
