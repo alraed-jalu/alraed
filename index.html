@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>استعلام الأسعار - معرض سنتر العائلة</title>
+    <title>استعلام الأسعار - سنتر العائلة السعيدة</title>
     <!-- مكتبة قراءة الباركود بالكاميرا -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
@@ -219,13 +219,14 @@
         .results-count {
             margin-top: 22px;
             margin-bottom: 12px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             color: #16325b;
             background: linear-gradient(90deg, #eff6ff 0%, #dbeafe 100%);
             border-right: 5px solid var(--primary-blue);
-            padding: 10px 14px;
+            padding: 11px 15px;
             border-radius: 10px;
+            text-align: center;
             box-shadow: 0 3px 10px rgba(27, 108, 168, 0.08);
         }
 
@@ -550,7 +551,7 @@
             const data = await response.json();
 
             if (data && data.length > 0) {
-                let html = `<div class="results-count">✨ تم العثور على ${data.length} صنف</div>`;
+                let html = `<div class="results-count">🏪 سنتر العائلة السعيدة</div>`;
                 data.forEach(item => {
                     html += `
                         <div class="item-card">
@@ -564,7 +565,7 @@
                 });
                 resultsDiv.innerHTML = html;
             } else {
-                resultsDiv.innerHTML = `<div class='status-msg status-error'>⚠️ لم يتم العثور على أي صنف مطابق في معرض سنتر العائلة.</div>`;
+                resultsDiv.innerHTML = `<div class='status-msg status-error'>⚠️ لم يتم العثور على أي صنف مطابق في سنتر العائلة السعيدة.</div>`;
             }
         } catch (err) {
             resultsDiv.innerHTML = `<div class='status-msg status-error'>❌ خطأ في النظام: ${err.message}</div>`;
