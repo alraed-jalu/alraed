@@ -116,7 +116,7 @@
         }
         
         .btn-primary:hover { 
-            background: linear-gradient(135deg, #0369a1 0%, #075985 100%); 
+            background: linear-gradient(135deg, #0369a1 100%, #075985 100%); 
             transform: translateY(-1px);
             box-shadow: 0 6px 15px rgba(2, 132, 199, 0.35);
         }
@@ -149,6 +149,16 @@
             background-color: rgba(59, 130, 246, 0.04);
             border-color: rgba(59, 130, 246, 0.3);
         }
+
+        .stat-card.multi { 
+            border-right: 6px solid #a855f7; 
+            cursor: pointer; 
+        }
+        .stat-card.multi:hover { 
+            transform: translateY(-2px); 
+            background-color: rgba(168, 85, 247, 0.04);
+            border-color: rgba(168, 85, 247, 0.3);
+        }
         
         .stat-card.total { 
             border-right: 6px solid #eab308; 
@@ -160,6 +170,7 @@
         
         .val-cash { color: #22c55e; }
         .val-bank { color: #3b82f6; }
+        .val-multi { color: #a855f7; }
         .val-total { color: #eab308; }
         
         .hint-text { display: block; font-size: 11px; margin-top: 4px; font-weight: 700; opacity: 0.9; }
@@ -300,25 +311,31 @@
         <!-- الكروت الإحصائية -->
         <div class="stats-container">
             <div class="stat-card cash">
-                <div class="stat-title">💵  الفواتير النقدية</div>
+                <div class="stat-title">💵 الفواتير النقدية</div>
                 <div class="stat-value val-cash" id="cashAmount">0.00 د.ل</div>
             </div>
 
             <div class="stat-card bank" onclick="toggleBankModal(true)">
-                <div class="stat-title">💳  فواتير الخدمات المصرفية </div>
+                <div class="stat-title">💳 فواتير الخدمات المصرفية</div>
                 <div class="stat-value val-bank" id="bankAmount">0.00 د.ل</div>
                 <span class="hint-text" style="color: #3b82f6;">🔍 انقر لعرض تفاصيل الخدمات المصرفية</span>
             </div>
 
+            <div class="stat-card multi" onclick="toggleMultiModal(true)">
+                <div class="stat-title">🔀 الدفع المتعدد</div>
+                <div class="stat-value val-multi" id="multiAmount">0.00 د.ل</div>
+                <span class="hint-text" style="color: #a855f7;">🔍 انقر لعرض تفاصيل الدفع المتعدد</span>
+            </div>
+
             <div class="stat-card total">
-                <div class="stat-title">💰 اجمالي (النقدية + الخدمات المصرفية)</div>
+                <div class="stat-title">💰 اجمالي (النقدية + الخدمات المصرفية + الدفع المتعدد)</div>
                 <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
             </div>
         </div>
 
         <!-- قسم الاستعلام عن المواد ومسح الباركود -->
         <div class="search-section">
-            <h3 style="color: #38bdf8; text-align: right; font-size: 16px; margin-bottom: 10px; font-weight: 700;">📦 الاستعلام عن المواد  </h3>
+            <h3 style="color: #38bdf8; text-align: right; font-size: 16px; margin-bottom: 10px; font-weight: 700;">📦 الاستعلام عن المواد </h3>
             
             <div class="search-mode-selector">
                 <label><input type="radio" name="searchMode" value="barcode_only" checked> 🏷️ بحث باركود </label>
@@ -359,6 +376,20 @@
     </div>
 </div>
 
+<!-- النافذة المنبثقة لتفاصيل الدفع المتعدد -->
+<div id="multiModal" class="modal" onclick="handleModalClick(event, 'multiModal')">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🔀 تفاصيل الدفع المتعدد</h3>
+            <button class="close-btn" onclick="toggleMultiModal(false)">&times;</button>
+        </div>
+        <ul class="bank-details-list">
+            <li><span>💵 كاش دفع متعدد (625):</span> <strong id="multiSpecialDetail" style="color: #a855f7;">0.00 د.ل</strong></li>
+            <li><span>🔀 حساب الدفع المتعدد (صافي):</span> <strong id="multiGeneralDetail" style="color: #a855f7;">0.00 د.ل</strong></li>
+        </ul>
+    </div>
+</div>
+
 <script>
     const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
@@ -367,6 +398,7 @@
     let html5QrcodeScanner = null;
 
     let currentBankBreakdown = { mobi: 0, card: 0, yesser: 0, edfaq: 0 };
+    let currentMultiBreakdown = { multiSpecial: 0, multiGeneral: 0 };
 
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('startDate').value = today;
@@ -407,9 +439,19 @@
         }
     }
 
+    function toggleMultiModal(show) {
+        const modal = document.getElementById('multiModal');
+        modal.style.display = show ? 'block' : 'none';
+        if(show) {
+            document.getElementById('multiSpecialDetail').innerText = currentMultiBreakdown.multiSpecial.toFixed(2) + " د.ل";
+            document.getElementById('multiGeneralDetail').innerText = currentMultiBreakdown.multiGeneral.toFixed(2) + " د.ل";
+        }
+    }
+
     function handleModalClick(event, modalId) {
         if (event.target.id === modalId) {
             if(modalId === 'bankModal') toggleBankModal(false);
+            if(modalId === 'multiModal') toggleMultiModal(false);
         }
     }
 
@@ -509,6 +551,8 @@
             let sumMobi = 0;
             let sumYesser = 0;
             let sumEdfaq = 0;
+            let sumMultiGeneralRaw = 0;
+            let sumMultiSpecial = 0;
             
             let latestFormattedDateTime = "--/--/---- --:--:--";
 
@@ -539,22 +583,34 @@
                 }
 
                 Object.values(dailyRecords).forEach(item => {
-                    const netCash = Number(item.cash_sales || 0) - Number(item.cash_returns || 0);
+                    // الاعتماد على قيمة cash_sales المباشرة المرسلة من السكريبت دون خصم مزدوج
+                    const netCash = Number(item.cash_sales || 0);
+                    
                     const netCard = Number(item.card_sales || 0) - Number(item.card_returns || 0);
                     const netMobi = Number(item.mobicash_sales || 0) - Number(item.mobicash_returns || 0);
                     const netYesser = Number(item.yesserpay_sales || 0) - Number(item.yesserpay_returns || 0);
                     const netEdfaq = Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0);
+                    const netMultiGeneral = Number(item.multi_cash_sales || 0) - Number(item.multi_cash_returns || 0);
+                    
+                    const netMultiSpecial = Number(item.multi_cash_special_sales || 0);
 
                     totalCash += netCash;
                     sumCard += netCard;
                     sumMobi += netMobi;
                     sumYesser += netYesser;
                     sumEdfaq += netEdfaq;
+                    sumMultiGeneralRaw += netMultiGeneral;
+                    sumMultiSpecial += netMultiSpecial;
                 });
             }
 
+            // طرح قيمة حساب 625 من حساب الدفع المتعدد العام
+            let netMultiGeneral = sumMultiGeneralRaw - sumMultiSpecial;
+            if (netMultiGeneral < 0) netMultiGeneral = 0;
+
             const totalBank = sumCard + sumMobi + sumYesser + sumEdfaq;
-            const grandTotal = totalCash + totalBank;
+            const totalMulti = netMultiGeneral + sumMultiSpecial;
+            const grandTotal = totalCash + totalBank + totalMulti;
 
             currentBankBreakdown = { 
                 mobi: sumMobi, 
@@ -563,13 +619,20 @@
                 edfaq: sumEdfaq 
             };
 
+            currentMultiBreakdown = {
+                multiSpecial: sumMultiSpecial,
+                multiGeneral: netMultiGeneral
+            };
+
             document.getElementById('cashAmount').innerText = totalCash.toFixed(2) + " د.ل";
             document.getElementById('bankAmount').innerText = totalBank.toFixed(2) + " د.ل";
+            document.getElementById('multiAmount').innerText = totalMulti.toFixed(2) + " د.ل";
             document.getElementById('totalAmount').innerText = grandTotal.toFixed(2) + " د.ل";
 
             document.getElementById('lastSyncTime').innerText = `آخر تحديث للبيانات: ${latestFormattedDateTime}`;
 
             if (document.getElementById('bankModal').style.display === 'block') toggleBankModal(true);
+            if (document.getElementById('multiModal').style.display === 'block') toggleMultiModal(true);
 
         } catch (err) {
             loadingDiv.style.display = 'none';
