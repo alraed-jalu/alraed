@@ -268,7 +268,7 @@
         .modal-box {
             width: 100%;
             max-width: 520px;
-            max-height: 90vh;
+            max-height: 92vh;
             overflow-y: auto;
             background: #ffffff;
             border-radius: 22px;
@@ -485,58 +485,50 @@
             cursor: pointer;
         }
 
-        /* نافذة الباركود المنبثقة الكبيرة */
+        /* نافذة الباركود المنبثقة: أكبر مساحة للباركود وتصغير تبويب الإجمالي */
         .barcode-popup-wrap {
             background: #ffffff;
             border: 2px solid #cbd5e1;
             border-radius: 16px;
-            padding: 18px 12px;
+            padding: 14px 10px;
             text-align: center;
             overflow-x: auto;
-            margin-bottom: 16px;
+            margin-bottom: 10px;
+            min-height: 195px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
         }
 
         #barcodeCanvas {
-            max-width: 100%;
-            height: auto;
+            height: 165px;
+            width: auto;
             display: block;
-            margin: 0 auto 12px auto;
+            margin: 0 auto;
         }
 
-        .barcode-code-big {
-            background: #f1f5f9;
-            border: 1.5px solid #94a3b8;
-            border-radius: 12px;
-            padding: 12px;
-            font-family: monospace;
-            font-size: 18px;
-            font-weight: bold;
-            color: #0f172a;
-            word-break: break-all;
-            direction: ltr;
-            text-align: center;
-        }
-
-        .invoice-amount-big {
+        .invoice-amount-compact {
             background: var(--success-soft);
-            border: 2px solid #4ade80;
-            border-radius: 16px;
-            padding: 16px;
-            text-align: center;
+            border: 1.5px solid #4ade80;
+            border-radius: 12px;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
         }
 
         .invoice-amount-label {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             color: #14532d;
-            margin-bottom: 6px;
         }
 
         .invoice-amount-value {
-            font-size: 34px;
+            font-size: 20px;
             font-weight: bold;
             color: #15803d;
-            line-height: 1.2;
+            line-height: 1.1;
         }
 
         .modal-footer-actions {
@@ -573,9 +565,6 @@
             }
             .modal-price-value {
                 font-size: 29px;
-            }
-            .invoice-amount-value {
-                font-size: 30px;
             }
         }
     </style>
@@ -686,12 +675,11 @@
         </div>
         <div class="modal-body">
             <div class="barcode-popup-wrap">
-                <canvas id="barcodeCanvas" width="440" height="145"></canvas>
-                <div id="barcodePopupCode" class="barcode-code-big"></div>
+                <canvas id="barcodeCanvas" width="440" height="165"></canvas>
             </div>
-            <div class="invoice-amount-big">
-                <div class="invoice-amount-label">قيمة الفاتورة</div>
-                <div id="barcodePopupTotal" class="invoice-amount-value">0 د.ل</div>
+            <div class="invoice-amount-compact">
+                <span class="invoice-amount-label">قيمة الفاتورة</span>
+                <span id="barcodePopupTotal" class="invoice-amount-value">0 د.ل</span>
             </div>
         </div>
         <div class="modal-footer-actions">
@@ -884,43 +872,38 @@
         for (var i = 0; i < text.length; i++) {
             var code = text.charCodeAt(i);
             for (var b = 7; b >= 0; b--) {
-                bits += ((code >> b) & 1) ? "1110" : "110";
+                bits += ((code >> b) & 1) ? "1111" : "110";
             }
             bits += "00";
         }
         bits += "10111011101011101";
 
-        var barUnit = bits.length > 420 ? 2 : 3;
-        var totalWidth = bits.length * barUnit + 32;
+        // إبقاء سماكة الخطوط واضحة دائماً مع إتاحة السحب الأفقي عند كثرة الأصناف
+        var barUnit = 3;
+        var totalWidth = Math.max(440, bits.length * barUnit + 36);
         canvas.width = totalWidth;
-        canvas.height = 140;
+        canvas.height = 165;
 
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         ctx.fillStyle = "#000000";
-        var x = 16;
+        var x = 18;
         for (var k = 0; k < bits.length; k++) {
             if (bits.charAt(k) === "1") {
-                ctx.fillRect(x, 12, barUnit, 96);
+                ctx.fillRect(x, 12, barUnit, 141);
             }
             x += barUnit;
         }
-
-        ctx.fillStyle = "#0f172a";
-        ctx.font = "bold 16px monospace";
-        ctx.textAlign = "center";
-        ctx.fillText(text, canvas.width / 2, 128);
     }
 
     function openBarcodePopup() {
         try {
             var modal = document.getElementById("barcodeModal");
-            var codeEl = document.getElementById("barcodePopupCode");
             var totalEl = document.getElementById("barcodePopupTotal");
             var canvas = document.getElementById("barcodeCanvas");
 
-            if (!modal || !codeEl || !totalEl) return;
+            if (!modal || !totalEl) return;
 
             var totalAmount = getCartTotalAmount();
             totalEl.textContent = totalAmount + " د.ل";
@@ -928,9 +911,11 @@
             if (shoppingCart.length === 0) {
                 if (canvas && canvas.getContext) {
                     var ctx = canvas.getContext("2d");
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    canvas.width = 440;
+                    canvas.height = 165;
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
-                codeEl.textContent = "EMPTY";
             } else {
                 var cleanParts = [];
                 for (var i = 0; i < shoppingCart.length; i++) {
@@ -938,7 +923,6 @@
                     cleanParts.push((safeCode || "ITEM") + "*" + shoppingCart[i].qty);
                 }
                 var payloadString = "CART-" + cleanParts.join("-");
-                codeEl.textContent = payloadString;
                 drawLargeBarcode(payloadString);
             }
 
