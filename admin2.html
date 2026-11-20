@@ -6,6 +6,8 @@
     <title>استعلام الأسعار - سنتر العائلة السعيدة</title>
     <!-- مكتبة قراءة الباركود بالكاميرا -->
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- مكتبة توليد الباركود الخطي (CODE128) -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <style>
         :root {
             --bg-gradient: linear-gradient(135deg, #eef2f7 0%, #dbe4f0 100%);
@@ -17,6 +19,8 @@
             --success-green: #15803d;
             --success-bright: #16a34a;
             --success-soft: linear-gradient(135deg, #ecfdf5 0%, #bbf7d0 100%);
+            --cart-orange: #ea580c;
+            --cart-orange-dark: #c2410c;
             --border-color: #cbd5e1;
             --text-main: #0f172a;
             --text-muted: #64748b;
@@ -33,7 +37,7 @@
             background: var(--bg-gradient);
             min-height: 100vh;
             margin: 0;
-            padding: 18px 14px;
+            padding: 18px 14px 32px;
             color: var(--text-main);
         }
 
@@ -65,7 +69,6 @@
             gap: 8px;
         }
 
-        /* شارة وأيقونة اسم المحل مكبرة وواضحة */
         .store-badge {
             display: inline-flex;
             align-items: center;
@@ -89,6 +92,57 @@
 
         .content-body {
             padding: 20px;
+        }
+
+        /* شريط / خانة سلة التسوق */
+        .cart-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+            border: 2px solid #fdba74;
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 18px;
+        }
+
+        .cart-summary-text {
+            font-size: 15px;
+            font-weight: bold;
+            color: #9a3412;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .cart-count-pill {
+            background: var(--cart-orange);
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 2px 10px;
+            border-radius: 999px;
+        }
+
+        .btn-open-cart {
+            background: linear-gradient(135deg, var(--cart-orange), #f97316);
+            color: #ffffff;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 11px;
+            font-size: 14.5px;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .btn-open-cart:hover {
+            background: linear-gradient(135deg, var(--cart-orange-dark), var(--cart-orange));
+            transform: translateY(-1px);
         }
 
         .form-group {
@@ -178,10 +232,6 @@
             transform: translateY(-1px);
         }
 
-        .btn-cam:active {
-            transform: scale(0.98);
-        }
-
         .btn-search-inline {
             background: linear-gradient(135deg, #16a34a, #22c55e);
             color: #ffffff;
@@ -199,10 +249,6 @@
         .btn-search-inline:hover {
             background: linear-gradient(135deg, #15803d, #16a34a);
             transform: translateY(-1px);
-        }
-
-        .btn-search-inline:active {
-            transform: scale(0.98);
         }
 
         #reader {
@@ -238,7 +284,7 @@
             border: 1px solid #fecaca;
         }
 
-        /* النافذة المنبثقة (Modal) لعرض نتيجة البحث */
+        /* النوافذ المنبثقة (Modal) */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -257,8 +303,8 @@
 
         .modal-box {
             width: 100%;
-            max-width: 480px;
-            max-height: 88vh;
+            max-width: 520px;
+            max-height: 90vh;
             overflow-y: auto;
             background: #ffffff;
             border-radius: 22px;
@@ -320,7 +366,7 @@
         }
 
         .modal-body {
-            padding: 20px 18px;
+            padding: 18px;
         }
 
         .modal-result-card {
@@ -328,7 +374,7 @@
             border: 2px solid #cbd5e1;
             border-top: 6px solid var(--primary-blue);
             border-radius: 18px;
-            padding: 20px 16px;
+            padding: 18px 16px;
             margin-bottom: 14px;
             box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
             text-align: center;
@@ -339,36 +385,220 @@
         }
 
         .modal-item-name {
-            font-size: 23px;
+            font-size: 22px;
             font-weight: bold;
             color: #0f172a;
             line-height: 1.5;
-            margin-bottom: 18px;
-            padding-bottom: 14px;
+            margin-bottom: 14px;
+            padding-bottom: 12px;
             border-bottom: 2px dashed #cbd5e1;
         }
 
         .modal-price-panel {
             background: var(--success-soft);
             border: 2px solid #4ade80;
-            border-radius: 16px;
-            padding: 16px;
-            box-shadow: 0 8px 20px rgba(22, 163, 74, 0.16);
+            border-radius: 15px;
+            padding: 14px;
+            margin-bottom: 14px;
+            box-shadow: 0 6px 16px rgba(22, 163, 74, 0.14);
         }
 
         .modal-price-caption {
-            font-size: 17px;
+            font-size: 16px;
             font-weight: bold;
             color: #14532d;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         .modal-price-value {
-            font-size: 34px;
+            font-size: 32px;
             font-weight: bold;
             color: #15803d;
             line-height: 1.15;
-            letter-spacing: 0.4px;
+        }
+
+        .btn-add-cart {
+            width: 100%;
+            background: linear-gradient(135deg, var(--cart-orange), #f97316);
+            color: #ffffff;
+            border: none;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 14px rgba(234, 88, 12, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .btn-add-cart:hover {
+            background: linear-gradient(135deg, var(--cart-orange-dark), var(--cart-orange));
+            transform: translateY(-1px);
+        }
+
+        /* عناصر سلة التسوق وتوليد الباركود */
+        .cart-item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 13px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .cart-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .cart-item-title {
+            font-size: 15.5px;
+            font-weight: bold;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        .cart-item-sub {
+            font-size: 13.5px;
+            color: #15803d;
+            font-weight: bold;
+        }
+
+        .qty-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .qty-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #0f172a;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .qty-btn:hover {
+            background: #e2e8f0;
+        }
+
+        .qty-num {
+            min-width: 24px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 15.5px;
+        }
+
+        .btn-remove-item {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .cart-total-box {
+            background: var(--success-soft);
+            border: 2px solid #86efac;
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin: 14px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 17px;
+            font-weight: bold;
+            color: #14532d;
+        }
+
+        .cart-actions-grid {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .btn-generate-code {
+            flex: 2;
+            background: linear-gradient(135deg, #16a34a, #22c55e);
+            color: #ffffff;
+            border: none;
+            padding: 13px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(22, 163, 74, 0.25);
+        }
+
+        .btn-clear-cart {
+            flex: 1;
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1.5px solid #fecaca;
+            padding: 13px 10px;
+            border-radius: 12px;
+            font-size: 14.5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .barcode-output-box {
+            margin-top: 16px;
+            background: #ffffff;
+            border: 2px solid #1b6ca8;
+            border-radius: 16px;
+            padding: 16px 12px;
+            text-align: center;
+        }
+
+        .barcode-output-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #162447;
+            margin-bottom: 12px;
+        }
+
+        .barcode-canvas-wrap {
+            background: #ffffff;
+            padding: 12px 8px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            overflow-x: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        #linearBarcodeSvg {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .code-payload-text {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: bold;
+            color: #0f172a;
+            word-break: break-all;
+            direction: ltr;
+            text-align: center;
         }
 
         .modal-footer-actions {
@@ -386,12 +616,6 @@
             border-radius: 13px;
             cursor: pointer;
             box-shadow: 0 6px 16px rgba(22, 36, 71, 0.24);
-            transition: all 0.2s ease;
-        }
-
-        .btn-modal-close:hover {
-            filter: brightness(1.08);
-            transform: translateY(-1px);
         }
 
         @media (max-width: 480px) {
@@ -408,10 +632,10 @@
                 font-size: 15px;
             }
             .modal-item-name {
-                font-size: 21px;
+                font-size: 20px;
             }
             .modal-price-value {
-                font-size: 30px;
+                font-size: 29px;
             }
         }
     </style>
@@ -428,6 +652,16 @@
     </div>
 
     <div class="content-body">
+        <!-- خانة وزر سلة التسوق للزبائن -->
+        <div class="cart-bar">
+            <div class="cart-summary-text">
+                <span>🛒 سلة التسوق:</span>
+                <span id="cartBadgeCount" class="cart-count-pill">0 صنف</span>
+                <span id="cartBadgeTotal" style="font-size: 14px; color: #15803d;">(0 د.ل)</span>
+            </div>
+            <button type="button" id="openCartBtn" class="btn-open-cart">عرض السلة والباركود</button>
+        </div>
+
         <!-- المربع الأول: البحث باسم المادة أو رقم الصنف + زر البحث بجانبه -->
         <div class="form-group">
             <label for="nameOrIdInput">1. البحث باسم المادة أو رقم الصنف</label>
@@ -459,7 +693,7 @@
     </div>
 </div>
 
-<!-- النافذة المنبثقة لعرض الصنف والسعر -->
+<!-- النافذة المنبثقة لعرض الصنف والسعر وإضافته للسلة -->
 <div id="resultModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalStoreTitle">
     <div class="modal-box" onclick="event.stopPropagation()">
         <div class="modal-top-bar">
@@ -476,6 +710,40 @@
     </div>
 </div>
 
+<!-- النافذة المنبثقة لسلة التسوق وتوليد باركود الكاشير -->
+<div id="cartModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="cartModalTitle">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-top-bar">
+            <div id="cartModalTitle" class="modal-store-title">
+                <span>🛒</span>
+                <span>سلة التسوق - سنتر العائلة السعيدة</span>
+            </div>
+            <button type="button" id="closeCartTopBtn" class="modal-close-icon" title="إغلاق">×</button>
+        </div>
+        <div class="modal-body">
+            <div id="cartItemsList"></div>
+            <div class="cart-total-box">
+                <span>الإجمالي التقريبي:</span>
+                <span id="cartModalTotal">0 د.ل</span>
+            </div>
+            <div class="cart-actions-grid">
+                <button type="button" id="generateCartBarcodeBtn" class="btn-generate-code">توليد باركود الكاشير 🧾</button>
+                <button type="button" id="clearCartBtn" class="btn-clear-cart">تفريغ</button>
+            </div>
+            <div id="generatedBarcodeSection" class="barcode-output-box" style="display: none;">
+                <div class="barcode-output-title">امسح الباركود الخطي (CODE128) من جهاز موظف الكاشير</div>
+                <div class="barcode-canvas-wrap">
+                    <svg id="linearBarcodeSvg"></svg>
+                </div>
+                <div id="codePayloadText" class="code-payload-text"></div>
+            </div>
+        </div>
+        <div class="modal-footer-actions">
+            <button type="button" id="closeCartBottomBtn" class="btn-modal-close">إغلاق السلة</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
@@ -483,14 +751,186 @@
 
     let html5QrCode = null;
     let cameraIsRunning = false;
+    let lastSearchItems = [];
+    let shoppingCart = [];
+
+    function getItemKey(item, index = 0) {
+        if (item.barcode && String(item.barcode).trim() !== "") return String(item.barcode).trim();
+        if (item.item_id !== undefined && item.item_id !== null && String(item.item_id).trim() !== "") return String(item.item_id).trim();
+        return `${item.item_name || 'item'}_${index}`;
+    }
+
+    function addItemToCartByIndex(index) {
+        const item = lastSearchItems[index];
+        if (!item) return;
+
+        const key = getItemKey(item, index);
+        const priceNum = Number(item.sale_price) || 0;
+        const existing = shoppingCart.find(entry => entry.key === key);
+
+        if (existing) {
+            existing.qty += 1;
+        } else {
+            shoppingCart.push({
+                key: key,
+                code: String(item.barcode || item.item_id || key).trim(),
+                name: item.item_name || 'بدون اسم',
+                price: priceNum,
+                qty: 1
+            });
+        }
+
+        updateCartSummaryBadge();
+        closeResultModal();
+        openCartModal();
+    }
+
+    function changeCartQty(key, delta) {
+        const idx = shoppingCart.findIndex(entry => entry.key === key);
+        if (idx === -1) return;
+
+        shoppingCart[idx].qty += delta;
+        if (shoppingCart[idx].qty <= 0) {
+            shoppingCart.splice(idx, 1);
+        }
+
+        hideGeneratedBarcode();
+        updateCartSummaryBadge();
+        renderCartModal();
+    }
+
+    function removeCartItem(key) {
+        shoppingCart = shoppingCart.filter(entry => entry.key !== key);
+        hideGeneratedBarcode();
+        updateCartSummaryBadge();
+        renderCartModal();
+    }
+
+    function clearCart() {
+        shoppingCart = [];
+        hideGeneratedBarcode();
+        updateCartSummaryBadge();
+        renderCartModal();
+    }
+
+    function hideGeneratedBarcode() {
+        const sec = document.getElementById('generatedBarcodeSection');
+        const svgEl = document.getElementById('linearBarcodeSvg');
+        const payloadEl = document.getElementById('codePayloadText');
+        if (sec) sec.style.display = 'none';
+        if (svgEl) svgEl.innerHTML = "";
+        if (payloadEl) payloadEl.textContent = "";
+    }
+
+    function updateCartSummaryBadge() {
+        const countEl = document.getElementById('cartBadgeCount');
+        const totalEl = document.getElementById('cartBadgeTotal');
+        const totalQty = shoppingCart.reduce((sum, item) => sum + item.qty, 0);
+        const totalAmount = shoppingCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+        if (countEl) countEl.textContent = `${totalQty} صنف`;
+        if (totalEl) totalEl.textContent = `(${totalAmount} د.ل)`;
+    }
+
+    function renderCartModal() {
+        const listEl = document.getElementById('cartItemsList');
+        const totalEl = document.getElementById('cartModalTotal');
+        if (!listEl || !totalEl) return;
+
+        const totalAmount = shoppingCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        totalEl.textContent = `${totalAmount} د.ل`;
+
+        if (shoppingCart.length === 0) {
+            listEl.innerHTML = "<div class='status-msg status-loading'>🛒 السلة فارغة حالياً. ابحث عن أي صنف وأضفه إلى السلة.</div>";
+            return;
+        }
+
+        let html = "";
+        shoppingCart.forEach(item => {
+            const lineTotal = item.price * item.qty;
+            html += `
+                <div class="cart-item-row">
+                    <div class="cart-item-info">
+                        <div class="cart-item-title">📦 ${item.name}</div>
+                        <div class="cart-item-sub">الرمز: ${item.code} | المجموع: ${lineTotal} د.ل</div>
+                    </div>
+                    <div class="qty-controls">
+                        <button type="button" class="qty-btn" onclick="changeCartQty('${item.key.replace(/'/g, "\\'")}', 1)">+</button>
+                        <span class="qty-num">${item.qty}</span>
+                        <button type="button" class="qty-btn" onclick="changeCartQty('${item.key.replace(/'/g, "\\'")}', -1)">-</button>
+                        <button type="button" class="btn-remove-item" onclick="removeCartItem('${item.key.replace(/'/g, "\\'")}')">×</button>
+                    </div>
+                </div>
+            `;
+        });
+
+        listEl.innerHTML = html;
+    }
+
+    function openCartModal() {
+        const modal = document.getElementById('cartModal');
+        renderCartModal();
+        if (modal) modal.classList.add('active');
+    }
+
+    function closeCartModal() {
+        const modal = document.getElementById('cartModal');
+        if (modal) modal.classList.remove('active');
+    }
+
+    function generateCartBarcode() {
+        const sec = document.getElementById('generatedBarcodeSection');
+        const svgEl = document.getElementById('linearBarcodeSvg');
+        const payloadEl = document.getElementById('codePayloadText');
+
+        if (!sec || !svgEl || !payloadEl) return;
+
+        if (shoppingCart.length === 0) {
+            sec.style.display = 'block';
+            svgEl.innerHTML = "";
+            payloadEl.textContent = "لا توجد مواد في السلة لتوليد الباركود.";
+            return;
+        }
+
+        // صيغة قياسية متوافقة مع قارئات الباركود الخطية (ASCII فقط)
+        const cleanParts = shoppingCart.map(item => {
+            const safeCode = String(item.code).replace(/[^A-Za-z0-9_-]/g, "");
+            return `${safeCode || "ITEM"}*${item.qty}`;
+        });
+        const payloadString = `CART-${cleanParts.join("-")}`;
+
+        sec.style.display = 'block';
+        svgEl.innerHTML = "";
+        payloadEl.textContent = payloadString;
+
+        if (typeof JsBarcode !== "undefined") {
+            try {
+                const barWidth = payloadString.length > 24 ? 1.6 : 2.2;
+                JsBarcode("#linearBarcodeSvg", payloadString, {
+                    format: "CODE128",
+                    lineColor: "#000000",
+                    background: "#ffffff",
+                    width: barWidth,
+                    height: 85,
+                    displayValue: true,
+                    fontSize: 15,
+                    margin: 10
+                });
+            } catch (err) {
+                console.error(err);
+                svgEl.innerHTML = "";
+            }
+        }
+    }
 
     function openResultModal(items) {
         const modal = document.getElementById('resultModal');
         const modalBody = document.getElementById('modalBody');
         if (!modal || !modalBody) return;
 
+        lastSearchItems = items;
         let html = "";
-        items.forEach(item => {
+        items.forEach((item, index) => {
             const itemName = item.item_name || 'بدون اسم';
             const salePrice = (item.sale_price !== undefined && item.sale_price !== null) ? item.sale_price : 0;
             html += `
@@ -500,6 +940,7 @@
                         <div class="modal-price-caption">سعر البيع</div>
                         <div class="modal-price-value">${salePrice} د.ل</div>
                     </div>
+                    <button type="button" class="btn-add-cart" onclick="addItemToCartByIndex(${index})">إضافة إلى سلة التسوق 🛒</button>
                 </div>
             `;
         });
@@ -592,168 +1033,4 @@
                         const barcodeInput = document.getElementById('barcodeInput');
                         const nameInput = document.getElementById('nameOrIdInput');
                         if (barcodeInput) {
-                            barcodeInput.value = cleanCode;
-                            toggleClearButton('barcodeInput', 'clearBarcodeBtn');
-                        }
-                        if (nameInput) {
-                            nameInput.value = "";
-                            toggleClearButton('nameOrIdInput', 'clearNameBtn');
-                        }
-                        await stopCamera();
-                        searchItem('barcode');
-                    }
-                );
-                cameraIsRunning = true;
-            } catch (err) {
-                console.error(err);
-                await stopCamera();
-                resultsDiv.innerHTML = "<div class='status-msg status-error'>⚠️ تعذر تشغيل الكاميرا، تأكد من منح صلاحية الكاميرا للمتصفح.</div>";
-            }
-        } else {
-            await stopCamera();
-        }
-    }
-
-    async function searchItem(preferredField = null) {
-        const nameOrIdInput = document.getElementById('nameOrIdInput');
-        const barcodeInput = document.getElementById('barcodeInput');
-        const resultsDiv = document.getElementById('results');
-
-        const nameOrIdVal = nameOrIdInput ? nameOrIdInput.value.trim() : "";
-        const barcodeVal = barcodeInput ? barcodeInput.value.trim() : "";
-
-        let activeQuery = "";
-        let searchMode = "";
-
-        if (preferredField === 'barcode') {
-            activeQuery = barcodeVal;
-            searchMode = "barcode";
-        } else if (preferredField === 'nameOrId') {
-            activeQuery = nameOrIdVal;
-            searchMode = "nameOrId";
-        } else if (nameOrIdVal) {
-            activeQuery = nameOrIdVal;
-            searchMode = "nameOrId";
-        } else if (barcodeVal) {
-            activeQuery = barcodeVal;
-            searchMode = "barcode";
-        }
-
-        if (!activeQuery) {
-            resultsDiv.innerHTML = "<div class='status-msg status-error'>⚠️ الرجاء إدخال اسم المادة، رقم الصنف، أو الباركود أولاً.</div>";
-            return;
-        }
-
-        resultsDiv.innerHTML = "<div class='status-msg status-loading'>⏳ جاري البحث في قائمة الأسعار...</div>";
-
-        try {
-            let apiUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&select=*`;
-
-            if (searchMode === "barcode") {
-                apiUrl += `&barcode=eq.${encodeURIComponent(activeQuery)}`;
-            } else {
-                if (!isNaN(activeQuery)) {
-                    apiUrl += `&or=(item_id.eq.${encodeURIComponent(activeQuery)},barcode.eq.${encodeURIComponent(activeQuery)})`;
-                } else {
-                    const safeName = activeQuery.replace(/[%_*]/g, "");
-                    apiUrl += `&item_name=ilike.*${encodeURIComponent(safeName)}*`;
-                }
-            }
-
-            const response = await fetch(apiUrl, {
-                method: 'GET',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                resultsDiv.innerHTML = `<div class='status-msg status-error'>❌ خطأ في الاتصال بالسحابة: ${response.statusText}</div>`;
-                return;
-            }
-
-            const data = await response.json();
-
-            if (data && data.length > 0) {
-                resultsDiv.innerHTML = "";
-                openResultModal(data);
-            } else {
-                resultsDiv.innerHTML = `<div class='status-msg status-error'>⚠️ لم يتم العثور على أي صنف مطابق في سنتر العائلة السعيدة.</div>`;
-            }
-        } catch (err) {
-            resultsDiv.innerHTML = `<div class='status-msg status-error'>❌ خطأ في النظام: ${err.message}</div>`;
-        }
-    }
-
-    document.addEventListener("DOMContentLoaded", function () {
-        const nameInput = document.getElementById('nameOrIdInput');
-        const barcodeInput = document.getElementById('barcodeInput');
-        const clearNameBtn = document.getElementById('clearNameBtn');
-        const clearBarcodeBtn = document.getElementById('clearBarcodeBtn');
-        const cameraBtn = document.getElementById('cameraBtn');
-        const searchNameBtn = document.getElementById('searchNameBtn');
-        const searchBarcodeBtn = document.getElementById('searchBarcodeBtn');
-        const resultModal = document.getElementById('resultModal');
-        const closeModalTopBtn = document.getElementById('closeModalTopBtn');
-        const closeModalBottomBtn = document.getElementById('closeModalBottomBtn');
-
-        if (nameInput) {
-            nameInput.addEventListener('input', () => toggleClearButton('nameOrIdInput', 'clearNameBtn'));
-            nameInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') searchItem('nameOrId');
-            });
-            toggleClearButton('nameOrIdInput', 'clearNameBtn');
-        }
-
-        if (barcodeInput) {
-            barcodeInput.addEventListener('input', () => toggleClearButton('barcodeInput', 'clearBarcodeBtn'));
-            barcodeInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') searchItem('barcode');
-            });
-            toggleClearButton('barcodeInput', 'clearBarcodeBtn');
-        }
-
-        if (clearNameBtn) {
-            clearNameBtn.addEventListener('click', () => clearField('nameOrIdInput', 'clearNameBtn'));
-        }
-
-        if (clearBarcodeBtn) {
-            clearBarcodeBtn.addEventListener('click', () => clearField('barcodeInput', 'clearBarcodeBtn'));
-        }
-
-        if (cameraBtn) {
-            cameraBtn.addEventListener('click', toggleCamera);
-        }
-
-        if (searchNameBtn) {
-            searchNameBtn.addEventListener('click', () => searchItem('nameOrId'));
-        }
-
-        if (searchBarcodeBtn) {
-            searchBarcodeBtn.addEventListener('click', () => searchItem('barcode'));
-        }
-
-        if (closeModalTopBtn) {
-            closeModalTopBtn.addEventListener('click', closeResultModal);
-        }
-
-        if (closeModalBottomBtn) {
-            closeModalBottomBtn.addEventListener('click', closeResultModal);
-        }
-
-        if (resultModal) {
-            resultModal.addEventListener('click', closeResultModal);
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeResultModal();
-            }
-        });
-    });
-</script>
-
-</body>
-</html>
+                            barcode
