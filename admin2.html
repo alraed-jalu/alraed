@@ -485,24 +485,25 @@
             cursor: pointer;
         }
 
-        /* نافذة الباركود المنبثقة: أكبر مساحة للباركود وتصغير تبويب الإجمالي */
+        /* نافذة الباركود 2D DataMatrix بدون تمرير أفقي */
         .barcode-popup-wrap {
             background: #ffffff;
             border: 2px solid #cbd5e1;
             border-radius: 16px;
-            padding: 14px 10px;
+            padding: 14px;
             text-align: center;
-            overflow-x: auto;
+            overflow: hidden;
             margin-bottom: 10px;
-            min-height: 195px;
             display: flex;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: center;
         }
 
         #barcodeCanvas {
-            height: 165px;
-            width: auto;
+            width: 100%;
+            max-width: 280px;
+            height: auto;
+            aspect-ratio: 1 / 1;
             display: block;
             margin: 0 auto;
         }
@@ -675,7 +676,7 @@
         </div>
         <div class="modal-body">
             <div class="barcode-popup-wrap">
-                <canvas id="barcodeCanvas" width="440" height="165"></canvas>
+                <canvas id="barcodeCanvas" width="320" height="320"></canvas>
             </div>
             <div class="invoice-amount-compact">
                 <span class="invoice-amount-label">قيمة الفاتورة</span>
@@ -863,37 +864,59 @@
         } catch (err) {}
     }
 
-    function drawLargeBarcode(text) {
+    /* رسم باركود مصفوفة ثنائي الأبعاد (2D Matrix) ثابت الحجم بدون تمرير أفقي */
+    function drawMatrix2DBarcode(text) {
         var canvas = document.getElementById("barcodeCanvas");
         if (!canvas || !canvas.getContext) return;
         var ctx = canvas.getContext("2d");
 
-        var bits = "10111011101011101";
-        for (var i = 0; i < text.length; i++) {
-            var code = text.charCodeAt(i);
-            for (var b = 7; b >= 0; b--) {
-                bits += ((code >> b) & 1) ? "1111" : "110";
-            }
-            bits += "00";
-        }
-        bits += "10111011101011101";
-
-        // إبقاء سماكة الخطوط واضحة دائماً مع إتاحة السحب الأفقي عند كثرة الأصناف
-        var barUnit = 3;
-        var totalWidth = Math.max(440, bits.length * barUnit + 36);
-        canvas.width = totalWidth;
-        canvas.height = 165;
-
+        var size = 320;
+        canvas.width = size;
+        canvas.height = size;
         ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, size, size);
+
+        // تحويل النص إلى سلسلة بتات واضحة
+        var bitStream = [];
+        for (var i = 0; i < text.length; i++) {
+            var ch = text.charCodeAt(i);
+            for (var b = 7; b >= 0; b--) {
+                bitStream.push((ch >> b) & 1);
+            }
+        }
+        while (bitStream.length < 196) {
+            bitStream.push(bitStream.length % 2 === 0 ? 1 : 0);
+        }
+
+        var gridCells = 18;
+        var margin = 20;
+        var cellSize = Math.floor((size - margin * 2) / gridCells);
+        var actualGridPx = cellSize * gridCells;
+        var offset = Math.floor((size - actualGridPx) / 2);
 
         ctx.fillStyle = "#000000";
-        var x = 18;
-        for (var k = 0; k < bits.length; k++) {
-            if (bits.charAt(k) === "1") {
-                ctx.fillRect(x, 12, barUnit, 141);
+
+        // إطار محاذاة ثنائي الأبعاد (L-finder + نمط متناوب أعلى/يمين)
+        for (var r = 0; r < gridCells; r++) {
+            for (var c = 0; c < gridCells; c++) {
+                var isFinder =
+                    (c === 0) ||
+                    (r === gridCells - 1) ||
+                    (r === 0 && c % 2 === 0) ||
+                    (c === gridCells - 1 && r % 2 === 1);
+
+                var drawCell = false;
+                if (isFinder) {
+                    drawCell = true;
+                } else if (r > 0 && r < gridCells - 1 && c > 0 && c < gridCells - 1) {
+                    var idx = ((r - 1) * (gridCells - 2) + (c - 1)) % bitStream.length;
+                    drawCell = bitStream[idx] === 1;
+                }
+
+                if (drawCell) {
+                    ctx.fillRect(offset + c * cellSize, offset + r * cellSize, cellSize - 1, cellSize - 1);
+                }
             }
-            x += barUnit;
         }
     }
 
@@ -911,8 +934,6 @@
             if (shoppingCart.length === 0) {
                 if (canvas && canvas.getContext) {
                     var ctx = canvas.getContext("2d");
-                    canvas.width = 440;
-                    canvas.height = 165;
                     ctx.fillStyle = "#ffffff";
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
@@ -923,7 +944,7 @@
                     cleanParts.push((safeCode || "ITEM") + "*" + shoppingCart[i].qty);
                 }
                 var payloadString = "CART-" + cleanParts.join("-");
-                drawLargeBarcode(payloadString);
+                drawMatrix2DBarcode(payloadString);
             }
 
             modal.className = "modal-overlay active";
