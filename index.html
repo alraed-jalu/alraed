@@ -16,7 +16,7 @@
             --primary-blue-hover: #145382;
             --success-green: #15803d;
             --success-bright: #16a34a;
-            --success-soft: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            --success-soft: linear-gradient(135deg, #ecfdf5 0%, #bbf7d0 100%);
             --border-color: #cbd5e1;
             --text-main: #0f172a;
             --text-muted: #64748b;
@@ -216,84 +216,6 @@
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
         }
 
-        .results-count {
-            margin-top: 22px;
-            margin-bottom: 12px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #16325b;
-            background: linear-gradient(90deg, #eff6ff 0%, #dbeafe 100%);
-            border-right: 5px solid var(--primary-blue);
-            padding: 11px 15px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 3px 10px rgba(27, 108, 168, 0.08);
-        }
-
-        .item-card {
-            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-            border: 1px solid #dbe4ee;
-            border-right: 6px solid var(--success-bright);
-            padding: 18px 16px;
-            border-radius: 16px;
-            margin-top: 14px;
-            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            animation: cardAppear 0.28s ease-out;
-        }
-
-        .item-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
-        }
-
-        @keyframes cardAppear {
-            from {
-                opacity: 0;
-                transform: translateY(8px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .item-name {
-            font-size: 21px;
-            color: var(--text-main);
-            font-weight: bold;
-            margin-bottom: 14px;
-            line-height: 1.5;
-            padding-bottom: 10px;
-            border-bottom: 1px dashed #cbd5e1;
-        }
-
-        .price-box {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            background: var(--success-soft);
-            border: 2px solid #86efac;
-            padding: 14px 16px;
-            border-radius: 13px;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-        }
-
-        .price-label {
-            font-size: 18px;
-            font-weight: bold;
-            color: #14532d;
-        }
-
-        .price {
-            color: var(--success-green);
-            font-weight: bold;
-            font-size: 28px;
-            line-height: 1.1;
-            letter-spacing: 0.3px;
-        }
-
         .status-msg {
             margin-top: 18px;
             padding: 14px 16px;
@@ -301,7 +223,7 @@
             text-align: center;
             font-weight: bold;
             font-size: 16px;
-            animation: cardAppear 0.22s ease-out;
+            animation: modalPop 0.22s ease-out;
         }
 
         .status-loading {
@@ -314,6 +236,162 @@
             background: var(--danger-bg);
             color: var(--danger-text);
             border: 1px solid #fecaca;
+        }
+
+        /* النافذة المنبثقة (Modal) لعرض نتيجة البحث */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 9999;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            width: 100%;
+            max-width: 480px;
+            max-height: 88vh;
+            overflow-y: auto;
+            background: #ffffff;
+            border-radius: 22px;
+            box-shadow: 0 24px 55px rgba(15, 23, 42, 0.35);
+            border: 2px solid #e2e8f0;
+            animation: modalPop 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-x: hidden;
+        }
+
+        @keyframes modalPop {
+            from {
+                opacity: 0;
+                transform: scale(0.92) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-top-bar {
+            background: var(--header-gradient);
+            color: #ffffff;
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .modal-store-title {
+            font-size: 19px;
+            font-weight: bold;
+            color: #fff3c4;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-close-icon {
+            background: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.18s ease;
+        }
+
+        .modal-close-icon:hover {
+            background: rgba(239, 68, 68, 0.85);
+            border-color: transparent;
+        }
+
+        .modal-body {
+            padding: 20px 18px;
+        }
+
+        .modal-result-card {
+            background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+            border: 2px solid #cbd5e1;
+            border-top: 6px solid var(--primary-blue);
+            border-radius: 18px;
+            padding: 20px 16px;
+            margin-bottom: 14px;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+            text-align: center;
+        }
+
+        .modal-result-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-item-name {
+            font-size: 23px;
+            font-weight: bold;
+            color: #0f172a;
+            line-height: 1.5;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 2px dashed #cbd5e1;
+        }
+
+        .modal-price-panel {
+            background: var(--success-soft);
+            border: 2px solid #4ade80;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 8px 20px rgba(22, 163, 74, 0.16);
+        }
+
+        .modal-price-caption {
+            font-size: 17px;
+            font-weight: bold;
+            color: #14532d;
+            margin-bottom: 6px;
+        }
+
+        .modal-price-value {
+            font-size: 34px;
+            font-weight: bold;
+            color: #15803d;
+            line-height: 1.15;
+            letter-spacing: 0.4px;
+        }
+
+        .modal-footer-actions {
+            padding: 0 18px 18px 18px;
+        }
+
+        .btn-modal-close {
+            width: 100%;
+            background: linear-gradient(135deg, #162447, #1b6ca8);
+            color: #ffffff;
+            border: none;
+            padding: 13px;
+            font-size: 17px;
+            font-weight: bold;
+            border-radius: 13px;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(22, 36, 71, 0.24);
+            transition: all 0.2s ease;
+        }
+
+        .btn-modal-close:hover {
+            filter: brightness(1.08);
+            transform: translateY(-1px);
         }
 
         @media (max-width: 480px) {
@@ -329,11 +407,11 @@
                 padding: 11px 12px;
                 font-size: 15px;
             }
-            .item-name {
-                font-size: 19.5px;
+            .modal-item-name {
+                font-size: 21px;
             }
-            .price {
-                font-size: 26px;
+            .modal-price-value {
+                font-size: 30px;
             }
         }
     </style>
@@ -381,6 +459,23 @@
     </div>
 </div>
 
+<!-- النافذة المنبثقة لعرض الصنف والسعر -->
+<div id="resultModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalStoreTitle">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-top-bar">
+            <div id="modalStoreTitle" class="modal-store-title">
+                <span>🏪</span>
+                <span>سنتر العائلة السعيدة</span>
+            </div>
+            <button type="button" id="closeModalTopBtn" class="modal-close-icon" title="إغلاق">×</button>
+        </div>
+        <div id="modalBody" class="modal-body"></div>
+        <div class="modal-footer-actions">
+            <button type="button" id="closeModalBottomBtn" class="btn-modal-close">إغلاق النافذة</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
@@ -388,6 +483,37 @@
 
     let html5QrCode = null;
     let cameraIsRunning = false;
+
+    function openResultModal(items) {
+        const modal = document.getElementById('resultModal');
+        const modalBody = document.getElementById('modalBody');
+        if (!modal || !modalBody) return;
+
+        let html = "";
+        items.forEach(item => {
+            const itemName = item.item_name || 'بدون اسم';
+            const salePrice = (item.sale_price !== undefined && item.sale_price !== null) ? item.sale_price : 0;
+            html += `
+                <div class="modal-result-card">
+                    <div class="modal-item-name">📦 ${itemName}</div>
+                    <div class="modal-price-panel">
+                        <div class="modal-price-caption">سعر البيع</div>
+                        <div class="modal-price-value">${salePrice} د.ل</div>
+                    </div>
+                </div>
+            `;
+        });
+
+        modalBody.innerHTML = html;
+        modal.classList.add('active');
+    }
+
+    function closeResultModal() {
+        const modal = document.getElementById('resultModal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    }
 
     function toggleClearButton(inputId, btnId) {
         const input = document.getElementById(inputId);
@@ -551,19 +677,8 @@
             const data = await response.json();
 
             if (data && data.length > 0) {
-                let html = `<div class="results-count">🏪 سنتر العائلة السعيدة</div>`;
-                data.forEach(item => {
-                    html += `
-                        <div class="item-card">
-                            <div class="item-name">📦 ${item.item_name || 'بدون اسم'}</div>
-                            <div class="price-box">
-                                <span class="price-label">سعر البيع</span>
-                                <span class="price">${item.sale_price !== undefined && item.sale_price !== null ? item.sale_price : 0} د.ل</span>
-                            </div>
-                        </div>
-                    `;
-                });
-                resultsDiv.innerHTML = html;
+                resultsDiv.innerHTML = "";
+                openResultModal(data);
             } else {
                 resultsDiv.innerHTML = `<div class='status-msg status-error'>⚠️ لم يتم العثور على أي صنف مطابق في سنتر العائلة السعيدة.</div>`;
             }
@@ -580,6 +695,9 @@
         const cameraBtn = document.getElementById('cameraBtn');
         const searchNameBtn = document.getElementById('searchNameBtn');
         const searchBarcodeBtn = document.getElementById('searchBarcodeBtn');
+        const resultModal = document.getElementById('resultModal');
+        const closeModalTopBtn = document.getElementById('closeModalTopBtn');
+        const closeModalBottomBtn = document.getElementById('closeModalBottomBtn');
 
         if (nameInput) {
             nameInput.addEventListener('input', () => toggleClearButton('nameOrIdInput', 'clearNameBtn'));
@@ -616,6 +734,24 @@
         if (searchBarcodeBtn) {
             searchBarcodeBtn.addEventListener('click', () => searchItem('barcode'));
         }
+
+        if (closeModalTopBtn) {
+            closeModalTopBtn.addEventListener('click', closeResultModal);
+        }
+
+        if (closeModalBottomBtn) {
+            closeModalBottomBtn.addEventListener('click', closeResultModal);
+        }
+
+        if (resultModal) {
+            resultModal.addEventListener('click', closeResultModal);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeResultModal();
+            }
+        });
     });
 </script>
 
