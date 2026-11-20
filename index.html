@@ -9,8 +9,7 @@
     <style>
         :root {
             --bg-gradient: linear-gradient(135deg, #eef2f7 0%, #dbe4f0 100%);
-            --shopping-bg: url("https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1600&q=80");
-            --card-bg: rgba(255, 255, 255, 0.96);
+            --card-bg: #ffffff;
             --header-gradient: linear-gradient(135deg, #162447 0%, #1f4068 60%, #1b6ca8 100%);
             --accent-gold: #ffd166;
             --primary-blue: #1b6ca8;
@@ -31,15 +30,7 @@
 
         body {
             font-family: Tahoma, "Segoe UI", sans-serif;
-            background-color: #162447;
-            background-image:
-                linear-gradient(rgba(15, 23, 42, 0.42), rgba(22, 36, 71, 0.52)),
-                var(--shopping-bg),
-                var(--bg-gradient);
-            background-size: cover, cover, cover;
-            background-position: center, center, center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
+            background: var(--bg-gradient);
             min-height: 100vh;
             margin: 0;
             padding: 18px 14px;
@@ -50,10 +41,8 @@
             max-width: 560px;
             margin: auto;
             background: var(--card-bg);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
             border-radius: 20px;
-            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+            box-shadow: 0 16px 38px rgba(22, 36, 71, 0.16);
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.85);
         }
@@ -328,9 +317,6 @@
         }
 
         @media (max-width: 480px) {
-            body {
-                background-attachment: scroll;
-            }
             .search-row {
                 flex-wrap: wrap;
             }
@@ -372,4 +358,266 @@
                     <input type="text" id="nameOrIdInput" placeholder="اكتب اسم المادة أو رقم الصنف...">
                     <button type="button" id="clearNameBtn" class="clear-btn" title="مسح">×</button>
                 </div>
-                <button type="button"
+                <button type="button" id="searchNameBtn" class="btn-search-inline">بحث فوراً 🔍</button>
+            </div>
+        </div>
+
+        <!-- المربع الثاني: كتابة الباركود أو قراءته بالكاميرا + زر الكاميرا وزر البحث بجانبه -->
+        <div class="form-group">
+            <label for="barcodeInput">2. البحث بالباركود أو الكاميرا</label>
+            <div class="search-row">
+                <div class="input-wrapper">
+                    <input type="text" id="barcodeInput" placeholder="اكتب الباركود أو امسحه بالكاميرا...">
+                    <button type="button" id="clearBarcodeBtn" class="clear-btn" title="مسح">×</button>
+                </div>
+                <button type="button" id="cameraBtn" class="btn-cam">📷 كاميرا</button>
+                <button type="button" id="searchBarcodeBtn" class="btn-search-inline">بحث فوراً 🔍</button>
+            </div>
+        </div>
+
+        <div id="reader"></div>
+
+        <div id="results"></div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
+    const FIXED_STORE_ID = "2";
+
+    let html5QrCode = null;
+    let cameraIsRunning = false;
+
+    function toggleClearButton(inputId, btnId) {
+        const input = document.getElementById(inputId);
+        const btn = document.getElementById(btnId);
+        if (!input || !btn) return;
+        btn.style.display = input.value.trim().length > 0 ? "flex" : "none";
+    }
+
+    function clearField(inputId, btnId) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        input.value = "";
+        toggleClearButton(inputId, btnId);
+        input.focus();
+    }
+
+    function playScanBeep() {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.value = 880;
+            gain.gain.value = 0.08;
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            setTimeout(() => {
+                try {
+                    osc.stop();
+                    ctx.close();
+                } catch (e) {}
+            }, 120);
+        } catch (e) {}
+    }
+
+    async function stopCamera() {
+        const readerDiv = document.getElementById('reader');
+        const camBtn = document.getElementById('cameraBtn');
+        if (cameraIsRunning && html5QrCode) {
+            try {
+                await html5QrCode.stop();
+                await html5QrCode.clear();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        if (readerDiv) readerDiv.style.display = 'none';
+        if (camBtn) camBtn.textContent = '📷 كاميرا';
+        cameraIsRunning = false;
+    }
+
+    async function toggleCamera() {
+        const readerDiv = document.getElementById('reader');
+        const camBtn = document.getElementById('cameraBtn');
+        const resultsDiv = document.getElementById('results');
+
+        if (typeof Html5Qrcode === "undefined") {
+            resultsDiv.innerHTML = "<div class='status-msg status-error'>⚠️ مكتبة الكاميرا لم تُحمّل بعد، تأكد من الاتصال بالإنترنت.</div>";
+            return;
+        }
+
+        if (!cameraIsRunning) {
+            try {
+                readerDiv.style.display = 'block';
+                if (camBtn) camBtn.textContent = '✖ إغلاق';
+                html5QrCode = new Html5Qrcode("reader");
+                await html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 100 } },
+                    async (decodedText) => {
+                        const cleanCode = (decodedText || "").trim();
+                        playScanBeep();
+                        const barcodeInput = document.getElementById('barcodeInput');
+                        const nameInput = document.getElementById('nameOrIdInput');
+                        if (barcodeInput) {
+                            barcodeInput.value = cleanCode;
+                            toggleClearButton('barcodeInput', 'clearBarcodeBtn');
+                        }
+                        if (nameInput) {
+                            nameInput.value = "";
+                            toggleClearButton('nameOrIdInput', 'clearNameBtn');
+                        }
+                        await stopCamera();
+                        searchItem('barcode');
+                    }
+                );
+                cameraIsRunning = true;
+            } catch (err) {
+                console.error(err);
+                await stopCamera();
+                resultsDiv.innerHTML = "<div class='status-msg status-error'>⚠️ تعذر تشغيل الكاميرا، تأكد من منح صلاحية الكاميرا للمتصفح.</div>";
+            }
+        } else {
+            await stopCamera();
+        }
+    }
+
+    async function searchItem(preferredField = null) {
+        const nameOrIdInput = document.getElementById('nameOrIdInput');
+        const barcodeInput = document.getElementById('barcodeInput');
+        const resultsDiv = document.getElementById('results');
+
+        const nameOrIdVal = nameOrIdInput ? nameOrIdInput.value.trim() : "";
+        const barcodeVal = barcodeInput ? barcodeInput.value.trim() : "";
+
+        let activeQuery = "";
+        let searchMode = "";
+
+        if (preferredField === 'barcode') {
+            activeQuery = barcodeVal;
+            searchMode = "barcode";
+        } else if (preferredField === 'nameOrId') {
+            activeQuery = nameOrIdVal;
+            searchMode = "nameOrId";
+        } else if (nameOrIdVal) {
+            activeQuery = nameOrIdVal;
+            searchMode = "nameOrId";
+        } else if (barcodeVal) {
+            activeQuery = barcodeVal;
+            searchMode = "barcode";
+        }
+
+        if (!activeQuery) {
+            resultsDiv.innerHTML = "<div class='status-msg status-error'>⚠️ الرجاء إدخال اسم المادة، رقم الصنف، أو الباركود أولاً.</div>";
+            return;
+        }
+
+        resultsDiv.innerHTML = "<div class='status-msg status-loading'>⏳ جاري البحث في قائمة الأسعار...</div>";
+
+        try {
+            let apiUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&select=*`;
+
+            if (searchMode === "barcode") {
+                apiUrl += `&barcode=eq.${encodeURIComponent(activeQuery)}`;
+            } else {
+                if (!isNaN(activeQuery)) {
+                    apiUrl += `&or=(item_id.eq.${encodeURIComponent(activeQuery)},barcode.eq.${encodeURIComponent(activeQuery)})`;
+                } else {
+                    const safeName = activeQuery.replace(/[%_*]/g, "");
+                    apiUrl += `&item_name=ilike.*${encodeURIComponent(safeName)}*`;
+                }
+            }
+
+            const response = await fetch(apiUrl, {
+                method: 'GET',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                resultsDiv.innerHTML = `<div class='status-msg status-error'>❌ خطأ في الاتصال بالسحابة: ${response.statusText}</div>`;
+                return;
+            }
+
+            const data = await response.json();
+
+            if (data && data.length > 0) {
+                let html = `<div class="results-count">🏪 سنتر العائلة السعيدة</div>`;
+                data.forEach(item => {
+                    html += `
+                        <div class="item-card">
+                            <div class="item-name">📦 ${item.item_name || 'بدون اسم'}</div>
+                            <div class="price-box">
+                                <span class="price-label">سعر البيع</span>
+                                <span class="price">${item.sale_price !== undefined && item.sale_price !== null ? item.sale_price : 0} د.ل</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                resultsDiv.innerHTML = html;
+            } else {
+                resultsDiv.innerHTML = `<div class='status-msg status-error'>⚠️ لم يتم العثور على أي صنف مطابق في سنتر العائلة السعيدة.</div>`;
+            }
+        } catch (err) {
+            resultsDiv.innerHTML = `<div class='status-msg status-error'>❌ خطأ في النظام: ${err.message}</div>`;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const nameInput = document.getElementById('nameOrIdInput');
+        const barcodeInput = document.getElementById('barcodeInput');
+        const clearNameBtn = document.getElementById('clearNameBtn');
+        const clearBarcodeBtn = document.getElementById('clearBarcodeBtn');
+        const cameraBtn = document.getElementById('cameraBtn');
+        const searchNameBtn = document.getElementById('searchNameBtn');
+        const searchBarcodeBtn = document.getElementById('searchBarcodeBtn');
+
+        if (nameInput) {
+            nameInput.addEventListener('input', () => toggleClearButton('nameOrIdInput', 'clearNameBtn'));
+            nameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchItem('nameOrId');
+            });
+            toggleClearButton('nameOrIdInput', 'clearNameBtn');
+        }
+
+        if (barcodeInput) {
+            barcodeInput.addEventListener('input', () => toggleClearButton('barcodeInput', 'clearBarcodeBtn'));
+            barcodeInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchItem('barcode');
+            });
+            toggleClearButton('barcodeInput', 'clearBarcodeBtn');
+        }
+
+        if (clearNameBtn) {
+            clearNameBtn.addEventListener('click', () => clearField('nameOrIdInput', 'clearNameBtn'));
+        }
+
+        if (clearBarcodeBtn) {
+            clearBarcodeBtn.addEventListener('click', () => clearField('barcodeInput', 'clearBarcodeBtn'));
+        }
+
+        if (cameraBtn) {
+            cameraBtn.addEventListener('click', toggleCamera);
+        }
+
+        if (searchNameBtn) {
+            searchNameBtn.addEventListener('click', () => searchItem('nameOrId'));
+        }
+
+        if (searchBarcodeBtn) {
+            searchBarcodeBtn.addEventListener('click', () => searchItem('barcode'));
+        }
+    });
+</script>
+
+</body>
+</html>
