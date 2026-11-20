@@ -4,10 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>استعلام الأسعار - سنتر العائلة السعيدة</title>
-    <!-- مكتبة قراءة الباركود بالكاميرا -->
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <!-- مكتبة توليد الباركود الخطي (CODE128) -->
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <style>
         :root {
             --bg-gradient: linear-gradient(135deg, #eef2f7 0%, #dbe4f0 100%);
@@ -15,15 +12,12 @@
             --header-gradient: linear-gradient(135deg, #162447 0%, #1f4068 60%, #1b6ca8 100%);
             --accent-gold: #ffd166;
             --primary-blue: #1b6ca8;
-            --primary-blue-hover: #145382;
             --success-green: #15803d;
-            --success-bright: #16a34a;
             --success-soft: linear-gradient(135deg, #ecfdf5 0%, #bbf7d0 100%);
             --cart-orange: #ea580c;
             --cart-orange-dark: #c2410c;
             --border-color: #cbd5e1;
             --text-main: #0f172a;
-            --text-muted: #64748b;
             --danger-bg: #fef2f2;
             --danger-text: #dc2626;
         }
@@ -56,13 +50,11 @@
             color: #ffffff;
             padding: 24px 20px;
             text-align: center;
-            position: relative;
         }
 
         .hero-header h2 {
             margin: 0 0 12px 0;
             font-size: 22px;
-            letter-spacing: 0.2px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -87,7 +79,6 @@
         .store-icon {
             font-size: 25px;
             line-height: 1;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
         }
 
         .content-body {
@@ -199,4 +190,955 @@
         }
 
         .btn-cam {
-            background: linear-
+            background: linear-gradient(135deg, #1b6ca8, #0ea5e9);
+            color: #ffffff;
+            border: none;
+            padding: 0 14px;
+            font-size: 14.5px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(27, 108, 168, 0.25);
+        }
+
+        .btn-search-inline {
+            background: linear-gradient(135deg, #16a34a, #22c55e);
+            color: #ffffff;
+            border: none;
+            padding: 0 15px;
+            font-size: 14.5px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+        }
+
+        #reader {
+            width: 100%;
+            max-width: 420px;
+            margin: 14px auto;
+            border-radius: 12px;
+            overflow: hidden;
+            display: none;
+            border: 2px solid var(--primary-blue);
+        }
+
+        .status-msg {
+            margin-top: 18px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .status-loading {
+            background: #eff6ff;
+            color: var(--primary-blue);
+            border: 1px solid #bfdbfe;
+        }
+
+        .status-error {
+            background: var(--danger-bg);
+            color: var(--danger-text);
+            border: 1px solid #fecaca;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 9999;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            width: 100%;
+            max-width: 520px;
+            max-height: 90vh;
+            overflow-y: auto;
+            background: #ffffff;
+            border-radius: 22px;
+            box-shadow: 0 24px 55px rgba(15, 23, 42, 0.35);
+            border: 2px solid #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        .modal-top-bar {
+            background: var(--header-gradient);
+            color: #ffffff;
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .modal-store-title {
+            font-size: 19px;
+            font-weight: bold;
+            color: #fff3c4;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-close-icon {
+            background: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-body {
+            padding: 18px;
+        }
+
+        .modal-result-card {
+            background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+            border: 2px solid #cbd5e1;
+            border-top: 6px solid var(--primary-blue);
+            border-radius: 18px;
+            padding: 18px 16px;
+            margin-bottom: 14px;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+            text-align: center;
+        }
+
+        .modal-result-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-item-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #0f172a;
+            line-height: 1.5;
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 2px dashed #cbd5e1;
+        }
+
+        .modal-price-panel {
+            background: var(--success-soft);
+            border: 2px solid #4ade80;
+            border-radius: 15px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+
+        .modal-price-caption {
+            font-size: 16px;
+            font-weight: bold;
+            color: #14532d;
+            margin-bottom: 4px;
+        }
+
+        .modal-price-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #15803d;
+            line-height: 1.15;
+        }
+
+        .btn-add-cart {
+            width: 100%;
+            background: linear-gradient(135deg, var(--cart-orange), #f97316);
+            color: #ffffff;
+            border: none;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .cart-item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 13px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .cart-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .cart-item-title {
+            font-size: 15.5px;
+            font-weight: bold;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        .cart-item-sub {
+            font-size: 13.5px;
+            color: #15803d;
+            font-weight: bold;
+        }
+
+        .qty-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .qty-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #0f172a;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .qty-num {
+            min-width: 24px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 15.5px;
+        }
+
+        .btn-remove-item {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .cart-total-box {
+            background: var(--success-soft);
+            border: 2px solid #86efac;
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin: 14px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 17px;
+            font-weight: bold;
+            color: #14532d;
+        }
+
+        .cart-actions-grid {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .btn-generate-code {
+            flex: 2;
+            background: linear-gradient(135deg, #16a34a, #22c55e);
+            color: #ffffff;
+            border: none;
+            padding: 13px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-clear-cart {
+            flex: 1;
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1.5px solid #fecaca;
+            padding: 13px 10px;
+            border-radius: 12px;
+            font-size: 14.5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .barcode-output-box {
+            margin-top: 16px;
+            background: #ffffff;
+            border: 2px solid #1b6ca8;
+            border-radius: 16px;
+            padding: 16px 12px;
+            text-align: center;
+        }
+
+        .barcode-output-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #162447;
+            margin-bottom: 12px;
+        }
+
+        .barcode-canvas-wrap {
+            background: #ffffff;
+            padding: 12px 8px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            overflow-x: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        #barcodeCanvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .code-payload-text {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: bold;
+            color: #0f172a;
+            word-break: break-all;
+            direction: ltr;
+            text-align: center;
+        }
+
+        .modal-footer-actions {
+            padding: 0 18px 18px 18px;
+        }
+
+        .btn-modal-close {
+            width: 100%;
+            background: linear-gradient(135deg, #162447, #1b6ca8);
+            color: #ffffff;
+            border: none;
+            padding: 13px;
+            font-size: 17px;
+            font-weight: bold;
+            border-radius: 13px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 480px) {
+            .search-row {
+                flex-wrap: wrap;
+            }
+            .input-wrapper {
+                flex-basis: 100%;
+            }
+            .btn-cam,
+            .btn-search-inline {
+                flex: 1;
+                padding: 11px 12px;
+                font-size: 15px;
+            }
+            .modal-item-name {
+                font-size: 20px;
+            }
+            .modal-price-value {
+                font-size: 29px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="hero-header">
+        <h2>🔍 استعلام الأسعار السريع</h2>
+        <div class="store-badge">
+            <span class="store-icon">🏪</span>
+            <span>معرض سنتر العائلة</span>
+        </div>
+    </div>
+
+    <div class="content-body">
+        <div class="cart-bar">
+            <div class="cart-summary-text">
+                <span>🛒 سلة التسوق:</span>
+                <span id="cartBadgeCount" class="cart-count-pill">0 صنف</span>
+                <span id="cartBadgeTotal" style="font-size: 14px; color: #15803d;">(0 د.ل)</span>
+            </div>
+            <button type="button" id="openCartBtn" class="btn-open-cart" onclick="openCartModal()">عرض السلة والباركود</button>
+        </div>
+
+        <div class="form-group">
+            <label for="nameOrIdInput">1. البحث باسم المادة أو رقم الصنف</label>
+            <div class="search-row">
+                <div class="input-wrapper">
+                    <input type="text" id="nameOrIdInput" placeholder="اكتب اسم المادة أو رقم الصنف..." oninput="toggleClearButton('nameOrIdInput', 'clearNameBtn')" onkeypress="handleSearchEnter(event, 'nameOrId')">
+                    <button type="button" id="clearNameBtn" class="clear-btn" title="مسح" onclick="clearField('nameOrIdInput', 'clearNameBtn')">×</button>
+                </div>
+                <button type="button" id="searchNameBtn" class="btn-search-inline" onclick="searchItem('nameOrId')">بحث فوراً 🔍</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="barcodeInput">2. البحث بالباركود أو الكاميرا</label>
+            <div class="search-row">
+                <div class="input-wrapper">
+                    <input type="text" id="barcodeInput" placeholder="اكتب الباركود أو امسحه بالكاميرا..." oninput="toggleClearButton('barcodeInput', 'clearBarcodeBtn')" onkeypress="handleSearchEnter(event, 'barcode')">
+                    <button type="button" id="clearBarcodeBtn" class="clear-btn" title="مسح" onclick="clearField('barcodeInput', 'clearBarcodeBtn')">×</button>
+                </div>
+                <button type="button" id="cameraBtn" class="btn-cam" onclick="toggleCamera()">📷 كاميرا</button>
+                <button type="button" id="searchBarcodeBtn" class="btn-search-inline" onclick="searchItem('barcode')">بحث فوراً 🔍</button>
+            </div>
+        </div>
+
+        <div id="reader"></div>
+
+        <div id="results"></div>
+    </div>
+</div>
+
+<!-- النافذة المنبثقة لعرض الصنف والسعر -->
+<div id="resultModal" class="modal-overlay" role="dialog" aria-modal="true" onclick="closeResultModal()">
+    <div class="modal-box" onclick="stopProp(event)">
+        <div class="modal-top-bar">
+            <div class="modal-store-title">
+                <span>🏪</span>
+                <span>سنتر العائلة السعيدة</span>
+            </div>
+            <button type="button" class="modal-close-icon" title="إغلاق" onclick="closeResultModal()">×</button>
+        </div>
+        <div id="modalBody" class="modal-body"></div>
+        <div class="modal-footer-actions">
+            <button type="button" class="btn-modal-close" onclick="closeResultModal()">إغلاق النافذة</button>
+        </div>
+    </div>
+</div>
+
+<!-- النافذة المنبثقة لسلة التسوق وتوليد الباركود -->
+<div id="cartModal" class="modal-overlay" role="dialog" aria-modal="true" onclick="closeCartModal()">
+    <div class="modal-box" onclick="stopProp(event)">
+        <div class="modal-top-bar">
+            <div class="modal-store-title">
+                <span>🛒</span>
+                <span>سلة التسوق - سنتر العائلة السعيدة</span>
+            </div>
+            <button type="button" class="modal-close-icon" title="إغلاق" onclick="closeCartModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <div id="cartItemsList"></div>
+            <div class="cart-total-box">
+                <span>الإجمالي التقريبي:</span>
+                <span id="cartModalTotal">0 د.ل</span>
+            </div>
+            <div class="cart-actions-grid">
+                <button type="button" id="generateCartBarcodeBtn" class="btn-generate-code" onclick="generateCartBarcode()">توليد باركود الكاشير 🧾</button>
+                <button type="button" id="clearCartBtn" class="btn-clear-cart" onclick="clearCart()">تفريغ</button>
+            </div>
+            <div id="generatedBarcodeSection" class="barcode-output-box" style="display: none;">
+                <div class="barcode-output-title">امسح الباركود من جهاز موظف الكاشير</div>
+                <div class="barcode-canvas-wrap">
+                    <canvas id="barcodeCanvas" width="380" height="110"></canvas>
+                </div>
+                <div id="codePayloadText" class="code-payload-text"></div>
+            </div>
+        </div>
+        <div class="modal-footer-actions">
+            <button type="button" class="btn-modal-close" onclick="closeCartModal()">إغلاق السلة</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    var SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
+    var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
+    var FIXED_STORE_ID = "2";
+
+    var html5QrCode = null;
+    var cameraIsRunning = false;
+    var lastSearchItems = [];
+    var shoppingCart = [];
+
+    function stopProp(e) {
+        try {
+            if (e && e.stopPropagation) e.stopPropagation();
+        } catch (err) {}
+    }
+
+    function escapeHtml(text) {
+        var raw = (text === undefined || text === null) ? "" : String(text);
+        return raw
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function handleSearchEnter(e, fieldType) {
+        try {
+            if (e && (e.key === "Enter" || e.keyCode === 13)) {
+                searchItem(fieldType);
+            }
+        } catch (err) {}
+    }
+
+    function getItemKey(item, index) {
+        var idx = index || 0;
+        if (item && item.barcode && String(item.barcode).trim() !== "") return String(item.barcode).trim();
+        if (item && item.item_id !== undefined && item.item_id !== null && String(item.item_id).trim() !== "") return String(item.item_id).trim();
+        return "item_" + idx;
+    }
+
+    function addItemToCartByIndex(index) {
+        try {
+            var item = lastSearchItems[index];
+            if (!item) return;
+
+            var key = getItemKey(item, index);
+            var priceNum = Number(item.sale_price) || 0;
+            var existing = null;
+            for (var i = 0; i < shoppingCart.length; i++) {
+                if (shoppingCart[i].key === key) {
+                    existing = shoppingCart[i];
+                    break;
+                }
+            }
+
+            if (existing) {
+                existing.qty += 1;
+            } else {
+                shoppingCart.push({
+                    key: key,
+                    code: String(item.barcode || item.item_id || key).trim(),
+                    name: String(item.item_name || "بدون اسم"),
+                    price: priceNum,
+                    qty: 1
+                });
+            }
+
+            hideGeneratedBarcode();
+            updateCartSummaryBadge();
+            closeResultModal();
+            openCartModal();
+        } catch (err) {}
+    }
+
+    function changeCartQtyByIndex(cartIndex, delta) {
+        try {
+            if (cartIndex < 0 || cartIndex >= shoppingCart.length) return;
+            shoppingCart[cartIndex].qty += delta;
+            if (shoppingCart[cartIndex].qty <= 0) {
+                shoppingCart.splice(cartIndex, 1);
+            }
+            hideGeneratedBarcode();
+            updateCartSummaryBadge();
+            renderCartModal();
+        } catch (err) {}
+    }
+
+    function removeCartItemByIndex(cartIndex) {
+        try {
+            if (cartIndex < 0 || cartIndex >= shoppingCart.length) return;
+            shoppingCart.splice(cartIndex, 1);
+            hideGeneratedBarcode();
+            updateCartSummaryBadge();
+            renderCartModal();
+        } catch (err) {}
+    }
+
+    function clearCart() {
+        try {
+            shoppingCart = [];
+            hideGeneratedBarcode();
+            updateCartSummaryBadge();
+            renderCartModal();
+        } catch (err) {}
+    }
+
+    function hideGeneratedBarcode() {
+        try {
+            var sec = document.getElementById("generatedBarcodeSection");
+            var canvas = document.getElementById("barcodeCanvas");
+            var payloadEl = document.getElementById("codePayloadText");
+            if (sec) sec.style.display = "none";
+            if (canvas && canvas.getContext) {
+                var ctx = canvas.getContext("2d");
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            if (payloadEl) payloadEl.textContent = "";
+        } catch (err) {}
+    }
+
+    function updateCartSummaryBadge() {
+        try {
+            var countEl = document.getElementById("cartBadgeCount");
+            var totalEl = document.getElementById("cartBadgeTotal");
+            var totalQty = 0;
+            var totalAmount = 0;
+            for (var i = 0; i < shoppingCart.length; i++) {
+                totalQty += shoppingCart[i].qty;
+                totalAmount += (shoppingCart[i].price * shoppingCart[i].qty);
+            }
+            if (countEl) countEl.textContent = totalQty + " صنف";
+            if (totalEl) totalEl.textContent = "(" + totalAmount + " د.ل)";
+        } catch (err) {}
+    }
+
+    function renderCartModal() {
+        try {
+            var listEl = document.getElementById("cartItemsList");
+            var totalEl = document.getElementById("cartModalTotal");
+            if (!listEl || !totalEl) return;
+
+            var totalAmount = 0;
+            for (var i = 0; i < shoppingCart.length; i++) {
+                totalAmount += (shoppingCart[i].price * shoppingCart[i].qty);
+            }
+            totalEl.textContent = totalAmount + " د.ل";
+
+            if (shoppingCart.length === 0) {
+                listEl.innerHTML = "<div class='status-msg status-loading'>🛒 السلة فارغة حالياً. ابحث عن أي صنف وأضفه إلى السلة.</div>";
+                return;
+            }
+
+            var html = "";
+            for (var j = 0; j < shoppingCart.length; j++) {
+                var item = shoppingCart[j];
+                var lineTotal = item.price * item.qty;
+                html += "<div class='cart-item-row'>" +
+                    "<div class='cart-item-info'>" +
+                    "<div class='cart-item-title'>📦 " + escapeHtml(item.name) + "</div>" +
+                    "<div class='cart-item-sub'>الرمز: " + escapeHtml(item.code) + " | المجموع: " + lineTotal + " د.ل</div>" +
+                    "</div>" +
+                    "<div class='qty-controls'>" +
+                    "<button type='button' class='qty-btn' onclick='changeCartQtyByIndex(" + j + ", 1)'>+</button>" +
+                    "<span class='qty-num'>" + item.qty + "</span>" +
+                    "<button type='button' class='qty-btn' onclick='changeCartQtyByIndex(" + j + ", -1)'>-</button>" +
+                    "<button type='button' class='btn-remove-item' onclick='removeCartItemByIndex(" + j + ")'>×</button>" +
+                    "</div>" +
+                    "</div>";
+            }
+
+            listEl.innerHTML = html;
+        } catch (err) {}
+    }
+
+    function openCartModal() {
+        try {
+            var modal = document.getElementById("cartModal");
+            renderCartModal();
+            if (modal) modal.className = "modal-overlay active";
+        } catch (err) {}
+    }
+
+    function closeCartModal() {
+        try {
+            var modal = document.getElementById("cartModal");
+            if (modal) modal.className = "modal-overlay";
+        } catch (err) {}
+    }
+
+    function drawBarcodeOnCanvas(text) {
+        var canvas = document.getElementById("barcodeCanvas");
+        if (!canvas || !canvas.getContext) return;
+        var ctx = canvas.getContext("2d");
+
+        // بناء نمط خطوط متباين واضح يمثل بيانات السلة
+        var bits = "10111011101011101";
+        for (var i = 0; i < text.length; i++) {
+            var code = text.charCodeAt(i);
+            for (var b = 7; b >= 0; b--) {
+                bits += ((code >> b) & 1) ? "110" : "10";
+            }
+            bits += "00";
+        }
+        bits += "10111011101011101";
+
+        var barUnit = bits.length > 360 ? 1 : 2;
+        var totalWidth = bits.length * barUnit + 24;
+        canvas.width = totalWidth;
+        canvas.height = 105;
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#000000";
+        var x = 12;
+        for (var k = 0; k < bits.length; k++) {
+            if (bits.charAt(k) === "1") {
+                ctx.fillRect(x, 10, barUnit, 64);
+            }
+            x += barUnit;
+        }
+
+        ctx.fillStyle = "#0f172a";
+        ctx.font = "bold 13px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText(text, canvas.width / 2, 92);
+    }
+
+    function generateCartBarcode() {
+        try {
+            var sec = document.getElementById("generatedBarcodeSection");
+            var payloadEl = document.getElementById("codePayloadText");
+            if (!sec || !payloadEl) return;
+
+            if (shoppingCart.length === 0) {
+                sec.style.display = "block";
+                payloadEl.textContent = "لا توجد مواد في السلة لتوليد الباركود.";
+                return;
+            }
+
+            var cleanParts = [];
+            for (var i = 0; i < shoppingCart.length; i++) {
+                var safeCode = String(shoppingCart[i].code).replace(/[^A-Za-z0-9_-]/g, "");
+                cleanParts.push((safeCode || "ITEM") + "*" + shoppingCart[i].qty);
+            }
+            var payloadString = "CART-" + cleanParts.join("-");
+
+            sec.style.display = "block";
+            payloadEl.textContent = payloadString;
+            drawBarcodeOnCanvas(payloadString);
+        } catch (err) {}
+    }
+
+    function openResultModal(items) {
+        try {
+            var modal = document.getElementById("resultModal");
+            var modalBody = document.getElementById("modalBody");
+            if (!modal || !modalBody) return;
+
+            lastSearchItems = items || [];
+            var html = "";
+            for (var i = 0; i < lastSearchItems.length; i++) {
+                var item = lastSearchItems[i];
+                var itemName = escapeHtml(item.item_name || "بدون اسم");
+                var salePrice = (item.sale_price !== undefined && item.sale_price !== null) ? item.sale_price : 0;
+                html += "<div class='modal-result-card'>" +
+                    "<div class='modal-item-name'>📦 " + itemName + "</div>" +
+                    "<div class='modal-price-panel'>" +
+                    "<div class='modal-price-caption'>سعر البيع</div>" +
+                    "<div class='modal-price-value'>" + escapeHtml(salePrice) + " د.ل</div>" +
+                    "</div>" +
+                    "<button type='button' class='btn-add-cart' onclick='addItemToCartByIndex(" + i + ")'>إضافة إلى سلة التسوق 🛒</button>" +
+                    "</div>";
+            }
+
+            modalBody.innerHTML = html;
+            modal.className = "modal-overlay active";
+        } catch (err) {}
+    }
+
+    function closeResultModal() {
+        try {
+            var modal = document.getElementById("resultModal");
+            if (modal) {
+                modal.className = "modal-overlay";
+            }
+        } catch (err) {}
+    }
+
+    function toggleClearButton(inputId, btnId) {
+        try {
+            var input = document.getElementById(inputId);
+            var btn = document.getElementById(btnId);
+            if (!input || !btn) return;
+            btn.style.display = input.value.trim().length > 0 ? "flex" : "none";
+        } catch (err) {}
+    }
+
+    function clearField(inputId, btnId) {
+        try {
+            var input = document.getElementById(inputId);
+            if (!input) return;
+            input.value = "";
+            toggleClearButton(inputId, btnId);
+            input.focus();
+        } catch (err) {}
+    }
+
+    function playScanBeep() {
+        try {
+            var AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            var ctx = new AudioCtx();
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.value = 880;
+            gain.gain.value = 0.08;
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            setTimeout(function () {
+                try {
+                    osc.stop();
+                    ctx.close();
+                } catch (e) {}
+            }, 120);
+        } catch (e) {}
+    }
+
+    function stopCamera() {
+        var readerDiv = document.getElementById("reader");
+        var camBtn = document.getElementById("cameraBtn");
+        if (cameraIsRunning && html5QrCode) {
+            html5QrCode.stop().then(function () {
+                return html5QrCode.clear();
+            }).catch(function () {});
+        }
+        if (readerDiv) readerDiv.style.display = "none";
+        if (camBtn) camBtn.textContent = "📷 كاميرا";
+        cameraIsRunning = false;
+    }
+
+    function toggleCamera() {
+        var readerDiv = document.getElementById("reader");
+        var camBtn = document.getElementById("cameraBtn");
+        var resultsDiv = document.getElementById("results");
+
+        if (typeof Html5Qrcode === "undefined") {
+            if (resultsDiv) resultsDiv.innerHTML = "<div class='status-msg status-error'>⚠️ مكتبة الكاميرا لم تُحمّل بعد، تأكد من الاتصال بالإنترنت.</div>";
+            return;
+        }
+
+        if (!cameraIsRunning) {
+            try {
+                if (readerDiv) readerDiv.style.display = "block";
+                if (camBtn) camBtn.textContent = "✖ إغلاق";
+                html5QrCode = new Html5Qrcode("reader");
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 100 } },
+                    function (decodedText) {
+                        var cleanCode = (decodedText || "").trim();
+                        playScanBeep();
+                        var barcodeInput = document.getElementById("barcodeInput");
+                        var nameInput = document.getElementById("nameOrIdInput");
+                        if (barcodeInput) {
+                            barcodeInput.value = cleanCode;
+                            toggleClearButton("barcodeInput", "clearBarcodeBtn");
+                        }
+                        if (nameInput) {
+                            nameInput.value = "";
+                            toggleClearButton("nameOrIdInput", "clearNameBtn");
+                        }
+                        stopCamera();
+                        searchItem("barcode");
+                    }
+                ).then(function () {
+                    cameraIsRunning = true;
+                }).catch(function () {
+                    stopCamera();
+                    if (resultsDiv) resultsDiv.innerHTML = "<div class='status-msg status-error'>⚠️ تعذر تشغيل الكاميرا، تأكد من منح صلاحية الكاميرا للمتصفح.</div>";
+                });
+            } catch (err) {
+                stopCamera();
+            }
+        } else {
+            stopCamera();
+        }
+    }
+
+    function searchItem(preferredField) {
+        var nameOrIdInput = document.getElementById("nameOrIdInput");
+        var barcodeInput = document.getElementById("barcodeInput");
+        var resultsDiv = document.getElementById("results");
+
+        var nameOrIdVal = nameOrIdInput ? nameOrIdInput.value.trim() : "";
+        var barcodeVal = barcodeInput ? barcodeInput.value.trim() : "";
+
+        var activeQuery = "";
+        var searchMode = "";
+
+        if (preferredField === "barcode") {
+            activeQuery = barcodeVal;
+            searchMode = "barcode";
+        } else if (preferredField === "nameOrId") {
+            activeQuery = nameOrIdVal;
+            searchMode = "nameOrId";
+        } else if (nameOrIdVal) {
+            activeQuery = nameOrIdVal;
+            searchMode = "nameOrId";
+        } else if (barcodeVal) {
+            activeQuery = barcodeVal;
+            searchMode = "barcode";
+        }
+
+        if (!activeQuery) {
+            if (resultsDiv) resultsDiv.innerHTML = "<div class='status-msg status-error'>⚠️ الرجاء إدخال اسم المادة، رقم الصنف، أو الباركود أولاً.</div>";
+            return;
+        }
+
+        if (resultsDiv) resultsDiv.innerHTML = "<div class='status-msg status-loading'>⏳ جاري البحث في قائمة الأسعار...</div>";
+
+        var apiUrl = SUPABASE_URL + "/rest/v1/store_items?store_id=eq." + FIXED_STORE_ID + "&select=*";
+
+        if (searchMode === "barcode") {
+            apiUrl += "&barcode=eq." + encodeURIComponent(activeQuery);
+        } else {
+            if (!isNaN(activeQuery)) {
+                apiUrl += "&or=(item_id.eq." + encodeURIComponent(activeQuery) + ",barcode.eq." + encodeURIComponent(activeQuery) + ")";
+            } else {
+                var safeName = activeQuery.replace(/[%_*]/g, "");
+                apiUrl += "&item_name=ilike.*" + encodeURIComponent(safeName) + "*";
+            }
+        }
+
+        fetch(apiUrl, {
+            method: "GET",
+            headers: {
+                "apikey": SUPABASE_KEY,
+                "Authorization": "Bearer " + SUPABASE_KEY,
+                "Content-Type": "application/json"
+            }
+        }).then(function (response) {
+            if (!response.ok) {
+                if (resultsDiv) resultsDiv.innerHTML = "<div class='status-msg status-error'>❌ خطأ في الاتصال بالسحابة: " + escapeHtml(response.statusText) + "</div>";
+                return null;
+            }
+            return response.json();
+        }).then(function (data) {
+            if (!data) return;
+            if (data && data.length > 0) {
+                if (resultsDiv) resultsDiv.innerHTML = "";
+                openResultModal(data);
+            } else {
+                if (resultsDiv) resultsDiv.innerHTML = "<div class='status-msg status-error'>⚠️ لم يتم العثور على أي صنف مطابق في سنتر العائلة السعيدة.</div>";
+            }
+        }).catch(function (err) {
+            if (resultsDiv) resultsDiv.innerHTML = "<div class='status-msg status-error'>❌ خطأ في النظام: " + escapeHtml(err && err.message ? err.message : err) + "</div>";
+        });
+    }
+
+    document.addEventListener("keydown", function (e) {
+        if (e && (e.key === "Escape" || e.keyCode === 27)) {
+            closeResultModal();
+            closeCartModal();
+        }
+    });
+
+    updateCartSummaryBadge();
+</script>
+
+</body>
+</html>
