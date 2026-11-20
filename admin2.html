@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>استعلام الأسعار - سنتر العائلة السعيدة</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://unpkg.com/html5-qrcode" defer></script>
     <style>
         :root {
             --bg-gradient: linear-gradient(135deg, #eef2f7 0%, #dbe4f0 100%);
@@ -485,7 +485,6 @@
             cursor: pointer;
         }
 
-        /* نافذة QR كود وقيمة الفاتورة */
         .barcode-popup-wrap {
             background: #ffffff;
             border: 2px solid #cbd5e1;
@@ -847,3 +846,23 @@
 
             listEl.innerHTML = html;
         } catch (err) {}
+    }
+
+    function openCartModal() {
+        try {
+            var modal = document.getElementById("cartModal");
+            renderCartModal();
+            if (modal) modal.className = "modal-overlay active";
+        } catch (err) {}
+    }
+
+    function closeCartModal() {
+        try {
+            var modal = document.getElementById("cartModal");
+            if (modal) modal.className = "modal-overlay";
+        } catch (err) {}
+    }
+
+    function isFinderCell(r, c, n) {
+        var inTopLeft = (r < 7 && c < 7);
+        var inTopRight
