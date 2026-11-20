@@ -249,7 +249,7 @@
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.65);
+            background: rgba(15, 23, 42, 0.68);
             display: none;
             align-items: center;
             justify-content: center;
@@ -259,6 +259,10 @@
 
         .modal-overlay.active {
             display: flex;
+        }
+
+        #barcodeModal {
+            z-index: 10000;
         }
 
         .modal-box {
@@ -481,52 +485,58 @@
             cursor: pointer;
         }
 
-        .barcode-output-box {
-            margin-top: 16px;
+        /* نافذة الباركود المنبثقة الكبيرة */
+        .barcode-popup-wrap {
             background: #ffffff;
-            border: 2px solid #1b6ca8;
+            border: 2px solid #cbd5e1;
             border-radius: 16px;
-            padding: 16px 12px;
+            padding: 18px 12px;
             text-align: center;
-        }
-
-        .barcode-output-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #162447;
-            margin-bottom: 12px;
-        }
-
-        .barcode-canvas-wrap {
-            background: #ffffff;
-            padding: 12px 8px;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
             overflow-x: auto;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 16px;
         }
 
         #barcodeCanvas {
             max-width: 100%;
             height: auto;
             display: block;
+            margin: 0 auto 12px auto;
         }
 
-        .code-payload-text {
+        .barcode-code-big {
             background: #f1f5f9;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            padding: 10px;
+            border: 1.5px solid #94a3b8;
+            border-radius: 12px;
+            padding: 12px;
             font-family: monospace;
-            font-size: 14px;
+            font-size: 18px;
             font-weight: bold;
             color: #0f172a;
             word-break: break-all;
             direction: ltr;
             text-align: center;
+        }
+
+        .invoice-amount-big {
+            background: var(--success-soft);
+            border: 2px solid #4ade80;
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .invoice-amount-label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #14532d;
+            margin-bottom: 6px;
+        }
+
+        .invoice-amount-value {
+            font-size: 34px;
+            font-weight: bold;
+            color: #15803d;
+            line-height: 1.2;
         }
 
         .modal-footer-actions {
@@ -563,6 +573,9 @@
             }
             .modal-price-value {
                 font-size: 29px;
+            }
+            .invoice-amount-value {
+                font-size: 30px;
             }
         }
     </style>
@@ -634,7 +647,7 @@
     </div>
 </div>
 
-<!-- النافذة المنبثقة لسلة التسوق وتوليد الباركود -->
+<!-- النافذة المنبثقة لسلة التسوق -->
 <div id="cartModal" class="modal-overlay" role="dialog" aria-modal="true" onclick="closeCartModal()">
     <div class="modal-box" onclick="stopProp(event)">
         <div class="modal-top-bar">
@@ -651,19 +664,38 @@
                 <span id="cartModalTotal">0 د.ل</span>
             </div>
             <div class="cart-actions-grid">
-                <button type="button" id="generateCartBarcodeBtn" class="btn-generate-code" onclick="generateCartBarcode()">توليد باركود الكاشير 🧾</button>
+                <button type="button" id="generateCartBarcodeBtn" class="btn-generate-code" onclick="openBarcodePopup()">توليد باركود الكاشير 🧾</button>
                 <button type="button" id="clearCartBtn" class="btn-clear-cart" onclick="clearCart()">تفريغ</button>
-            </div>
-            <div id="generatedBarcodeSection" class="barcode-output-box" style="display: none;">
-                <div class="barcode-output-title">امسح الباركود من جهاز موظف الكاشير</div>
-                <div class="barcode-canvas-wrap">
-                    <canvas id="barcodeCanvas" width="380" height="110"></canvas>
-                </div>
-                <div id="codePayloadText" class="code-payload-text"></div>
             </div>
         </div>
         <div class="modal-footer-actions">
             <button type="button" class="btn-modal-close" onclick="closeCartModal()">إغلاق السلة</button>
+        </div>
+    </div>
+</div>
+
+<!-- النافذة المنبثقة للباركود وقيمة الفاتورة فقط -->
+<div id="barcodeModal" class="modal-overlay" role="dialog" aria-modal="true" onclick="closeBarcodeModal()">
+    <div class="modal-box" onclick="stopProp(event)">
+        <div class="modal-top-bar">
+            <div class="modal-store-title">
+                <span>🧾</span>
+                <span>باركود الفاتورة</span>
+            </div>
+            <button type="button" class="modal-close-icon" title="إغلاق" onclick="closeBarcodeModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="barcode-popup-wrap">
+                <canvas id="barcodeCanvas" width="440" height="145"></canvas>
+                <div id="barcodePopupCode" class="barcode-code-big"></div>
+            </div>
+            <div class="invoice-amount-big">
+                <div class="invoice-amount-label">قيمة الفاتورة</div>
+                <div id="barcodePopupTotal" class="invoice-amount-value">0 د.ل</div>
+            </div>
+        </div>
+        <div class="modal-footer-actions">
+            <button type="button" class="btn-modal-close" onclick="closeBarcodeModal()">إغلاق</button>
         </div>
     </div>
 </div>
@@ -708,6 +740,14 @@
         return "item_" + idx;
     }
 
+    function getCartTotalAmount() {
+        var totalAmount = 0;
+        for (var i = 0; i < shoppingCart.length; i++) {
+            totalAmount += (shoppingCart[i].price * shoppingCart[i].qty);
+        }
+        return totalAmount;
+    }
+
     function addItemToCartByIndex(index) {
         try {
             var item = lastSearchItems[index];
@@ -735,7 +775,6 @@
                 });
             }
 
-            hideGeneratedBarcode();
             updateCartSummaryBadge();
             closeResultModal();
             openCartModal();
@@ -749,7 +788,6 @@
             if (shoppingCart[cartIndex].qty <= 0) {
                 shoppingCart.splice(cartIndex, 1);
             }
-            hideGeneratedBarcode();
             updateCartSummaryBadge();
             renderCartModal();
         } catch (err) {}
@@ -759,7 +797,6 @@
         try {
             if (cartIndex < 0 || cartIndex >= shoppingCart.length) return;
             shoppingCart.splice(cartIndex, 1);
-            hideGeneratedBarcode();
             updateCartSummaryBadge();
             renderCartModal();
         } catch (err) {}
@@ -768,23 +805,8 @@
     function clearCart() {
         try {
             shoppingCart = [];
-            hideGeneratedBarcode();
             updateCartSummaryBadge();
             renderCartModal();
-        } catch (err) {}
-    }
-
-    function hideGeneratedBarcode() {
-        try {
-            var sec = document.getElementById("generatedBarcodeSection");
-            var canvas = document.getElementById("barcodeCanvas");
-            var payloadEl = document.getElementById("codePayloadText");
-            if (sec) sec.style.display = "none";
-            if (canvas && canvas.getContext) {
-                var ctx = canvas.getContext("2d");
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
-            if (payloadEl) payloadEl.textContent = "";
         } catch (err) {}
     }
 
@@ -793,11 +815,10 @@
             var countEl = document.getElementById("cartBadgeCount");
             var totalEl = document.getElementById("cartBadgeTotal");
             var totalQty = 0;
-            var totalAmount = 0;
             for (var i = 0; i < shoppingCart.length; i++) {
                 totalQty += shoppingCart[i].qty;
-                totalAmount += (shoppingCart[i].price * shoppingCart[i].qty);
             }
+            var totalAmount = getCartTotalAmount();
             if (countEl) countEl.textContent = totalQty + " صنف";
             if (totalEl) totalEl.textContent = "(" + totalAmount + " د.ل)";
         } catch (err) {}
@@ -809,10 +830,7 @@
             var totalEl = document.getElementById("cartModalTotal");
             if (!listEl || !totalEl) return;
 
-            var totalAmount = 0;
-            for (var i = 0; i < shoppingCart.length; i++) {
-                totalAmount += (shoppingCart[i].price * shoppingCart[i].qty);
-            }
+            var totalAmount = getCartTotalAmount();
             totalEl.textContent = totalAmount + " د.ل";
 
             if (shoppingCart.length === 0) {
@@ -857,67 +875,81 @@
         } catch (err) {}
     }
 
-    function drawBarcodeOnCanvas(text) {
+    function drawLargeBarcode(text) {
         var canvas = document.getElementById("barcodeCanvas");
         if (!canvas || !canvas.getContext) return;
         var ctx = canvas.getContext("2d");
 
-        // بناء نمط خطوط متباين واضح يمثل بيانات السلة
         var bits = "10111011101011101";
         for (var i = 0; i < text.length; i++) {
             var code = text.charCodeAt(i);
             for (var b = 7; b >= 0; b--) {
-                bits += ((code >> b) & 1) ? "110" : "10";
+                bits += ((code >> b) & 1) ? "1110" : "110";
             }
             bits += "00";
         }
         bits += "10111011101011101";
 
-        var barUnit = bits.length > 360 ? 1 : 2;
-        var totalWidth = bits.length * barUnit + 24;
+        var barUnit = bits.length > 420 ? 2 : 3;
+        var totalWidth = bits.length * barUnit + 32;
         canvas.width = totalWidth;
-        canvas.height = 105;
+        canvas.height = 140;
 
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         ctx.fillStyle = "#000000";
-        var x = 12;
+        var x = 16;
         for (var k = 0; k < bits.length; k++) {
             if (bits.charAt(k) === "1") {
-                ctx.fillRect(x, 10, barUnit, 64);
+                ctx.fillRect(x, 12, barUnit, 96);
             }
             x += barUnit;
         }
 
         ctx.fillStyle = "#0f172a";
-        ctx.font = "bold 13px monospace";
+        ctx.font = "bold 16px monospace";
         ctx.textAlign = "center";
-        ctx.fillText(text, canvas.width / 2, 92);
+        ctx.fillText(text, canvas.width / 2, 128);
     }
 
-    function generateCartBarcode() {
+    function openBarcodePopup() {
         try {
-            var sec = document.getElementById("generatedBarcodeSection");
-            var payloadEl = document.getElementById("codePayloadText");
-            if (!sec || !payloadEl) return;
+            var modal = document.getElementById("barcodeModal");
+            var codeEl = document.getElementById("barcodePopupCode");
+            var totalEl = document.getElementById("barcodePopupTotal");
+            var canvas = document.getElementById("barcodeCanvas");
+
+            if (!modal || !codeEl || !totalEl) return;
+
+            var totalAmount = getCartTotalAmount();
+            totalEl.textContent = totalAmount + " د.ل";
 
             if (shoppingCart.length === 0) {
-                sec.style.display = "block";
-                payloadEl.textContent = "لا توجد مواد في السلة لتوليد الباركود.";
-                return;
+                if (canvas && canvas.getContext) {
+                    var ctx = canvas.getContext("2d");
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+                codeEl.textContent = "EMPTY";
+            } else {
+                var cleanParts = [];
+                for (var i = 0; i < shoppingCart.length; i++) {
+                    var safeCode = String(shoppingCart[i].code).replace(/[^A-Za-z0-9_-]/g, "");
+                    cleanParts.push((safeCode || "ITEM") + "*" + shoppingCart[i].qty);
+                }
+                var payloadString = "CART-" + cleanParts.join("-");
+                codeEl.textContent = payloadString;
+                drawLargeBarcode(payloadString);
             }
 
-            var cleanParts = [];
-            for (var i = 0; i < shoppingCart.length; i++) {
-                var safeCode = String(shoppingCart[i].code).replace(/[^A-Za-z0-9_-]/g, "");
-                cleanParts.push((safeCode || "ITEM") + "*" + shoppingCart[i].qty);
-            }
-            var payloadString = "CART-" + cleanParts.join("-");
+            modal.className = "modal-overlay active";
+        } catch (err) {}
+    }
 
-            sec.style.display = "block";
-            payloadEl.textContent = payloadString;
-            drawBarcodeOnCanvas(payloadString);
+    function closeBarcodeModal() {
+        try {
+            var modal = document.getElementById("barcodeModal");
+            if (modal) modal.className = "modal-overlay";
         } catch (err) {}
     }
 
@@ -1132,6 +1164,7 @@
 
     document.addEventListener("keydown", function (e) {
         if (e && (e.key === "Escape" || e.keyCode === 27)) {
+            closeBarcodeModal();
             closeResultModal();
             closeCartModal();
         }
