@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>استعلام الأسعار - سنتر العائلة السعيدة</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
             --bg-gradient: linear-gradient(135deg, #eef2f7 0%, #dbe4f0 100%);
@@ -326,3 +325,525 @@
             box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
             text-align: center;
         }
+
+        .modal-result-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-item-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #0f172a;
+            line-height: 1.5;
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 2px dashed #cbd5e1;
+        }
+
+        .modal-price-panel {
+            background: var(--success-soft);
+            border: 2px solid #4ade80;
+            border-radius: 15px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+
+        .modal-price-caption {
+            font-size: 16px;
+            font-weight: bold;
+            color: #14532d;
+            margin-bottom: 4px;
+        }
+
+        .modal-price-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #15803d;
+            line-height: 1.15;
+        }
+
+        .btn-add-cart {
+            width: 100%;
+            background: linear-gradient(135deg, var(--cart-orange), #f97316);
+            color: #ffffff;
+            border: none;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .cart-item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 13px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .cart-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .cart-item-title {
+            font-size: 15.5px;
+            font-weight: bold;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        .cart-item-sub {
+            font-size: 13.5px;
+            color: #15803d;
+            font-weight: bold;
+        }
+
+        .qty-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .qty-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #0f172a;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .qty-num {
+            min-width: 24px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 15.5px;
+        }
+
+        .btn-remove-item {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .cart-total-box {
+            background: var(--success-soft);
+            border: 2px solid #86efac;
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin: 14px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 17px;
+            font-weight: bold;
+            color: #14532d;
+        }
+
+        .cart-actions-grid {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .btn-generate-code {
+            flex: 2;
+            background: linear-gradient(135deg, #16a34a, #22c55e);
+            color: #ffffff;
+            border: none;
+            padding: 13px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-clear-cart {
+            flex: 1;
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1.5px solid #fecaca;
+            padding: 13px 10px;
+            border-radius: 12px;
+            font-size: 14.5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* نافذة QR كود وقيمة الفاتورة */
+        .barcode-popup-wrap {
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            overflow: hidden;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #qrCanvas {
+            width: 100%;
+            max-width: 280px;
+            height: auto;
+            aspect-ratio: 1 / 1;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .invoice-amount-compact {
+            background: var(--success-soft);
+            border: 1.5px solid #4ade80;
+            border-radius: 12px;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .invoice-amount-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #14532d;
+        }
+
+        .invoice-amount-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #15803d;
+            line-height: 1.1;
+        }
+
+        .modal-footer-actions {
+            padding: 0 18px 18px 18px;
+        }
+
+        .btn-modal-close {
+            width: 100%;
+            background: linear-gradient(135deg, #162447, #1b6ca8);
+            color: #ffffff;
+            border: none;
+            padding: 13px;
+            font-size: 17px;
+            font-weight: bold;
+            border-radius: 13px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 480px) {
+            .search-row {
+                flex-wrap: wrap;
+            }
+            .input-wrapper {
+                flex-basis: 100%;
+            }
+            .btn-cam,
+            .btn-search-inline {
+                flex: 1;
+                padding: 11px 12px;
+                font-size: 15px;
+            }
+            .modal-item-name {
+                font-size: 20px;
+            }
+            .modal-price-value {
+                font-size: 29px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="hero-header">
+        <h2>🔍 استعلام الأسعار السريع</h2>
+        <div class="store-badge">
+            <span class="store-icon">🏪</span>
+            <span>معرض سنتر العائلة</span>
+        </div>
+    </div>
+
+    <div class="content-body">
+        <div class="cart-bar">
+            <div class="cart-summary-text">
+                <span>🛒 سلة التسوق:</span>
+                <span id="cartBadgeCount" class="cart-count-pill">0 صنف</span>
+                <span id="cartBadgeTotal" style="font-size: 14px; color: #15803d;">(0 د.ل)</span>
+            </div>
+            <button type="button" id="openCartBtn" class="btn-open-cart" onclick="openCartModal()">عرض السلة والباركود</button>
+        </div>
+
+        <div class="form-group">
+            <label for="nameOrIdInput">1. البحث باسم المادة أو رقم الصنف</label>
+            <div class="search-row">
+                <div class="input-wrapper">
+                    <input type="text" id="nameOrIdInput" placeholder="اكتب اسم المادة أو رقم الصنف..." oninput="toggleClearButton('nameOrIdInput', 'clearNameBtn')" onkeypress="handleSearchEnter(event, 'nameOrId')">
+                    <button type="button" id="clearNameBtn" class="clear-btn" title="مسح" onclick="clearField('nameOrIdInput', 'clearNameBtn')">×</button>
+                </div>
+                <button type="button" id="searchNameBtn" class="btn-search-inline" onclick="searchItem('nameOrId')">بحث فوراً 🔍</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="barcodeInput">2. البحث بالباركود أو الكاميرا</label>
+            <div class="search-row">
+                <div class="input-wrapper">
+                    <input type="text" id="barcodeInput" placeholder="اكتب الباركود أو امسحه بالكاميرا..." oninput="toggleClearButton('barcodeInput', 'clearBarcodeBtn')" onkeypress="handleSearchEnter(event, 'barcode')">
+                    <button type="button" id="clearBarcodeBtn" class="clear-btn" title="مسح" onclick="clearField('barcodeInput', 'clearBarcodeBtn')">×</button>
+                </div>
+                <button type="button" id="cameraBtn" class="btn-cam" onclick="toggleCamera()">📷 كاميرا</button>
+                <button type="button" id="searchBarcodeBtn" class="btn-search-inline" onclick="searchItem('barcode')">بحث فوراً 🔍</button>
+            </div>
+        </div>
+
+        <div id="reader"></div>
+
+        <div id="results"></div>
+    </div>
+</div>
+
+<!-- النافذة المنبثقة لعرض الصنف والسعر -->
+<div id="resultModal" class="modal-overlay" role="dialog" aria-modal="true" onclick="closeResultModal()">
+    <div class="modal-box" onclick="stopProp(event)">
+        <div class="modal-top-bar">
+            <div class="modal-store-title">
+                <span>🏪</span>
+                <span>سنتر العائلة السعيدة</span>
+            </div>
+            <button type="button" class="modal-close-icon" title="إغلاق" onclick="closeResultModal()">×</button>
+        </div>
+        <div id="modalBody" class="modal-body"></div>
+        <div class="modal-footer-actions">
+            <button type="button" class="btn-modal-close" onclick="closeResultModal()">إغلاق النافذة</button>
+        </div>
+    </div>
+</div>
+
+<!-- النافذة المنبثقة لسلة التسوق -->
+<div id="cartModal" class="modal-overlay" role="dialog" aria-modal="true" onclick="closeCartModal()">
+    <div class="modal-box" onclick="stopProp(event)">
+        <div class="modal-top-bar">
+            <div class="modal-store-title">
+                <span>🛒</span>
+                <span>سلة التسوق - سنتر العائلة السعيدة</span>
+            </div>
+            <button type="button" class="modal-close-icon" title="إغلاق" onclick="closeCartModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <div id="cartItemsList"></div>
+            <div class="cart-total-box">
+                <span>الإجمالي التقريبي:</span>
+                <span id="cartModalTotal">0 د.ل</span>
+            </div>
+            <div class="cart-actions-grid">
+                <button type="button" id="generateCartBarcodeBtn" class="btn-generate-code" onclick="openBarcodePopup()">توليد باركود الكاشير 🧾</button>
+                <button type="button" id="clearCartBtn" class="btn-clear-cart" onclick="clearCart()">تفريغ</button>
+            </div>
+        </div>
+        <div class="modal-footer-actions">
+            <button type="button" class="btn-modal-close" onclick="closeCartModal()">إغلاق السلة</button>
+        </div>
+    </div>
+</div>
+
+<!-- النافذة المنبثقة لـ QR كود وقيمة الفاتورة -->
+<div id="barcodeModal" class="modal-overlay" role="dialog" aria-modal="true" onclick="closeBarcodeModal()">
+    <div class="modal-box" onclick="stopProp(event)">
+        <div class="modal-top-bar">
+            <div class="modal-store-title">
+                <span>🧾</span>
+                <span>باركود الفاتورة (QR)</span>
+            </div>
+            <button type="button" class="modal-close-icon" title="إغلاق" onclick="closeBarcodeModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="barcode-popup-wrap">
+                <canvas id="qrCanvas" width="320" height="320"></canvas>
+            </div>
+            <div class="invoice-amount-compact">
+                <span class="invoice-amount-label">قيمة الفاتورة</span>
+                <span id="barcodePopupTotal" class="invoice-amount-value">0 د.ل</span>
+            </div>
+        </div>
+        <div class="modal-footer-actions">
+            <button type="button" class="btn-modal-close" onclick="closeBarcodeModal()">إغلاق</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    var SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
+    var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
+    var FIXED_STORE_ID = "2";
+
+    var html5QrCode = null;
+    var cameraIsRunning = false;
+    var lastSearchItems = [];
+    var shoppingCart = [];
+
+    function stopProp(e) {
+        try {
+            if (e && e.stopPropagation) e.stopPropagation();
+        } catch (err) {}
+    }
+
+    function escapeHtml(text) {
+        var raw = (text === undefined || text === null) ? "" : String(text);
+        return raw
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function handleSearchEnter(e, fieldType) {
+        try {
+            if (e && (e.key === "Enter" || e.keyCode === 13)) {
+                searchItem(fieldType);
+            }
+        } catch (err) {}
+    }
+
+    function getItemKey(item, index) {
+        var idx = index || 0;
+        if (item && item.barcode && String(item.barcode).trim() !== "") return String(item.barcode).trim();
+        if (item && item.item_id !== undefined && item.item_id !== null && String(item.item_id).trim() !== "") return String(item.item_id).trim();
+        return "item_" + idx;
+    }
+
+    function getCartTotalAmount() {
+        var totalAmount = 0;
+        for (var i = 0; i < shoppingCart.length; i++) {
+            totalAmount += (shoppingCart[i].price * shoppingCart[i].qty);
+        }
+        return totalAmount;
+    }
+
+    function addItemToCartByIndex(index) {
+        try {
+            var item = lastSearchItems[index];
+            if (!item) return;
+
+            var key = getItemKey(item, index);
+            var priceNum = Number(item.sale_price) || 0;
+            var existing = null;
+            for (var i = 0; i < shoppingCart.length; i++) {
+                if (shoppingCart[i].key === key) {
+                    existing = shoppingCart[i];
+                    break;
+                }
+            }
+
+            if (existing) {
+                existing.qty += 1;
+            } else {
+                shoppingCart.push({
+                    key: key,
+                    code: String(item.barcode || item.item_id || key).trim(),
+                    name: String(item.item_name || "بدون اسم"),
+                    price: priceNum,
+                    qty: 1
+                });
+            }
+
+            updateCartSummaryBadge();
+            closeResultModal();
+            openCartModal();
+        } catch (err) {}
+    }
+
+    function changeCartQtyByIndex(cartIndex, delta) {
+        try {
+            if (cartIndex < 0 || cartIndex >= shoppingCart.length) return;
+            shoppingCart[cartIndex].qty += delta;
+            if (shoppingCart[cartIndex].qty <= 0) {
+                shoppingCart.splice(cartIndex, 1);
+            }
+            updateCartSummaryBadge();
+            renderCartModal();
+        } catch (err) {}
+    }
+
+    function removeCartItemByIndex(cartIndex) {
+        try {
+            if (cartIndex < 0 || cartIndex >= shoppingCart.length) return;
+            shoppingCart.splice(cartIndex, 1);
+            updateCartSummaryBadge();
+            renderCartModal();
+        } catch (err) {}
+    }
+
+    function clearCart() {
+        try {
+            shoppingCart = [];
+            updateCartSummaryBadge();
+            renderCartModal();
+        } catch (err) {}
+    }
+
+    function updateCartSummaryBadge() {
+        try {
+            var countEl = document.getElementById("cartBadgeCount");
+            var totalEl = document.getElementById("cartBadgeTotal");
+            var totalQty = 0;
+            for (var i = 0; i < shoppingCart.length; i++) {
+                totalQty += shoppingCart[i].qty;
+            }
+            var totalAmount = getCartTotalAmount();
+            if (countEl) countEl.textContent = totalQty + " صنف";
+            if (totalEl) totalEl.textContent = "(" + totalAmount + " د.ل)";
+        } catch (err) {}
+    }
+
+    function renderCartModal() {
+        try {
+            var listEl = document.getElementById("cartItemsList");
+            var totalEl = document.getElementById("cartModalTotal");
+            if (!listEl || !totalEl) return;
+
+            var totalAmount = getCartTotalAmount();
+            totalEl.textContent = totalAmount + " د.ل";
+
+            if (shoppingCart.length === 0) {
+                listEl.innerHTML = "<div class='status-msg status-loading'>🛒 السلة فارغة حالياً. ابحث عن أي صنف وأضفه إلى السلة.</div>";
+                return;
+            }
+
+            var html = "";
+            for (var j = 0; j < shoppingCart.length; j++) {
+                var item = shoppingCart[j];
+                var lineTotal = item.price * item.qty;
+                html += "<div class='cart-item-row'>" +
+                    "<div class='cart-item-info'>" +
+                    "<div class='cart-item-title'>📦 " + escapeHtml(item.name) + "</div>" +
+                    "<div class='cart-item-sub'>الرمز: " + escapeHtml(item.code) + " | المجموع: " + lineTotal + " د.ل</div>" +
+                    "</div>" +
+                    "<div class='qty-controls'>" +
+                    "<button type='button' class='qty-btn' onclick='changeCartQtyByIndex(" + j + ", 1)'>+</button>" +
+                    "<span class='qty-num'>" + item.qty + "</span>" +
+                    "<button type='button' class='qty-btn' onclick='changeCartQtyByIndex(" + j + ", -1)'>-</button>" +
+                    "<button type='button' class='btn-remove-item' onclick='removeCartItemByIndex(" + j + ")'>×</button>" +
+                    "</div>" +
+                    "</div>";
+            }
+
+            listEl.innerHTML = html;
+        } catch (err) {}
