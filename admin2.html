@@ -3,597 +3,777 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>استعلام الأسعار - سنتر العائلة السعيدة</title>
+    <title>شاشة عرض المبيعات - معرض سنتر العائلة</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: Tahoma, Arial, sans-serif;
-            background: #e8eef5;
-            margin: 0;
-            padding: 16px;
-            color: #0f172a;
+        :root {
+            --bg-color: #0b0f19;
+            --container-bg: #131b2e;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --input-bg: #0b0f19;
+            --border-color: #1e293b;
+            --card-bg: #131b2e;
+            --accent-glow: rgba(56, 189, 248, 0.1);
         }
-        .box {
-            max-width: 540px;
-            margin: auto;
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 18px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-        }
-        .header {
-            background: #162447;
-            color: #ffffff;
-            padding: 16px;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 16px;
-        }
-        .header h2 {
-            margin: 0 0 8px 0;
-            font-size: 20px;
-        }
-        .store-tag {
-            display: inline-block;
-            background: #ffd166;
-            color: #162447;
-            font-weight: bold;
-            padding: 6px 16px;
-            border-radius: 999px;
-            font-size: 16px;
-        }
-        .cart-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            background: #fff7ed;
-            border: 1px solid #fdba74;
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            font-weight: bold;
-        }
-        .field-group {
-            margin-bottom: 14px;
-        }
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: bold;
-        }
-        .row {
-            display: flex;
-            gap: 8px;
-        }
-        input[type="text"] {
-            flex: 1;
-            min-width: 0;
-            padding: 11px 12px;
-            font-size: 15px;
-            border: 2px solid #cbd5e1;
-            border-radius: 10px;
-        }
-        button {
-            cursor: pointer;
-            border: none;
-            border-radius: 10px;
-            font-weight: bold;
-            font-size: 14px;
-            padding: 11px 14px;
-        }
-        .btn-blue { background: #1b6ca8; color: #fff; }
-        .btn-green { background: #15803d; color: #fff; }
-        .btn-orange { background: #ea580c; color: #fff; }
-        .btn-dark { background: #162447; color: #fff; width: 100%; }
-        .btn-red { background: #dc2626; color: #fff; }
 
-        #msg {
-            margin-top: 12px;
-            padding: 12px;
-            border-radius: 10px;
-            display: none;
-            font-weight: bold;
-            text-align: center;
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg-color: #f8fafc;
+                --container-bg: #ffffff;
+                --text-color: #0f172a;
+                --text-muted: #64748b;
+                --input-bg: #f1f5f9;
+                --border-color: #e2e8f0;
+                --card-bg: #f8fafc;
+                --accent-glow: rgba(2, 132, 199, 0.08);
+            }
         }
-        .msg-info { background: #eff6ff; color: #1d4ed8; display: block !important; }
-        .msg-err { background: #fef2f2; color: #b91c1c; display: block !important; }
+
+        body { 
+            font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            margin: 0; 
+            padding: 12px; 
+            transition: background-color 0.3s ease; 
+        }
+        
+        .container { 
+            max-width: 600px; 
+            margin: auto; 
+            background: var(--container-bg); 
+            padding: 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2); 
+            border: 1px solid var(--border-color);
+        }
+
+        h2 { 
+            text-align: center; 
+            color: #38bdf8; 
+            margin-top: 0; 
+            margin-bottom: 6px; 
+            font-size: 22px; 
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .store-tag { 
+            text-align: center; 
+            color: #fb923c; 
+            font-size: 15px; 
+            font-weight: 700; 
+            margin-bottom: 4px; 
+        }
+
+        .last-sync-time { 
+            text-align: center; 
+            color: var(--text-muted); 
+            font-size: 12px; 
+            margin-bottom: 16px; 
+            font-weight: 500;
+        }
+        
+        #loginSection { text-align: center; padding: 20px 0; }
+        label { font-weight: 600; font-size: 13px; color: var(--text-muted); }
+        
+        input[type="text"], input[type="password"], input[type="date"] { 
+            width: 100%; 
+            padding: 12px; 
+            font-size: 14px; 
+            border-radius: 10px; 
+            border: 1px solid var(--border-color); 
+            background: var(--input-bg); 
+            color: var(--text-color); 
+            box-sizing: border-box; 
+            margin-bottom: 14px; 
+            text-align: center; 
+            transition: all 0.2s ease;
+        }
+        
+        input[type="text"]:focus, input[type="password"]:focus, input[type="date"]:focus {
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        
+        .btn { 
+            width: 100%; 
+            padding: 12px; 
+            font-size: 15px; 
+            font-weight: 700; 
+            border-radius: 10px; 
+            border: none; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+        }
+        
+        .btn-primary { 
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); 
+            color: white; 
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+        }
+        
+        .btn-primary:hover { 
+            background: linear-gradient(135deg, #0369a1 100%, #075985 100%); 
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(2, 132, 199, 0.35);
+        }
+        
+        .date-range-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .date-group { text-align: right; }
+        .date-group label { font-size: 12px; display: block; margin-bottom: 4px; }
+        .date-group input { margin-bottom: 0; padding: 10px; font-size: 13px; }
+
+        .stats-container { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+        
+        .stat-card { 
+            background: var(--card-bg); 
+            border: 1px solid var(--border-color); 
+            padding: 16px; 
+            border-radius: 12px; 
+            text-align: center; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.25s ease;
+        }
+        
+        .stat-card.cash { 
+            border-right: 6px solid #22c55e; 
+            cursor: pointer; 
+        }
+        .stat-card.cash:hover { 
+            transform: translateY(-2px); 
+            background-color: rgba(34, 197, 94, 0.04);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+        
+        .stat-card.bank { 
+            border-right: 6px solid #3b82f6; 
+            cursor: pointer; 
+        }
+        .stat-card.bank:hover { 
+            transform: translateY(-2px); 
+            background-color: rgba(59, 130, 246, 0.04);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .stat-card.multi { 
+            border-right: 6px solid #a855f7; 
+            cursor: pointer; 
+        }
+        .stat-card.multi:hover { 
+            transform: translateY(-2px); 
+            background-color: rgba(168, 85, 247, 0.04);
+            border-color: rgba(168, 85, 247, 0.3);
+        }
+        
+        .stat-card.total { 
+            border-right: 6px solid #eab308; 
+            background: linear-gradient(to left, rgba(234, 179, 8, 0.03), var(--card-bg)); 
+        }
+        
+        .stat-title { font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
+        .stat-value { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+        
+        .val-cash { color: #22c55e; }
+        .val-bank { color: #3b82f6; }
+        .val-multi { color: #a855f7; }
+        .val-total { color: #eab308; }
+        
+        .hint-text { display: block; font-size: 11px; margin-top: 4px; font-weight: 700; opacity: 0.9; }
 
         .modal {
             display: none;
             position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.65);
-            z-index: 999;
-            padding: 16px;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal.show { display: flex; }
-        .modal-card {
-            background: #fff;
+            z-index: 1000;
+            left: 0;
+            top: 0;
             width: 100%;
-            max-width: 480px;
-            max-height: 90vh;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: var(--container-bg);
+            margin: 18% auto;
+            padding: 20px;
+            border-radius: 14px;
+            width: 85%;
+            max-width: 360px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            text-align: right;
+            max-height: 65vh;
             overflow-y: auto;
-            border-radius: 16px;
-            padding: 16px;
         }
-        .modal-head {
+        .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--border-color);
             padding-bottom: 10px;
-            margin-bottom: 14px;
-            font-weight: bold;
-            font-size: 17px;
-        }
-        .item-card {
-            border: 1px solid #cbd5e1;
-            border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 12px;
-            text-align: center;
-            background: #f8fafc;
-        }
-        .item-name {
-            font-size: 19px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .item-price {
-            font-size: 26px;
-            font-weight: bold;
-            color: #15803d;
-            background: #dcfce7;
-            padding: 10px;
-            border-radius: 10px;
             margin-bottom: 12px;
         }
-        .cart-row {
+        .modal-header h3 { color: #38bdf8; margin: 0; font-size: 16px; font-weight: 700; }
+        .close-btn { background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; transition: color 0.2s; }
+        .close-btn:hover { color: var(--text-color); }
+        
+        .bank-details-list { list-style: none; padding: 0; margin: 0; }
+        .bank-details-list li {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 8px;
-            background: #f8fafc;
+            padding: 11px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            font-weight: 500;
         }
-        .cart-total {
-            display: flex;
-            justify-content: space-between;
-            font-size: 17px;
-            font-weight: bold;
-            color: #14532d;
-            background: #dcfce7;
-            padding: 10px 12px;
-            border-radius: 10px;
-            margin: 12px 0;
+        .bank-details-list li:last-child { border-bottom: none; }
+
+        .search-section { margin-top: 22px; border-top: 2px solid var(--border-color); padding-top: 18px; }
+        
+        .search-mode-selector { 
+            display: flex; justify-content: center; gap: 20px; margin-bottom: 12px; background: var(--input-bg); padding: 10px; border-radius: 10px; border: 1px solid var(--border-color); 
         }
-        .qr-box {
-            text-align: center;
-            padding: 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 12px;
-            background: #fff;
-            margin-bottom: 10px;
+        .search-mode-selector label { font-size: 13px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 6px; color: var(--text-color); }
+
+        .search-box-wrapper { display: flex; gap: 8px; margin-bottom: 12px; }
+        .search-box-wrapper input { margin-bottom: 0; text-align: center; flex: 1; font-weight: 700; padding: 12px; font-size: 14px; }
+        
+        .btn-action { background: #0284c7; color: white; border: none; padding: 0 14px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13px; white-space: nowrap; transition: background 0.2s; }
+        .btn-action:hover { background: #0369a1; }
+
+        .btn-scan { background: #059669; color: white; border: none; padding: 0 14px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13px; white-space: nowrap; transition: background 0.2s; }
+        .btn-scan:hover { background: #047857; }
+
+        #reader { width: 100%; max-width: 350px; margin: 0 auto 12px auto; border-radius: 12px; overflow: hidden; display: none; border: 2px solid #38bdf8; }
+
+        .items-results { display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto; }
+        
+        .item-card { 
+            background: var(--card-bg); 
+            border: 1px solid var(--border-color); 
+            padding: 14px; 
+            border-radius: 10px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        #qrCanvas {
-            width: 240px;
-            height: 240px;
-            max-width: 100%;
-            display: block;
-            margin: auto;
+        
+        .item-name { font-size: 15px; font-weight: 800; color: #38bdf8; }
+        
+        .item-details { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr 1fr; 
+            gap: 6px; 
+            font-size: 13px; 
+            text-align: center; 
+            background: var(--input-bg); 
+            padding: 8px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border-color);
         }
-        .invoice-box {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #dcfce7;
-            color: #14532d;
-            padding: 8px 12px;
-            border-radius: 10px;
-            font-weight: bold;
-            margin-bottom: 12px;
-        }
-        .invoice-val {
-            font-size: 20px;
-            color: #15803d;
-        }
+        .item-details span { color: var(--text-muted); font-size: 11px; font-weight: 600; }
+        .item-details b { color: var(--text-color); display: block; margin-top: 3px; font-size: 13px; }
+
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <div class="header">
-        <h2>🔍 استعلام الأسعار السريع</h2>
-        <div class="store-tag">🏪 معرض سنتر العائلة</div>
+<div class="container">
+    <h2>📊 لوحة عرض المبيعات </h2>
+    <div class="store-tag" id="welcomeStore">تسجيل الدخول مطلوب</div>
+    <div class="last-sync-time" id="lastSyncTime">آخر تحديث للبيانات: --/--/---- --:--:--</div>
+
+    <!-- شاشة تسجيل الدخول -->
+    <div id="loginSection">
+        <label style="display:block; margin-bottom: 6px; text-align: right;">اسم المستخدم:</label>
+        <input type="text" id="userInput" placeholder="أدخل اسم المستخدم...">
+        
+        <label style="display:block; margin-bottom: 6px; text-align: right;">كلمة المرور:</label>
+        <input type="password" id="passInput" placeholder="****">
+
+        <button class="btn btn-primary" onclick="cloudLogin()">دخول 🔐</button>
+        <p id="loginError" style="color: #f87171; display: none; margin-top: 10px; font-size: 13px; font-weight: 600;">❌ اسم المستخدم أو كلمة المرور غير صحيحة</p>
+        <p id="loginLoading" style="color: #38bdf8; display: none; margin-top: 10px; font-size: 13px; font-weight: 600;">⏳ جاري التحقق من قاعدة البيانات...</p>
     </div>
 
-    <div class="cart-bar">
-        <div>
-            🛒 السلة: <span id="badgeCount">0</span> صنف — <span id="badgeTotal">0</span> د.ل
+    <!-- لوحة البيانات الرئيسية والبحث -->
+    <div id="dashboardSection" class="hidden">
+        <div class="date-range-grid">
+            <div class="date-group">
+                <label>من تاريخ:</label>
+                <input type="date" id="startDate">
+            </div>
+            <div class="date-group">
+                <label>إلى تاريخ:</label>
+                <input type="date" id="endDate">
+            </div>
         </div>
-        <button type="button" class="btn-orange" id="btnOpenCart">عرض السلة</button>
-    </div>
+        <button class="btn btn-primary" style="margin-bottom: 14px; padding: 11px;" onclick="fetchSalesData()">عرض الفترة 🔍</button>
 
-    <div class="field-group">
-        <label for="inName">1. البحث بالاسم أو رقم الصنف</label>
-        <div class="row">
-            <input type="text" id="inName" placeholder="اكتب اسم المادة أو رقم الصنف...">
-            <button type="button" class="btn-green" id="btnSearchName">بحث 🔍</button>
+        <div id="loadingStatus" style="text-align: center; color: var(--text-muted); display: none; font-size: 13px; font-weight: 600; margin-bottom: 10px;">⏳ جاري جلب البيانات من السحابة...</div>
+
+        <!-- الكروت الإحصائية -->
+        <div class="stats-container">
+            <div class="stat-card cash" onclick="toggleCashModal(true)">
+                <div class="stat-title">💵 الفواتير النقدية</div>
+                <div class="stat-value val-cash" id="cashAmount">0.00 د.ل</div>
+                <span class="hint-text" style="color: #22c55e;">🔍 انقر لعرض تفاصيل الفواتير النقدية</span>
+            </div>
+
+            <div class="stat-card bank" onclick="toggleBankModal(true)">
+                <div class="stat-title">💳 فواتير الخدمات المصرفية</div>
+                <div class="stat-value val-bank" id="bankAmount">0.00 د.ل</div>
+                <span class="hint-text" style="color: #3b82f6;">🔍 انقر لعرض تفاصيل الخدمات المصرفية</span>
+            </div>
+
+            <div class="stat-card multi" onclick="toggleMultiModal(true)">
+                <div class="stat-title">🔀 الدفع المتعدد</div>
+                <div class="stat-value val-multi" id="multiAmount">0.00 د.ل</div>
+                <span class="hint-text" style="color: #a855f7;">🔍 انقر لعرض تفاصيل الدفع المتعدد</span>
+            </div>
+
+            <div class="stat-card total">
+                <div class="stat-title">💰 اجمالي (النقدية + الخدمات المصرفية + الدفع المتعدد)</div>
+                <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
+            </div>
         </div>
-    </div>
 
-    <div class="field-group">
-        <label for="inBarcode">2. البحث بالباركود</label>
-        <div class="row">
-            <input type="text" id="inBarcode" placeholder="اكتب أو امسح الباركود...">
-            <button type="button" class="btn-blue" id="btnSearchBarcode">بحث 🔍</button>
+        <!-- قسم الاستعلام عن المواد ومسح الباركود -->
+        <div class="search-section">
+            <h3 style="color: #38bdf8; text-align: right; font-size: 16px; margin-bottom: 10px; font-weight: 700;">📦 الاستعلام عن المواد </h3>
+            
+            <div class="search-mode-selector">
+                <label><input type="radio" name="searchMode" value="barcode_only" checked> 🏷️ بحث باركود </label>
+                <label><input type="radio" name="searchMode" value="barcode_and_text"> 🔍 بحث الاسم</label>
+            </div>
+
+            <div class="search-box-wrapper">
+                <input type="text" id="itemSearchInput" placeholder="أدخل نص/رقم البحث هنا..." onkeydown="if(event.key === 'Enter') searchItems()">
+                <button class="btn-action" onclick="searchItems()">بحث 🔍</button>
+                <button class="btn-scan" onclick="toggleCameraScanner()">كاميرا 📷</button>
+            </div>
+
+            <div id="reader"></div>
+
+            <div id="itemsLoading" style="text-align: center; color: var(--text-muted); display: none; font-size: 12px; font-weight: 600; margin-bottom: 8px;">⏳ جاري البحث...</div>
+            <div class="items-results" id="itemsResultsContainer">
+                <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px;">اختر خيار البحث وادخل القيمة للبدء...</div>
+            </div>
         </div>
+        
+        <button class="btn" style="background: #334155; color: white; margin-top: 22px; padding: 11px;" onclick="logout()">تسجيل الخروج 🚪</button>
     </div>
-
-    <div id="msg"></div>
 </div>
 
-<!-- نافذة النتائج -->
-<div class="modal" id="modalResult">
-    <div class="modal-card">
-        <div class="modal-head">
-            <span>نتيجة البحث - سنتر العائلة السعيدة</span>
-            <button type="button" class="btn-red" id="btnCloseResultX">×</button>
+<!-- النافذة المنبثقة لتفاصيل الفواتير النقدية -->
+<div id="cashModal" class="modal" onclick="handleModalClick(event, 'cashModal')">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>💵 تفاصيل الفواتير النقدية</h3>
+            <button class="close-btn" onclick="toggleCashModal(false)">&times;</button>
         </div>
-        <div id="resultList"></div>
-        <button type="button" class="btn-dark" id="btnCloseResult">إغلاق</button>
+        <ul class="bank-details-list">
+            <li><span>💵 المبيعات النقدية:</span> <strong id="cashSalesDetail" style="color: #22c55e;">0.00 د.ل</strong></li>
+            <li><span>🔀 كاش دفع متعدد:</span> <strong id="cashMultiSpecialDetail" style="color: #a855f7;">0.00 د.ل</strong></li>
+        </ul>
     </div>
 </div>
 
-<!-- نافذة السلة -->
-<div class="modal" id="modalCart">
-    <div class="modal-card">
-        <div class="modal-head">
-            <span>🛒 سلة التسوق</span>
-            <button type="button" class="btn-red" id="btnCloseCartX">×</button>
+<!-- النافذة المنبثقة لتفاصيل الخدمات المصرفية -->
+<div id="bankModal" class="modal" onclick="handleModalClick(event, 'bankModal')">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>💳 تفاصيل العمليات المصرفية</h3>
+            <button class="close-btn" onclick="toggleBankModal(false)">&times;</button>
         </div>
-        <div id="cartList"></div>
-        <div class="cart-total">
-            <span>الإجمالي:</span>
-            <span><span id="cartSum">0</span> د.ل</span>
-        </div>
-        <div class="row" style="margin-bottom:10px;">
-            <button type="button" class="btn-green" style="flex:2;" id="btnMakeQr">توليد QR الفاتورة</button>
-            <button type="button" class="btn-red" style="flex:1;" id="btnEmptyCart">تفريغ</button>
-        </div>
-        <button type="button" class="btn-dark" id="btnCloseCart">إغلاق</button>
+        <ul class="bank-details-list">
+            <li><span>📱 موبي كاش:</span> <strong id="mobiDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+            <li><span>💳 البطاقة المصرفية:</span> <strong id="cardDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+            <li><span>🤝 يسر باي :</span> <strong id="yesserDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+            <li><span>🛒 ادفع لي:</span> <strong id="edfaqDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+        </ul>
     </div>
 </div>
 
-<!-- نافذة QR الفاتورة -->
-<div class="modal" id="modalQr">
-    <div class="modal-card">
-        <div class="modal-head">
-            <span>QR الفاتورة</span>
-            <button type="button" class="btn-red" id="btnCloseQrX">×</button>
+<!-- النافذة المنبثقة لتفاصيل الدفع المتعدد -->
+<div id="multiModal" class="modal" onclick="handleModalClick(event, 'multiModal')">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🔀 تفاصيل الدفع المتعدد</h3>
+            <button class="close-btn" onclick="toggleMultiModal(false)">&times;</button>
         </div>
-        <div class="qr-box">
-            <canvas id="qrCanvas" width="240" height="240"></canvas>
-        </div>
-        <div class="invoice-box">
-            <span>قيمة الفاتورة</span>
-            <span class="invoice-val"><span id="qrInvoiceSum">0</span> د.ل</span>
-        </div>
-        <button type="button" class="btn-dark" id="btnCloseQr">إغلاق</button>
+        <ul class="bank-details-list">
+            <li><span>💵 كاش دفع متعدد (625):</span> <strong id="multiSpecialDetail" style="color: #a855f7;">0.00 د.ل</strong></li>
+            <li><span>🔀 حساب الدفع المتعدد (صافي):</span> <strong id="multiGeneralDetail" style="color: #a855f7;">0.00 د.ل</strong></li>
+        </ul>
     </div>
 </div>
 
 <script>
-(function () {
-    var SB_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
-    var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
-    var STORE_ID = "2";
+    const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
+    
+    let currentStoreId = null;
+    let html5QrcodeScanner = null;
 
-    var foundItems = [];
-    var cart = [];
+    let currentCashBreakdown = { cashSales: 0, multiSpecial: 0 };
+    let currentBankBreakdown = { mobi: 0, card: 0, yesser: 0, edfaq: 0 };
+    let currentMultiBreakdown = { multiSpecial: 0, multiGeneral: 0 };
 
-    function showMsg(text, isError) {
-        var el = document.getElementById("msg");
-        if (!el) return;
-        el.textContent = text;
-        el.className = isError ? "msg-err" : "msg-info";
-    }
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('startDate').value = today;
+    document.getElementById('endDate').value = today;
 
-    function hideMsg() {
-        var el = document.getElementById("msg");
-        if (!el) return;
-        el.textContent = "";
-        el.className = "";
-    }
+    window.onload = function() {
+        const savedSession = localStorage.getItem('admin_session');
+        const loginTime = localStorage.getItem('admin_login_time');
 
-    function esc(s) {
-        return String(s == null ? "" : s)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;");
-    }
+        if (savedSession && loginTime) {
+            const currentTime = new Date().getTime();
+            const hoursElapsed = (currentTime - Number(loginTime)) / (1000 * 60 * 60);
 
-    function calcTotal() {
-        var sum = 0;
-        for (var i = 0; i < cart.length; i++) {
-            sum += (Number(cart[i].price) || 0) * (Number(cart[i].qty) || 1);
-        }
-        return sum;
-    }
-
-    function refreshCartBadge() {
-        var count = 0;
-        for (var i = 0; i < cart.length; i++) {
-            count += Number(cart[i].qty) || 1;
-        }
-        var bCount = document.getElementById("badgeCount");
-        var bTotal = document.getElementById("badgeTotal");
-        if (bCount) bCount.textContent = String(count);
-        if (bTotal) bTotal.textContent = String(calcTotal());
-    }
-
-    function openModal(id) {
-        var m = document.getElementById(id);
-        if (m) m.classList.add("show");
-    }
-
-    function closeModal(id) {
-        var m = document.getElementById(id);
-        if (m) m.classList.remove("show");
-    }
-
-    function drawSimpleQr(text) {
-        var canvas = document.getElementById("qrCanvas");
-        if (!canvas || !canvas.getContext) return;
-        var ctx = canvas.getContext("2d");
-        var w = 240;
-        canvas.width = w;
-        canvas.height = w;
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, w, w);
-        if (!text) return;
-
-        var n = 21;
-        var cell = Math.floor((w - 24) / n);
-        var offset = Math.floor((w - cell * n) / 2);
-
-        var bits = [];
-        for (var i = 0; i < text.length; i++) {
-            var code = text.charCodeAt(i);
-            for (var b = 7; b >= 0; b--) {
-                bits.push((code >> b) & 1);
-            }
-        }
-        while (bits.length < 300) {
-            bits.push((bits.length * 3 + 1) % 2);
-        }
-
-        ctx.fillStyle = "#000000";
-        var k = 0;
-        for (var r = 0; r < n; r++) {
-            for (var c = 0; c < n; c++) {
-                var tl = (r < 7 && c < 7);
-                var tr = (r < 7 && c >= n - 7);
-                var bl = (r >= n - 7 && c < 7);
-                var black = false;
-
-                if (tl || tr || bl) {
-                    var lr = r, lc = c;
-                    if (tr) lc = c - (n - 7);
-                    if (bl) lr = r - (n - 7);
-                    black = (lr === 0 || lr === 6 || lc === 0 || lc === 6 || (lr >= 2 && lr <= 4 && lc >= 2 && lc <= 4));
-                } else if (r === 6 || c === 6) {
-                    black = ((r + c) % 2 === 0);
-                } else {
-                    black = bits[k % bits.length] === 1;
-                    k++;
-                }
-
-                if (black) {
-                    ctx.fillRect(offset + c * cell, offset + r * cell, cell, cell);
-                }
-            }
-        }
-    }
-
-    function renderCart() {
-        var list = document.getElementById("cartList");
-        var sumEl = document.getElementById("cartSum");
-        var total = calcTotal();
-        if (sumEl) sumEl.textContent = String(total);
-        if (!list) return;
-
-        if (cart.length === 0) {
-            list.innerHTML = "<div style='padding:14px;text-align:center;color:#475569;font-weight:bold;'>السلة فارغة حالياً</div>";
-            return;
-        }
-
-        var out = "";
-        for (var i = 0; i < cart.length; i++) {
-            var item = cart[i];
-            var line = (Number(item.price) || 0) * (Number(item.qty) || 1);
-            out += "<div class='cart-row'>" +
-                "<div>" +
-                "<div style='font-weight:bold;'>" + esc(item.name) + "</div>" +
-                "<div style='font-size:13px;color:#15803d;font-weight:bold;'>الكمية: " + item.qty + " | المجموع: " + line + " د.ل</div>" +
-                "</div>" +
-                "<div class='row'>" +
-                "<button type='button' class='btn-blue' style='padding:6px 10px;' data-plus='" + i + "'>+</button>" +
-                "<button type='button' class='btn-blue' style='padding:6px 10px;' data-minus='" + i + "'>-</button>" +
-                "<button type='button' class='btn-red' style='padding:6px 10px;' data-del='" + i + "'>×</button>" +
-                "</div>" +
-                "</div>";
-        }
-        list.innerHTML = out;
-    }
-
-    function openResult(items) {
-        foundItems = items || [];
-        var list = document.getElementById("resultList");
-        if (!list) return;
-
-        var out = "";
-        for (var i = 0; i < foundItems.length; i++) {
-            var it = foundItems[i];
-            var price = Number(it.sale_price) || 0;
-            out += "<div class='item-card'>" +
-                "<div class='item-name'>" + esc(it.item_name || "بدون اسم") + "</div>" +
-                "<div class='item-price'>" + price + " د.ل</div>" +
-                "<button type='button' class='btn-orange' style='width:100%;' data-add='" + i + "'>إضافة إلى السلة</button>" +
-                "</div>";
-        }
-        list.innerHTML = out;
-        openModal("modalResult");
-    }
-
-    function runSearch(mode) {
-        var inName = document.getElementById("inName");
-        var inBarcode = document.getElementById("inBarcode");
-        var q = mode === "barcode"
-            ? (inBarcode ? inBarcode.value.trim() : "")
-            : (inName ? inName.value.trim() : "");
-
-        if (!q) {
-            showMsg("أدخل كلمة البحث أو الباركود أولاً", true);
-            return;
-        }
-
-        showMsg("جاري البحث...", false);
-
-        var url = SB_URL + "/rest/v1/store_items?store_id=eq." + STORE_ID + "&select=*";
-        if (mode === "barcode") {
-            url += "&barcode=eq." + encodeURIComponent(q);
-        } else if (!isNaN(q)) {
-            url += "&or=(item_id.eq." + encodeURIComponent(q) + ",barcode.eq." + encodeURIComponent(q) + ")";
-        } else {
-            url += "&item_name=ilike.*" + encodeURIComponent(q.replace(/[%_*]/g, "")) + "*";
-        }
-
-        fetch(url, {
-            headers: {
-                "apikey": SB_KEY,
-                "Authorization": "Bearer " + SB_KEY
-            }
-        })
-        .then(function (r) { return r.json(); })
-        .then(function (rows) {
-            if (Array.isArray(rows) && rows.length > 0) {
-                hideMsg();
-                openResult(rows);
+            if (hoursElapsed < 6) {
+                const storeData = JSON.parse(savedSession);
+                currentStoreId = storeData.store_id;
+                
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                document.getElementById('welcomeStore').innerText = `🏪 ${storeData.store_name}`;
+                
+                fetchSalesData();
             } else {
-                showMsg("لم يتم العثور على صنف مطابق", true);
+                localStorage.removeItem('admin_session');
+                localStorage.removeItem('admin_login_time');
             }
-        })
-        .catch(function () {
-            showMsg("تعذر الاتصال بقاعدة البيانات", true);
-        });
+        }
+    };
+
+    function toggleCashModal(show) {
+        const modal = document.getElementById('cashModal');
+        modal.style.display = show ? 'block' : 'none';
+        if(show) {
+            document.getElementById('cashSalesDetail').innerText = currentCashBreakdown.cashSales.toFixed(2) + " د.ل";
+            document.getElementById('cashMultiSpecialDetail').innerText = currentCashBreakdown.multiSpecial.toFixed(2) + " د.ل";
+        }
     }
 
-    document.getElementById("btnSearchName").addEventListener("click", function () { runSearch("name"); });
-    document.getElementById("btnSearchBarcode").addEventListener("click", function () { runSearch("barcode"); });
-
-    document.getElementById("inName").addEventListener("keydown", function (e) {
-        if (e.key === "Enter") runSearch("name");
-    });
-    document.getElementById("inBarcode").addEventListener("keydown", function (e) {
-        if (e.key === "Enter") runSearch("barcode");
-    });
-
-    document.getElementById("btnOpenCart").addEventListener("click", function () {
-        renderCart();
-        openModal("modalCart");
-    });
-
-    document.getElementById("btnEmptyCart").addEventListener("click", function () {
-        cart = [];
-        refreshCartBadge();
-        renderCart();
-    });
-
-    document.getElementById("btnMakeQr").addEventListener("click", function () {
-        var total = calcTotal();
-        var sumEl = document.getElementById("qrInvoiceSum");
-        if (sumEl) sumEl.textContent = String(total);
-
-        var parts = [];
-        for (var i = 0; i < cart.length; i++) {
-            var code = String(cart[i].code || ("I" + (i + 1))).replace(/[^A-Za-z0-9_-]/g, "");
-            parts.push((code || "ITEM") + "*" + cart[i].qty);
+    function toggleBankModal(show) {
+        const modal = document.getElementById('bankModal');
+        modal.style.display = show ? 'block' : 'none';
+        if(show) {
+            document.getElementById('mobiDetail').innerText = currentBankBreakdown.mobi.toFixed(2) + " د.ل";
+            document.getElementById('cardDetail').innerText = currentBankBreakdown.card.toFixed(2) + " د.ل";
+            document.getElementById('yesserDetail').innerText = currentBankBreakdown.yesser.toFixed(2) + " د.ل";
+            document.getElementById('edfaqDetail').innerText = currentBankBreakdown.edfaq.toFixed(2) + " د.ل";
         }
-        drawSimpleQr(parts.length ? ("CART-" + parts.join("-")) : "");
-        openModal("modalQr");
-    });
+    }
 
-    document.getElementById("resultList").addEventListener("click", function (e) {
-        var btn = e.target.closest ? e.target.closest("[data-add]") : null;
-        if (!btn) return;
-        var idx = Number(btn.getAttribute("data-add"));
-        var it = foundItems[idx];
-        if (!it) return;
-
-        var key = String(it.barcode || it.item_id || idx);
-        var found = null;
-        for (var i = 0; i < cart.length; i++) {
-            if (cart[i].key === key) { found = cart[i]; break; }
+    function toggleMultiModal(show) {
+        const modal = document.getElementById('multiModal');
+        modal.style.display = show ? 'block' : 'none';
+        if(show) {
+            document.getElementById('multiSpecialDetail').innerText = currentMultiBreakdown.multiSpecial.toFixed(2) + " د.ل";
+            document.getElementById('multiGeneralDetail').innerText = currentMultiBreakdown.multiGeneral.toFixed(2) + " د.ل";
         }
-        if (found) {
-            found.qty += 1;
+    }
+
+    function handleModalClick(event, modalId) {
+        if (event.target.id === modalId) {
+            if(modalId === 'cashModal') toggleCashModal(false);
+            if(modalId === 'bankModal') toggleBankModal(false);
+            if(modalId === 'multiModal') toggleMultiModal(false);
+        }
+    }
+
+    async function cloudLogin() {
+        const usernameInput = document.getElementById('userInput').value.trim();
+        const passwordInput = document.getElementById('passInput').value.trim();
+        const errorMsg = document.getElementById('loginError');
+        const loadingMsg = document.getElementById('loginLoading');
+
+        if (!usernameInput || !passwordInput) {
+            errorMsg.innerText = "⚠️ الرجاء إدخال اسم المستخدم وكلمة المرور";
+            errorMsg.style.display = 'block';
+            return;
+        }
+
+        errorMsg.style.display = 'none';
+        loadingMsg.style.display = 'block';
+
+        try {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/stores?username=eq.${encodeURIComponent(usernameInput)}&password=eq.${encodeURIComponent(passwordInput)}&select=*`, {
+                method: 'GET',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            loadingMsg.style.display = 'none';
+
+            if (!response.ok) {
+                errorMsg.innerText = "❌ خطأ في الاتصال بقاعدة البيانات";
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            const data = await response.json();
+
+            if (data && data.length > 0) {
+                const store = data[0];
+                currentStoreId = String(store.store_id || store.id || "2");
+                const storeName = store.store_name || 'معرض التجارة';
+
+                const sessionData = { store_id: currentStoreId, store_name: storeName };
+                localStorage.setItem('admin_session', JSON.stringify(sessionData));
+                localStorage.setItem('admin_login_time', new Date().getTime().toString());
+                
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                document.getElementById('welcomeStore').innerText = `🏪 ${storeName}`;
+                
+                fetchSalesData();
+            } else {
+                errorMsg.innerText = "❌ اسم المستخدم أو كلمة المرور غير صحيحة";
+                errorMsg.style.display = 'block';
+            }
+        } catch (err) {
+            loadingMsg.style.display = 'none';
+            errorMsg.innerText = "❌ خطأ في النظام: " + err.message;
+            errorMsg.style.display = 'block';
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('admin_session');
+        localStorage.removeItem('admin_login_time');
+        location.reload();
+    }
+
+    async function fetchSalesData() {
+        if (!currentStoreId) return;
+
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const loadingDiv = document.getElementById('loadingStatus');
+        
+        loadingDiv.style.display = 'block';
+
+        try {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${currentStoreId}&order=last_update.desc&limit=2000&select=*`, {
+                method: 'GET',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            loadingDiv.style.display = 'none';
+
+            if (!response.ok) return;
+
+            const data = await response.json();
+
+            let totalCash = 0;
+            let sumCard = 0;
+            let sumMobi = 0;
+            let sumYesser = 0;
+            let sumEdfaq = 0;
+            let sumMultiGeneralRaw = 0;
+            let sumMultiSpecial = 0;
+            
+            let latestFormattedDateTime = "--/--/---- --:--:--";
+
+            if (data && data.length > 0) {
+                const dailyRecords = {};
+                
+                data.forEach(item => {
+                    if (!item.last_update) return;
+                    const itemDate = item.last_update.split('T')[0];
+                    
+                    if (itemDate >= startDate && itemDate <= endDate) {
+                        if (!dailyRecords[itemDate]) {
+                            dailyRecords[itemDate] = item;
+                        }
+                    }
+                });
+
+                if (data[0] && data[0].last_update) {
+                    const rawIsoString = data[0].last_update;
+                    const parsedDate = new Date(rawIsoString);
+                    if (!isNaN(parsedDate)) {
+                        const year = parsedDate.getFullYear();
+                        const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(parsedDate.getDate()).padStart(2, '0');
+                        const timeString = parsedDate.toTimeString().substring(0, 8);
+                        latestFormattedDateTime = `${year}/${month}/${day} - ${timeString}`;
+                    }
+                }
+
+                Object.values(dailyRecords).forEach(item => {
+                    const netCash = Number(item.cash_sales || 0);
+                    
+                    const netCard = Number(item.card_sales || 0) - Number(item.card_returns || 0);
+                    const netMobi = Number(item.mobicash_sales || 0) - Number(item.mobicash_returns || 0);
+                    const netYesser = Number(item.yesserpay_sales || 0) - Number(item.yesserpay_returns || 0);
+                    const netEdfaq = Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0);
+                    const netMultiGeneral = Number(item.multi_cash_sales || 0) - Number(item.multi_cash_returns || 0);
+                    
+                    const netMultiSpecial = Number(item.multi_cash_special_sales || 0);
+
+                    totalCash += netCash;
+                    sumCard += netCard;
+                    sumMobi += netMobi;
+                    sumYesser += netYesser;
+                    sumEdfaq += netEdfaq;
+                    sumMultiGeneralRaw += netMultiGeneral;
+                    sumMultiSpecial += netMultiSpecial;
+                });
+            }
+
+            let netMultiGeneral = sumMultiGeneralRaw - sumMultiSpecial;
+            if (netMultiGeneral < 0) netMultiGeneral = 0;
+
+            const totalBank = sumCard + sumMobi + sumYesser + sumEdfaq;
+            const totalMulti = netMultiGeneral + sumMultiSpecial;
+            const grandTotal = totalCash + totalBank + totalMulti;
+
+            currentCashBreakdown = {
+                cashSales: totalCash,
+                multiSpecial: sumMultiSpecial
+            };
+
+            currentBankBreakdown = { 
+                mobi: sumMobi, 
+                card: sumCard, 
+                yesser: sumYesser, 
+                edfaq: sumEdfaq 
+            };
+
+            currentMultiBreakdown = {
+                multiSpecial: sumMultiSpecial,
+                multiGeneral: netMultiGeneral
+            };
+
+            document.getElementById('cashAmount').innerText = totalCash.toFixed(2) + " د.ل";
+            document.getElementById('bankAmount').innerText = totalBank.toFixed(2) + " د.ل";
+            document.getElementById('multiAmount').innerText = totalMulti.toFixed(2) + " د.ل";
+            document.getElementById('totalAmount').innerText = grandTotal.toFixed(2) + " د.ل";
+
+            document.getElementById('lastSyncTime').innerText = `آخر تحديث للبيانات: ${latestFormattedDateTime}`;
+
+            if (document.getElementById('cashModal').style.display === 'block') toggleCashModal(true);
+            if (document.getElementById('bankModal').style.display === 'block') toggleBankModal(true);
+            if (document.getElementById('multiModal').style.display === 'block') toggleMultiModal(true);
+
+        } catch (err) {
+            loadingDiv.style.display = 'none';
+            console.error("خطأ في جلب المبيعات:", err);
+        }
+    }
+
+    async function searchItems(overrideQuery = null) {
+        const rawQuery = overrideQuery !== null ? overrideQuery : document.getElementById('itemSearchInput').value;
+        const query = rawQuery.trim();
+        const resultsContainer = document.getElementById('itemsResultsContainer');
+        const loadingIndicator = document.getElementById('itemsLoading');
+        const selectedMode = document.querySelector('input[name="searchMode"]:checked').value;
+
+        if (query.length < 1) {
+            resultsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px;">ادخل القيمة للبحث...</div>';
+            return;
+        }
+
+        loadingIndicator.style.display = 'block';
+
+        try {
+            let fetchUrl = "";
+            if (selectedMode === "barcode_only") {
+                fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&barcode=eq.${encodeURIComponent(query)}&limit=20&select=*`;
+            } else {
+                fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&or=(barcode.eq.${encodeURIComponent(query)},item_name.ilike.*${encodeURIComponent(query)}*)&limit=20&select=*`;
+            }
+
+            const response = await fetch(fetchUrl, {
+                method: 'GET',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const items = await response.json();
+            loadingIndicator.style.display = 'none';
+
+            if (items && items.length > 0) {
+                let html = '';
+                items.forEach(item => {
+                    html += `
+                        <div class="item-card">
+                            <div class="item-name">${item.item_name}</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">الباركود: ${item.barcode || 'بدون باركود'}</div>
+                            <div class="item-details">
+                                <div><span>سعر الشراء</span><b>${Number(item.buy_price || 0).toFixed(2)} د.ل</b></div>
+                                <div><span>سعر البيع</span><b style="color: #4ade80;">${Number(item.sale_price || 0).toFixed(2)} د.ل</b></div>
+                                <div><span>الكمية المتوفرة</span><b style="color: #38bdf8;">${item.available_qty} قطعة</b></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                resultsContainer.innerHTML = html;
+            } else {
+                resultsContainer.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 13px; padding: 12px;">❌ لم يتم العثور على أي صنف</div>`;
+            }
+
+        } catch (err) {
+            loadingIndicator.style.display = 'none';
+            console.error("خطأ في البحث:", err);
+        }
+    }
+
+    function toggleCameraScanner() {
+        const readerDiv = document.getElementById('reader');
+        if (readerDiv.style.display === 'block') {
+            stopScanner();
         } else {
-            cart.push({
-                key: key,
-                code: key,
-                name: String(it.item_name || "بدون اسم"),
-                price: Number(it.sale_price) || 0,
-                qty: 1
+            readerDiv.style.display = 'block';
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 220, height: 120 } },
+                (decodedText) => {
+                    document.getElementById('itemSearchInput').value = decodedText;
+                    searchItems(decodedText);
+                    stopScanner();
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                alert("⚠️ لا يمكن فتح الكاميرا، يرجى التأكد من إعطاء المتصفح صلاحية الكاميرا.");
+                stopScanner();
             });
         }
-        refreshCartBadge();
-        closeModal("modalResult");
-        renderCart();
-        openModal("modalCart");
-    });
+    }
 
-    document.getElementById("cartList").addEventListener("click", function (e) {
-        var plusBtn = e.target.closest ? e.target.closest("[data-plus]") : null;
-        var minusBtn = e.target.closest ? e.target.closest("[data-minus]") : null;
-        var delBtn = e.target.closest ? e.target.closest("[data-del]") : null;
-
-        if (plusBtn) {
-            var p = Number(plusBtn.getAttribute("data-plus"));
-            if (cart[p]) cart[p].qty += 1;
-        } else if (minusBtn) {
-            var m = Number(minusBtn.getAttribute("data-minus"));
-            if (cart[m]) {
-                cart[m].qty -= 1;
-                if (cart[m].qty <= 0) cart.splice(m, 1);
-            }
-        } else if (delBtn) {
-            var d = Number(delBtn.getAttribute("data-del"));
-            if (cart[d]) cart.splice(d, 1);
+    function stopScanner() {
+        const readerDiv = document.getElementById('reader');
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.stop().then(() => {
+                html5QrcodeScanner.clear();
+                readerDiv.style.display = 'none';
+            }).catch(() => {
+                readerDiv.style.display = 'none';
+            });
         } else {
-            return;
+            readerDiv.style.display = 'none';
         }
-
-        refreshCartBadge();
-        renderCart();
-    });
-
-    document.getElementById("btnCloseResult").addEventListener("click", function () { closeModal("modalResult"); });
-    document.getElementById("btnCloseResultX").addEventListener("click", function () { closeModal("modalResult"); });
-    document.getElementById("btnCloseCart").addEventListener("click", function () { closeModal("modalCart"); });
-    document.getElementById("btnCloseCartX").addEventListener("click", function () { closeModal("modalCart"); });
-    document.getElementById("btnCloseQr").addEventListener("click", function () { closeModal("modalQr"); });
-    document.getElementById("btnCloseQrX").addEventListener("click", function () { closeModal("modalQr"); });
-
-    refreshCartBadge();
-})();
+    }
 </script>
 
 </body>
