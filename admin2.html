@@ -157,6 +157,10 @@
             background-color: rgba(59, 130, 246, 0.04);
             border-color: rgba(59, 130, 246, 0.3);
         }
+
+        .stat-card.multi-net {
+            border-right: 6px solid #a855f7;
+        }
         
         .stat-card.total { 
             border-right: 6px solid #eab308; 
@@ -168,6 +172,7 @@
         
         .val-cash { color: #22c55e; }
         .val-bank { color: #3b82f6; }
+        .val-multi-net { color: #a855f7; }
         .val-total { color: #eab308; }
         
         .hint-text { display: block; font-size: 11px; margin-top: 4px; font-weight: 700; opacity: 0.9; }
@@ -319,8 +324,13 @@
                 <span class="hint-text" style="color: #3b82f6;">🔍 انقر لعرض تفاصيل الخدمات المصرفية</span>
             </div>
 
+            <div class="stat-card multi-net">
+                <div class="stat-title">🔀 الدفع المتعدد صافي</div>
+                <div class="stat-value val-multi-net" id="multiNetAmount">0.00 د.ل</div>
+            </div>
+
             <div class="stat-card total">
-                <div class="stat-title">💰 اجمالي (النقدية + الخدمات المصرفية)</div>
+                <div class="stat-title">💰 اجمالي (النقدية + الخدمات المصرفية + الدفع المتعدد صافي)</div>
                 <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
             </div>
         </div>
@@ -378,7 +388,6 @@
             <li><span>💳 البطاقة المصرفية:</span> <strong id="cardDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
             <li><span>🤝 يسر باي :</span> <strong id="yesserDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
             <li><span>🛒 ادفع لي:</span> <strong id="edfaqDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
-            <li><span>🔀 حساب الدفع المتعدد (صافي):</span> <strong id="bankMultiGeneralDetail" style="color: #a855f7;">0.00 د.ل</strong></li>
         </ul>
     </div>
 </div>
@@ -391,7 +400,7 @@
     let html5QrcodeScanner = null;
 
     let currentCashBreakdown = { cashSales: 0, multiSpecial: 0 };
-    let currentBankBreakdown = { mobi: 0, card: 0, yesser: 0, edfaq: 0, multiGeneral: 0 };
+    let currentBankBreakdown = { mobi: 0, card: 0, yesser: 0, edfaq: 0 };
 
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('startDate').value = today;
@@ -438,7 +447,6 @@
             document.getElementById('cardDetail').innerText = currentBankBreakdown.card.toFixed(2) + " د.ل";
             document.getElementById('yesserDetail').innerText = currentBankBreakdown.yesser.toFixed(2) + " د.ل";
             document.getElementById('edfaqDetail').innerText = currentBankBreakdown.edfaq.toFixed(2) + " د.ل";
-            document.getElementById('bankMultiGeneralDetail').innerText = currentBankBreakdown.multiGeneral.toFixed(2) + " د.ل";
         }
     }
 
@@ -572,163 +580,3 @@
                         const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
                         const day = String(parsedDate.getDate()).padStart(2, '0');
                         const timeString = parsedDate.toTimeString().substring(0, 8);
-                        latestFormattedDateTime = `${year}/${month}/${day} - ${timeString}`;
-                    }
-                }
-
-                Object.values(dailyRecords).forEach(item => {
-                    const netCash = Number(item.cash_sales || 0);
-                    
-                    const netCard = Number(item.card_sales || 0) - Number(item.card_returns || 0);
-                    const netMobi = Number(item.mobicash_sales || 0) - Number(item.mobicash_returns || 0);
-                    const netYesser = Number(item.yesserpay_sales || 0) - Number(item.yesserpay_returns || 0);
-                    const netEdfaq = Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0);
-                    const netMultiGeneral = Number(item.multi_cash_sales || 0) - Number(item.multi_cash_returns || 0);
-                    
-                    const netMultiSpecial = Number(item.multi_cash_special_sales || 0);
-
-                    totalCash += netCash;
-                    sumCard += netCard;
-                    sumMobi += netMobi;
-                    sumYesser += netYesser;
-                    sumEdfaq += netEdfaq;
-                    sumMultiGeneralRaw += netMultiGeneral;
-                    sumMultiSpecial += netMultiSpecial;
-                });
-            }
-
-            let netMultiGeneral = sumMultiGeneralRaw - sumMultiSpecial;
-            if (netMultiGeneral < 0) netMultiGeneral = 0;
-
-            const cashTabTotal = totalCash + sumMultiSpecial;
-            const bankTabTotal = sumCard + sumMobi + sumYesser + sumEdfaq + netMultiGeneral;
-            const grandTotal = cashTabTotal + bankTabTotal;
-
-            currentCashBreakdown = {
-                cashSales: totalCash,
-                multiSpecial: sumMultiSpecial
-            };
-
-            currentBankBreakdown = { 
-                mobi: sumMobi, 
-                card: sumCard, 
-                yesser: sumYesser, 
-                edfaq: sumEdfaq,
-                multiGeneral: netMultiGeneral
-            };
-
-            document.getElementById('cashAmount').innerText = cashTabTotal.toFixed(2) + " د.ل";
-            document.getElementById('bankAmount').innerText = bankTabTotal.toFixed(2) + " د.ل";
-            document.getElementById('totalAmount').innerText = grandTotal.toFixed(2) + " د.ل";
-
-            document.getElementById('lastSyncTime').innerText = `آخر تحديث للبيانات: ${latestFormattedDateTime}`;
-
-            if (document.getElementById('cashModal').style.display === 'block') toggleCashModal(true);
-            if (document.getElementById('bankModal').style.display === 'block') toggleBankModal(true);
-
-        } catch (err) {
-            loadingDiv.style.display = 'none';
-            console.error("خطأ في جلب المبيعات:", err);
-        }
-    }
-
-    async function searchItems(overrideQuery = null) {
-        const rawQuery = overrideQuery !== null ? overrideQuery : document.getElementById('itemSearchInput').value;
-        const query = rawQuery.trim();
-        const resultsContainer = document.getElementById('itemsResultsContainer');
-        const loadingIndicator = document.getElementById('itemsLoading');
-        const selectedMode = document.querySelector('input[name="searchMode"]:checked').value;
-
-        if (query.length < 1) {
-            resultsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px;">ادخل القيمة للبحث...</div>';
-            return;
-        }
-
-        loadingIndicator.style.display = 'block';
-
-        try {
-            let fetchUrl = "";
-            if (selectedMode === "barcode_only") {
-                fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&barcode=eq.${encodeURIComponent(query)}&limit=20&select=*`;
-            } else {
-                fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&or=(barcode.eq.${encodeURIComponent(query)},item_name.ilike.*${encodeURIComponent(query)}*)&limit=20&select=*`;
-            }
-
-            const response = await fetch(fetchUrl, {
-                method: 'GET',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            const items = await response.json();
-            loadingIndicator.style.display = 'none';
-
-            if (items && items.length > 0) {
-                let html = '';
-                items.forEach(item => {
-                    html += `
-                        <div class="item-card">
-                            <div class="item-name">${item.item_name}</div>
-                            <div style="font-size: 11px; color: var(--text-muted);">الباركود: ${item.barcode || 'بدون باركود'}</div>
-                            <div class="item-details">
-                                <div><span>سعر الشراء</span><b>${Number(item.buy_price || 0).toFixed(2)} د.ل</b></div>
-                                <div><span>سعر البيع</span><b style="color: #4ade80;">${Number(item.sale_price || 0).toFixed(2)} د.ل</b></div>
-                                <div><span>الكمية المتوفرة</span><b style="color: #38bdf8;">${item.available_qty} قطعة</b></div>
-                            </div>
-                        </div>
-                    `;
-                });
-                resultsContainer.innerHTML = html;
-            } else {
-                resultsContainer.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 13px; padding: 12px;">❌ لم يتم العثور على أي صنف</div>`;
-            }
-
-        } catch (err) {
-            loadingIndicator.style.display = 'none';
-            console.error("خطأ في البحث:", err);
-        }
-    }
-
-    function toggleCameraScanner() {
-        const readerDiv = document.getElementById('reader');
-        if (readerDiv.style.display === 'block') {
-            stopScanner();
-        } else {
-            readerDiv.style.display = 'block';
-            html5QrcodeScanner = new Html5Qrcode("reader");
-            html5QrcodeScanner.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 220, height: 120 } },
-                (decodedText) => {
-                    document.getElementById('itemSearchInput').value = decodedText;
-                    searchItems(decodedText);
-                    stopScanner();
-                },
-                (errorMessage) => {}
-            ).catch(err => {
-                alert("⚠️ لا يمكن فتح الكاميرا، يرجى التأكد من إعطاء المتصفح صلاحية الكاميرا.");
-                stopScanner();
-            });
-        }
-    }
-
-    function stopScanner() {
-        const readerDiv = document.getElementById('reader');
-        if (html5QrcodeScanner) {
-            html5QrcodeScanner.stop().then(() => {
-                html5QrcodeScanner.clear();
-                readerDiv.style.display = 'none';
-            }).catch(() => {
-                readerDiv.style.display = 'none';
-            });
-        } else {
-            readerDiv.style.display = 'none';
-        }
-    }
-</script>
-
-</body>
-</html>
