@@ -711,4 +711,32 @@
                 { facingMode: "environment" },
                 { fps: 10, qrbox: { width: 220, height: 120 } },
                 (decodedText) => {
-                    document
+                    document.getElementById('itemSearchInput').value = decodedText;
+                    searchItems(decodedText);
+                    stopScanner();
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                alert("⚠️ لا يمكن فتح الكاميرا، يرجى التأكد من إعطاء المتصفح صلاحية الكاميرا.");
+                stopScanner();
+            });
+        }
+    }
+
+    function stopScanner() {
+        const readerDiv = document.getElementById('reader');
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.stop().then(() => {
+                html5QrcodeScanner.clear();
+                readerDiv.style.display = 'none';
+            }).catch(() => {
+                readerDiv.style.display = 'none';
+            });
+        } else {
+            readerDiv.style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>
