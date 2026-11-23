@@ -157,16 +157,6 @@
             background-color: rgba(59, 130, 246, 0.04);
             border-color: rgba(59, 130, 246, 0.3);
         }
-
-        .stat-card.multi { 
-            border-right: 6px solid #a855f7; 
-            cursor: pointer; 
-        }
-        .stat-card.multi:hover { 
-            transform: translateY(-2px); 
-            background-color: rgba(168, 85, 247, 0.04);
-            border-color: rgba(168, 85, 247, 0.3);
-        }
         
         .stat-card.total { 
             border-right: 6px solid #eab308; 
@@ -178,7 +168,6 @@
         
         .val-cash { color: #22c55e; }
         .val-bank { color: #3b82f6; }
-        .val-multi { color: #a855f7; }
         .val-total { color: #eab308; }
         
         .hint-text { display: block; font-size: 11px; margin-top: 4px; font-weight: 700; opacity: 0.9; }
@@ -330,14 +319,8 @@
                 <span class="hint-text" style="color: #3b82f6;">🔍 انقر لعرض تفاصيل الخدمات المصرفية</span>
             </div>
 
-            <div class="stat-card multi" onclick="toggleMultiModal(true)">
-                <div class="stat-title">🔀 الدفع المتعدد</div>
-                <div class="stat-value val-multi" id="multiAmount">0.00 د.ل</div>
-                <span class="hint-text" style="color: #a855f7;">🔍 انقر لعرض تفاصيل الدفع المتعدد</span>
-            </div>
-
             <div class="stat-card total">
-                <div class="stat-title">💰 اجمالي (النقدية + الخدمات المصرفية + الدفع المتعدد)</div>
+                <div class="stat-title">💰 اجمالي (النقدية + الخدمات المصرفية)</div>
                 <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
             </div>
         </div>
@@ -400,19 +383,6 @@
     </div>
 </div>
 
-<!-- النافذة المنبثقة لتفاصيل الدفع المتعدد -->
-<div id="multiModal" class="modal" onclick="handleModalClick(event, 'multiModal')">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>🔀 تفاصيل الدفع المتعدد</h3>
-            <button class="close-btn" onclick="toggleMultiModal(false)">&times;</button>
-        </div>
-        <ul class="bank-details-list">
-            <li><span>💵 كاش دفع متعدد (625):</span> <strong id="multiSpecialDetail" style="color: #a855f7;">0.00 د.ل</strong></li>
-        </ul>
-    </div>
-</div>
-
 <script>
     const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
@@ -422,7 +392,6 @@
 
     let currentCashBreakdown = { cashSales: 0, multiSpecial: 0 };
     let currentBankBreakdown = { mobi: 0, card: 0, yesser: 0, edfaq: 0, multiGeneral: 0 };
-    let currentMultiBreakdown = { multiSpecial: 0 };
 
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('startDate').value = today;
@@ -473,19 +442,10 @@
         }
     }
 
-    function toggleMultiModal(show) {
-        const modal = document.getElementById('multiModal');
-        modal.style.display = show ? 'block' : 'none';
-        if(show) {
-            document.getElementById('multiSpecialDetail').innerText = currentMultiBreakdown.multiSpecial.toFixed(2) + " د.ل";
-        }
-    }
-
     function handleModalClick(event, modalId) {
         if (event.target.id === modalId) {
             if(modalId === 'cashModal') toggleCashModal(false);
             if(modalId === 'bankModal') toggleBankModal(false);
-            if(modalId === 'multiModal') toggleMultiModal(false);
         }
     }
 
@@ -642,8 +602,7 @@
 
             const cashTabTotal = totalCash + sumMultiSpecial;
             const totalBank = sumCard + sumMobi + sumYesser + sumEdfaq;
-            const totalMulti = netMultiGeneral + sumMultiSpecial;
-            const grandTotal = totalCash + totalBank + totalMulti;
+            const grandTotal = cashTabTotal + totalBank;
 
             currentCashBreakdown = {
                 cashSales: totalCash,
@@ -658,20 +617,14 @@
                 multiGeneral: netMultiGeneral
             };
 
-            currentMultiBreakdown = {
-                multiSpecial: sumMultiSpecial
-            };
-
             document.getElementById('cashAmount').innerText = cashTabTotal.toFixed(2) + " د.ل";
             document.getElementById('bankAmount').innerText = totalBank.toFixed(2) + " د.ل";
-            document.getElementById('multiAmount').innerText = totalMulti.toFixed(2) + " د.ل";
             document.getElementById('totalAmount').innerText = grandTotal.toFixed(2) + " د.ل";
 
             document.getElementById('lastSyncTime').innerText = `آخر تحديث للبيانات: ${latestFormattedDateTime}`;
 
             if (document.getElementById('cashModal').style.display === 'block') toggleCashModal(true);
             if (document.getElementById('bankModal').style.display === 'block') toggleBankModal(true);
-            if (document.getElementById('multiModal').style.display === 'block') toggleMultiModal(true);
 
         } catch (err) {
             loadingDiv.style.display = 'none';
