@@ -601,8 +601,8 @@
             if (netMultiGeneral < 0) netMultiGeneral = 0;
 
             const cashTabTotal = totalCash + sumMultiSpecial;
-            const totalBank = sumCard + sumMobi + sumYesser + sumEdfaq;
-            const grandTotal = cashTabTotal + totalBank;
+            const bankTabTotal = sumCard + sumMobi + sumYesser + sumEdfaq + netMultiGeneral;
+            const grandTotal = cashTabTotal + bankTabTotal;
 
             currentCashBreakdown = {
                 cashSales: totalCash,
@@ -618,7 +618,7 @@
             };
 
             document.getElementById('cashAmount').innerText = cashTabTotal.toFixed(2) + " د.ل";
-            document.getElementById('bankAmount').innerText = totalBank.toFixed(2) + " د.ل";
+            document.getElementById('bankAmount').innerText = bankTabTotal.toFixed(2) + " د.ل";
             document.getElementById('totalAmount').innerText = grandTotal.toFixed(2) + " د.ل";
 
             document.getElementById('lastSyncTime').innerText = `آخر تحديث للبيانات: ${latestFormattedDateTime}`;
