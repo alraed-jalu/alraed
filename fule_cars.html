@@ -3,424 +3,774 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منظومة توزيع الوقود الذكية - وضع المبرمج</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Barcode & QR Scanner Library -->
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <!-- QR Code Generator Library -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-</head>
-<body class="bg-gray-100 font-sans">
-
-    <!-- التطبيق الرئيسي -->
-    <div id="app-screen" class="max-w-md mx-auto min-h-screen bg-white shadow-lg flex flex-col">
-        <header class="bg-blue-600 text-white p-4 flex justify-between items-center shadow">
-            <div>
-                <span id="user-role-badge" class="text-xs bg-blue-800 px-2 py-0.5 rounded font-bold">المبرمج (أحمد) - صلاحيات كاملة 🚀</span>
-                <h2 class="font-bold text-lg mt-1">منظومة الوقود الذكية</h2>
-            </div>
-            <div class="flex items-center gap-2">
-                <span id="connection-status" class="text-xs px-2 py-1 rounded bg-green-500 font-bold">متصل</span>
-            </div>
-        </header>
-
-        <!-- شريط العمليات المعلقة في الأوفلاين -->
-        <div id="sync-bar" class="bg-yellow-100 text-yellow-800 px-4 py-2 text-xs flex justify-between items-center hidden">
-            <span id="sync-text">⚠️ توجد عمليات معلقة بانتظار الاتصال</span>
-            <button onclick="syncOfflineData()" class="bg-yellow-600 text-white px-2 py-1 rounded">مزامنة الآن</button>
-        </div>
-
-        <!-- الأزرار الرئيسية للتبديل بين الأقسام -->
-        <div class="flex border-b text-sm bg-gray-50" id="tabs-container">
-            <button onclick="switchTab('scan')" id="btn-tab-scan" class="flex-1 py-3 text-center font-bold text-blue-600 border-b-2 border-blue-600 bg-white">فحص وتعبئة</button>
-            <button onclick="switchTab('add')" id="btn-tab-add" class="flex-1 py-3 text-center font-bold text-gray-500">إضافة سيارة</button>
-            <button onclick="switchTab('report')" id="btn-tab-report" class="flex-1 py-3 text-center font-bold text-gray-500">التقرير</button>
-            <button onclick="switchTab('devices')" id="btn-tab-devices" class="flex-1 py-3 text-center font-bold text-gray-500">الأجهزة</button>
-        </div>
-
-        <!-- المحتوى -->
-        <main class="p-4 flex-1">
-            
-            <!-- تبويب الفحص والتعبئة -->
-            <div id="tab-scan" class="space-y-4">
-                <div class="bg-blue-50 p-3 rounded border border-blue-200">
-                    <label class="block text-xs font-bold text-blue-900 mb-1">📍 تحديد المحطة الحالية:</label>
-                    <input type="text" id="station-name-input" value="محطة التوزيع المركزية - رقم (1)" class="w-full border p-2 rounded text-sm bg-white" placeholder="اكتب اسم ورقم المحطة...">
-                </div>
-
-                <div class="flex justify-between items-center">
-                    <h2 class="text-gray-700 font-semibold text-sm">مسح الـ QR Code أو الإدخال اليدوي</h2>
-                    <button onclick="toggleCamera()" id="cam-toggle-btn" class="bg-green-600 text-white text-xs px-3 py-1.5 rounded font-bold">📷 فتح الكاميرا</button>
-                </div>
-
-                <!-- حاوية قارئ الكاميرا -->
-                <div id="reader-container" class="hidden space-y-2">
-                    <div id="reader" class="w-full rounded overflow-hidden border bg-black"></div>
-                    <button onclick="stopCamera()" class="w-full bg-red-500 text-white text-xs py-1.5 rounded font-bold">إغلاق الكاميرا ❌</button>
-                </div>
-
-                <div class="flex gap-2 mt-2">
-                    <input type="text" id="barcode-input" placeholder="رقم الكود..." class="flex-1 border p-2 rounded text-sm">
-                    <button onclick="checkCar()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold text-sm">بحث</button>
-                </div>
-                <div id="result-box" class="mt-4 p-4 rounded hidden"></div>
-            </div>
-
-            <!-- تبويب إضافة سيارة مع توليد QR -->
-            <div id="tab-add" class="space-y-4 hidden">
-                <h2 class="text-gray-700 font-semibold text-sm">تسجيل سيارة جديدة وتوليد QR</h2>
-                <div>
-                    <label class="block text-xs text-gray-600 mb-1">رقم لوحة السيارة</label>
-                    <input type="text" id="car-plate" placeholder="مثال: بنغازي 12345" class="w-full border p-2 rounded text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-600 mb-1">اسم المالك (حسب الأوراق)</label>
-                    <input type="text" id="owner-name" placeholder="اسم المالك" class="w-full border p-2 rounded text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-600 mb-1">نوع الوقود</label>
-                    <select id="fuel-type" class="w-full border p-2 rounded text-sm">
-                        <option value="بنزين">بنزين</option>
-                        <option value="نافته">نافته</option>
-                    </select>
-                </div>
-                <button onclick="addNewCar()" class="w-full bg-green-600 text-white py-2 rounded font-bold mt-2 text-sm">حفظ وتوليد QR Code</button>
-                
-                <div id="add-result" class="mt-2 text-center font-bold text-sm"></div>
-
-                <!-- حاوية عرض QR Code الناتج للطباعة -->
-                <div id="qrcode-container" class="mt-4 flex flex-col items-center hidden bg-gray-50 p-3 rounded border">
-                    <p class="text-xs text-gray-600 mb-2 font-bold">QR Code الخاص بالسيارة (جاهز للطباعة):</p>
-                    <div id="qrcode" class="p-2 bg-white border rounded"></div>
-                    <button onclick="window.print()" class="mt-2 bg-gray-800 text-white text-xs px-3 py-1 rounded">🖨️ طباعة الملصق</button>
-                </div>
-            </div>
-
-            <!-- تبويب التقرير اليومي -->
-            <div id="tab-report" class="space-y-4 hidden">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-gray-700 font-semibold text-sm">التقرير اليومي لعمليات التعبئة</h2>
-                    <button onclick="window.print()" class="bg-gray-800 text-white text-xs px-3 py-1 rounded">🖨️ طباعة</button>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-blue-50 p-3 rounded border text-center">
-                        <span class="block text-xs text-gray-500">إجمالي المعَبأ اليوم</span>
-                        <span id="today-count" class="text-xl font-bold text-blue-600">0</span>
-                    </div>
-                    <div class="bg-green-50 p-3 rounded border text-center">
-                        <span class="block text-xs text-gray-500">فترة الانتظار</span>
-                        <span id="current-period-label" class="text-xl font-bold text-green-600">5 أيام</span>
-                    </div>
-                </div>
-
-                <div id="admin-settings" class="bg-gray-50 p-3 rounded border">
-                    <h3 class="font-bold text-xs text-gray-700 mb-2">⚙️ إعدادات النظام</h3>
-                    <div class="flex gap-2">
-                        <input type="number" id="waiting-days-input" value="5" min="1" max="30" class="border p-1 w-20 rounded text-center text-sm">
-                        <span class="text-xs self-center">أيام الحظر بين التعبئات</span>
-                        <button onclick="updateWaitingDays()" class="bg-blue-600 text-white px-3 py-1 rounded text-xs">تحديث</button>
-                    </div>
-                </div>
-
-                <div class="border rounded overflow-hidden">
-                    <table class="w-full text-right text-xs">
-                        <thead class="bg-gray-100 border-b">
-                            <tr>
-                                <th class="p-2">اللوحة</th>
-                                <th class="p-2">المالك</th>
-                                <th class="p-2">النوع</th>
-                                <th class="p-2">المحطة</th>
-                                <th class="p-2">الوقت</th>
-                            </tr>
-                        </thead>
-                        <tbody id="report-table-body"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- تبويب إدارة الأجهزة والموافقات (للمبرمج) -->
-            <div id="tab-devices" class="space-y-4 hidden">
-                <h2 class="text-gray-700 font-semibold text-sm">📱 إدارة الأجهزة والموافقات الأمنية</h2>
-                <p class="text-xs text-gray-500">الموافقة على الهواتف الجديدة أو حظرها.</p>
-                <button onclick="loadDevicesList()" class="bg-blue-600 text-white text-xs px-3 py-1.5 rounded mb-2">🔄 تحديث القائمة</button>
-                <div id="devices-list" class="space-y-2"></div>
-            </div>
-
-        </main>
-    </div>
-
-    <!-- تعريف الدوال بشكل عام (Global) لضمان استجابة الأزرار بنسبة 100% -->
-    <script>
-        const SUPABASE_URL = "https://juuxykjfesqodofzcarg.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_6HPGqXM6fhBvitIzhZv8bA_gUNbSXd6";
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        let currentBarcode = "";
-        let waitingDaysLimit = parseInt(localStorage.getItem('waiting_days') || '5');
-        let html5QrCode = null;
-        let isCameraRunning = false;
-
-        window.onload = function() {
-            try {
-                document.getElementById('waiting-days-input').value = waitingDaysLimit;
-                document.getElementById('current-period-label').textContent = `${waitingDaysLimit} أيام`;
-                loadDailyReport();
-                loadDevicesList();
-                cacheCarsData();
-            } catch(e) {}
-        };
-
-        // دالة التنقل بين التبويبات
-        window.switchTab = function(tab) {
-            if(tab !== 'scan' && isCameraRunning) {
-                stopCamera();
-            }
-
-            ['scan', 'add', 'report', 'devices'].forEach(t => {
-                const el = document.getElementById(`tab-${t}`);
-                const btn = document.getElementById(`btn-tab-${t}`);
-                if(el) el.classList.add('hidden');
-                if(btn) {
-                    btn.className = "flex-1 py-3 text-center font-bold text-gray-500 bg-gray-50";
-                }
-            });
-            
-            const targetTab = document.getElementById(`tab-${tab}`);
-            const targetBtn = document.getElementById(`btn-tab-${tab}`);
-            if(targetTab) targetTab.classList.remove('hidden');
-            if(targetBtn) targetBtn.className = "flex-1 py-3 text-center font-bold text-blue-600 border-b-2 border-blue-600 bg-white";
-
-            if(tab === 'report') loadDailyReport();
-            if(tab === 'devices') loadDevicesList();
-        };
-
-        // تشغيل الكاميرا
-        window.toggleCamera = async function() {
-            const container = document.getElementById('reader-container');
-            const btn = document.getElementById('cam-toggle-btn');
-
-            if (!isCameraRunning) {
-                container.classList.remove('hidden');
-                btn.textContent = "إيقاف الكاميرا";
-                btn.className = "bg-red-600 text-white text-xs px-3 py-1.5 rounded font-bold";
-                
-                try {
-                    if (!html5QrCode) {
-                        html5QrCode = new Html5Qrcode("reader");
-                    }
-                    await html5QrCode.start(
-                        { facingMode: "environment" }, 
-                        { fps: 10, qrbox: { width: 250, height: 250 } }, 
-                        (decodedText) => {
-                            document.getElementById('barcode-input').value = decodedText;
-                            stopCamera();
-                            checkCar(decodedText);
-                        },
-                        (errorMessage) => {}
-                    );
-                    isCameraRunning = true;
-                } catch(err) {
-                    alert("تعذر تشغيل الكاميرا. تأكد من إعطاء الصلاحية للمتصفح.");
-                    container.classList.add('hidden');
-                    btn.textContent = "📷 فتح الكاميرا";
-                    btn.className = "bg-green-600 text-white text-xs px-3 py-1.5 rounded font-bold";
-                }
-            } else {
-                stopCamera();
-            }
-        };
-
-        window.stopCamera = async function() {
-            if (html5QrCode && isCameraRunning) {
-                try {
-                    await html5QrCode.stop();
-                    html5QrCode.clear();
-                } catch(e) {}
-                isCameraRunning = false;
-            }
-            document.getElementById('reader-container').classList.add('hidden');
-            const btn = document.getElementById('cam-toggle-btn');
-            if(btn) {
-                btn.textContent = "📷 فتح الكاميرا";
-                btn.className = "bg-green-600 text-white text-xs px-3 py-1.5 rounded font-bold";
-            }
-        };
-
-        window.loadDevicesList = async function() {
-            const container = document.getElementById('devices-list');
-            if(!container) return;
-            container.innerHTML = "جاري التحميل...";
-            const { data, error } = await supabase.from('approved_devices').select('*').order('created_at', { ascending: false });
-            
-            if (error || !data) { container.innerHTML = "خطأ في الجلب."; return; }
-
-            container.innerHTML = "";
-            data.forEach(dev => {
-                let statusColor = dev.status === 'approved' ? 'text-green-600 bg-green-50' : (dev.status === 'blocked' ? 'text-red-600 bg-red-50' : 'text-yellow-600 bg-yellow-50');
-                let statusText = dev.status === 'approved' ? 'معتمد ✅' : (dev.status === 'blocked' ? 'محظور ❌' : 'قيد الانتظار ⏳');
-
-                container.innerHTML += `
-                    <div class="p-3 border rounded text-xs space-y-1 ${statusColor}">
-                        <div><b>البصمة:</b> <span class="font-mono">${dev.device_fingerprint}</span></div>
-                        <div><b>الجهاز:</b> ${dev.device_name}</div>
-                        <div><b>الحالة:</b> ${statusText}</div>
-                        <div class="flex gap-2 mt-2">
-                            <button onclick="updateDeviceStatus('${dev.device_fingerprint}', 'approved')" class="bg-green-600 text-white px-2 py-1 rounded">اعتماد</button>
-                            <button onclick="updateDeviceStatus('${dev.device_fingerprint}', 'blocked')" class="bg-red-600 text-white px-2 py-1 rounded">حظر</button>
-                        </div>
-                    </div>
-                `;
-            });
-        };
-
-        window.updateDeviceStatus = async function(fp, newStatus) {
-            const { error } = await supabase.from('approved_devices').update({ status: newStatus }).eq('device_fingerprint', fp);
-            if (!error) { alert("تم التحديث!"); loadDevicesList(); } else { alert("خطأ في التحديث."); }
-        };
-
-        window.updateWaitingDays = function() {
-            const val = parseInt(document.getElementById('waiting-days-input').value);
-            if(val > 0) {
-                waitingDaysLimit = val;
-                localStorage.setItem('waiting_days', val);
-                document.getElementById('current-period-label').textContent = `${val} أيام`;
-                alert("تم التحديث!");
-            }
-        };
-
-        async function cacheCarsData() {
-            if (!navigator.onLine) return;
-            const { data, error } = await supabase.from('cars').select('*');
-            if (!error && data) localStorage.setItem('cached_cars', JSON.stringify(data));
+    <title>شاشة عرض المبيعات - معرض سنتر العائلة</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --container-bg: #131b2e;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --input-bg: #0b0f19;
+            --border-color: #1e293b;
+            --card-bg: #131b2e;
+            --accent-glow: rgba(56, 189, 248, 0.1);
         }
 
-        window.checkCar = async function(code = null) {
-            const barcode = code || document.getElementById('barcode-input').value.trim();
-            const resultBox = document.getElementById('result-box');
-            if(!barcode) { alert("أدخل الكود أولاً"); return; }
-
-            resultBox.classList.remove('hidden');
-            resultBox.innerHTML = "جاري البحث...";
-
-            let car = null;
-            if (navigator.onLine) {
-                const { data } = await supabase.from('cars').select('*').eq('barcode_id', barcode).single();
-                if (data) car = data;
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg-color: #f8fafc;
+                --container-bg: #ffffff;
+                --text-color: #0f172a;
+                --text-muted: #64748b;
+                --input-bg: #f1f5f9;
+                --border-color: #e2e8f0;
+                --card-bg: #f8fafc;
+                --accent-glow: rgba(2, 132, 199, 0.08);
             }
-            if (!car) {
-                const cached = JSON.parse(localStorage.getItem('cached_cars') || '[]');
-                car = cached.find(c => c.barcode_id === barcode);
-            }
+        }
 
-            if (!car) {
-                resultBox.className = "mt-4 p-4 rounded bg-red-100 text-red-700 font-bold text-sm";
-                resultBox.innerHTML = "❌ الكود غير مسجل في المنظومة!";
+        body { 
+            font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            margin: 0; 
+            padding: 12px; 
+            transition: background-color 0.3s ease; 
+        }
+        
+        .container { 
+            max-width: 600px; 
+            margin: auto; 
+            background: var(--container-bg); 
+            padding: 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2); 
+            border: 1px solid var(--border-color);
+        }
+
+        h2 { 
+            text-align: center; 
+            color: #38bdf8; 
+            margin-top: 0; 
+            margin-bottom: 6px; 
+            font-size: 22px; 
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .store-tag { 
+            text-align: center; 
+            color: #fb923c; 
+            font-size: 15px; 
+            font-weight: 700; 
+            margin-bottom: 4px; 
+        }
+
+        .last-sync-time { 
+            text-align: center; 
+            color: var(--text-muted); 
+            font-size: 12px; 
+            margin-bottom: 16px; 
+            font-weight: 500;
+        }
+        
+        #loginSection { text-align: center; padding: 20px 0; }
+        label { font-weight: 600; font-size: 13px; color: var(--text-muted); }
+        
+        input[type="text"], input[type="password"], input[type="date"] { 
+            width: 100%; 
+            padding: 12px; 
+            font-size: 14px; 
+            border-radius: 10px; 
+            border: 1px solid var(--border-color); 
+            background: var(--input-bg); 
+            color: var(--text-color); 
+            box-sizing: border-box; 
+            margin-bottom: 14px; 
+            text-align: center; 
+            transition: all 0.2s ease;
+        }
+        
+        input[type="text"]:focus, input[type="password"]:focus, input[type="date"]:focus {
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        
+        .btn { 
+            width: 100%; 
+            padding: 12px; 
+            font-size: 15px; 
+            font-weight: 700; 
+            border-radius: 10px; 
+            border: none; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+        }
+        
+        .btn-primary { 
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); 
+            color: white; 
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+        }
+        
+        .btn-primary:hover { 
+            background: linear-gradient(135deg, #0369a1 100%, #075985 100%); 
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(2, 132, 199, 0.35);
+        }
+        
+        .date-range-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .date-group { text-align: right; }
+        .date-group label { font-size: 12px; display: block; margin-bottom: 4px; }
+        .date-group input { margin-bottom: 0; padding: 10px; font-size: 13px; }
+
+        .stats-container { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+        
+        .stat-card { 
+            background: var(--card-bg); 
+            border: 1px solid var(--border-color); 
+            padding: 16px; 
+            border-radius: 12px; 
+            text-align: center; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.25s ease;
+        }
+        
+        .stat-card.cash { 
+            border-right: 6px solid #22c55e; 
+            cursor: pointer; 
+        }
+        .stat-card.cash:hover { 
+            transform: translateY(-2px); 
+            background-color: rgba(34, 197, 94, 0.04);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+        
+        .stat-card.bank { 
+            border-right: 6px solid #3b82f6; 
+            cursor: pointer; 
+        }
+        .stat-card.bank:hover { 
+            transform: translateY(-2px); 
+            background-color: rgba(59, 130, 246, 0.04);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+        
+        .stat-card.total { 
+            border-right: 6px solid #eab308; 
+            background: linear-gradient(to left, rgba(234, 179, 8, 0.03), var(--card-bg)); 
+            cursor: pointer;
+        }
+        .stat-card.total:hover {
+            transform: translateY(-2px);
+            background-color: rgba(234, 179, 8, 0.05);
+            border-color: rgba(234, 179, 8, 0.35);
+        }
+        
+        .stat-title { font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
+        .stat-value { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+        
+        .val-cash { color: #22c55e; }
+        .val-bank { color: #3b82f6; }
+        .val-total { color: #eab308; }
+        
+        .hint-text { display: block; font-size: 11px; margin-top: 4px; font-weight: 700; opacity: 0.9; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: var(--container-bg);
+            margin: 18% auto;
+            padding: 20px;
+            border-radius: 14px;
+            width: 85%;
+            max-width: 360px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            text-align: right;
+            max-height: 65vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+        .modal-header h3 { color: #38bdf8; margin: 0; font-size: 16px; font-weight: 700; }
+        .close-btn { background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; transition: color 0.2s; }
+        .close-btn:hover { color: var(--text-color); }
+        
+        .bank-details-list { list-style: none; padding: 0; margin: 0; }
+        .bank-details-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 11px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .bank-details-list li:last-child { border-bottom: none; }
+
+        .search-section { margin-top: 22px; border-top: 2px solid var(--border-color); padding-top: 18px; }
+        
+        .search-mode-selector { 
+            display: flex; justify-content: center; gap: 20px; margin-bottom: 12px; background: var(--input-bg); padding: 10px; border-radius: 10px; border: 1px solid var(--border-color); 
+        }
+        .search-mode-selector label { font-size: 13px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 6px; color: var(--text-color); }
+
+        .search-box-wrapper { display: flex; gap: 8px; margin-bottom: 12px; }
+        .search-box-wrapper input { margin-bottom: 0; text-align: center; flex: 1; font-weight: 700; padding: 12px; font-size: 14px; }
+        
+        .btn-action { background: #0284c7; color: white; border: none; padding: 0 14px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13px; white-space: nowrap; transition: background 0.2s; }
+        .btn-action:hover { background: #0369a1; }
+
+        .btn-scan { background: #059669; color: white; border: none; padding: 0 14px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13px; white-space: nowrap; transition: background 0.2s; }
+        .btn-scan:hover { background: #047857; }
+
+        #reader { width: 100%; max-width: 350px; margin: 0 auto 12px auto; border-radius: 12px; overflow: hidden; display: none; border: 2px solid #38bdf8; }
+
+        .items-results { display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto; }
+        
+        .item-card { 
+            background: var(--card-bg); 
+            border: 1px solid var(--border-color); 
+            padding: 14px; 
+            border-radius: 10px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .item-name { font-size: 15px; font-weight: 800; color: #38bdf8; }
+        
+        .item-details { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr 1fr; 
+            gap: 6px; 
+            font-size: 13px; 
+            text-align: center; 
+            background: var(--input-bg); 
+            padding: 8px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border-color);
+        }
+        .item-details span { color: var(--text-muted); font-size: 11px; font-weight: 600; }
+        .item-details b { color: var(--text-color); display: block; margin-top: 3px; font-size: 13px; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📊 لوحة عرض المبيعات </h2>
+    <div class="store-tag" id="welcomeStore">تسجيل الدخول مطلوب</div>
+    <div class="last-sync-time" id="lastSyncTime">آخر تحديث للبيانات: --/--/---- --:--:--</div>
+
+    <!-- شاشة تسجيل الدخول -->
+    <div id="loginSection">
+        <label style="display:block; margin-bottom: 6px; text-align: right;">اسم المستخدم:</label>
+        <input type="text" id="userInput" placeholder="أدخل اسم المستخدم...">
+        
+        <label style="display:block; margin-bottom: 6px; text-align: right;">كلمة المرور:</label>
+        <input type="password" id="passInput" placeholder="****">
+
+        <button class="btn btn-primary" onclick="cloudLogin()">دخول 🔐</button>
+        <p id="loginError" style="color: #f87171; display: none; margin-top: 10px; font-size: 13px; font-weight: 600;">❌ اسم المستخدم أو كلمة المرور غير صحيحة</p>
+        <p id="loginLoading" style="color: #38bdf8; display: none; margin-top: 10px; font-size: 13px; font-weight: 600;">⏳ جاري التحقق من قاعدة البيانات...</p>
+    </div>
+
+    <!-- لوحة البيانات الرئيسية والبحث -->
+    <div id="dashboardSection" class="hidden">
+        <div class="date-range-grid">
+            <div class="date-group">
+                <label>من تاريخ:</label>
+                <input type="date" id="startDate">
+            </div>
+            <div class="date-group">
+                <label>إلى تاريخ:</label>
+                <input type="date" id="endDate">
+            </div>
+        </div>
+        <button class="btn btn-primary" style="margin-bottom: 14px; padding: 11px;" onclick="fetchSalesData()">عرض الفترة 🔍</button>
+
+        <div id="loadingStatus" style="text-align: center; color: var(--text-muted); display: none; font-size: 13px; font-weight: 600; margin-bottom: 10px;">⏳ جاري جلب البيانات من السحابة...</div>
+
+        <!-- الكروت الإحصائية -->
+        <div class="stats-container">
+            <div class="stat-card cash" onclick="toggleCashModal(true)">
+                <div class="stat-title">💵 الفواتير النقدية</div>
+                <div class="stat-value val-cash" id="cashAmount">0.00 د.ل</div>
+                <span class="hint-text" style="color: #22c55e;">🔍 انقر لعرض تفاصيل الفواتير النقدية</span>
+            </div>
+
+            <div class="stat-card bank" onclick="toggleBankModal(true)">
+                <div class="stat-title">💳 فواتير الخدمات المصرفية</div>
+                <div class="stat-value val-bank" id="bankAmount">0.00 د.ل</div>
+                <span class="hint-text" style="color: #3b82f6;">🔍 انقر لعرض تفاصيل الخدمات المصرفية</span>
+            </div>
+
+            <div class="stat-card total" onclick="toggleTotalModal(true)">
+                <div class="stat-title">💰 اجمالي (النقدية + الخدمات المصرفية + الدفع المتعدد)</div>
+                <div class="stat-value val-total" id="totalAmount">0.00 د.ل</div>
+                <span class="hint-text" style="color: #eab308;">🔍 انقر لعرض تكلفة المواد وقيمة الربح</span>
+            </div>
+        </div>
+
+        <!-- قسم الاستعلام عن المواد ومسح الباركود -->
+        <div class="search-section">
+            <h3 style="color: #38bdf8; text-align: right; font-size: 16px; margin-bottom: 10px; font-weight: 700;">📦 الاستعلام عن المواد </h3>
+            
+            <div class="search-mode-selector">
+                <label><input type="radio" name="searchMode" value="barcode_only" checked> 🏷️ بحث باركود </label>
+                <label><input type="radio" name="searchMode" value="barcode_and_text"> 🔍 بحث الاسم</label>
+            </div>
+
+            <div class="search-box-wrapper">
+                <input type="text" id="itemSearchInput" placeholder="أدخل نص/رقم البحث هنا..." onkeydown="if(event.key === 'Enter') searchItems()">
+                <button class="btn-action" onclick="searchItems()">بحث 🔍</button>
+                <button class="btn-scan" onclick="toggleCameraScanner()">كاميرا 📷</button>
+            </div>
+
+            <div id="reader"></div>
+
+            <div id="itemsLoading" style="text-align: center; color: var(--text-muted); display: none; font-size: 12px; font-weight: 600; margin-bottom: 8px;">⏳ جاري البحث...</div>
+            <div class="items-results" id="itemsResultsContainer">
+                <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px;">اختر خيار البحث وادخل القيمة للبدء...</div>
+            </div>
+        </div>
+        
+        <button class="btn" style="background: #334155; color: white; margin-top: 22px; padding: 11px;" onclick="logout()">تسجيل الخروج 🚪</button>
+    </div>
+</div>
+
+<!-- النافذة المنبثقة لتفاصيل الفواتير النقدية -->
+<div id="cashModal" class="modal" onclick="handleModalClick(event, 'cashModal')">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>💵 تفاصيل الفواتير النقدية</h3>
+            <button class="close-btn" onclick="toggleCashModal(false)">&times;</button>
+        </div>
+        <ul class="bank-details-list">
+            <li><span>💵 المبيعات النقدية:</span> <strong id="cashSalesDetail" style="color: #22c55e;">0.00 د.ل</strong></li>
+            <li><span>🔀 كاش دفع متعدد:</span> <strong id="cashMultiSpecialDetail" style="color: #a855f7;">0.00 د.ل</strong></li>
+        </ul>
+    </div>
+</div>
+
+<!-- النافذة المنبثقة لتفاصيل الخدمات المصرفية -->
+<div id="bankModal" class="modal" onclick="handleModalClick(event, 'bankModal')">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>💳 تفاصيل العمليات المصرفية</h3>
+            <button class="close-btn" onclick="toggleBankModal(false)">&times;</button>
+        </div>
+        <ul class="bank-details-list">
+            <li><span>📱 موبي كاش:</span> <strong id="mobiDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+            <li><span>💳 البطاقة المصرفية:</span> <strong id="cardDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+            <li><span>🤝 يسر باي :</span> <strong id="yesserDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+            <li><span>🛒 ادفع لي:</span> <strong id="edfaqDetail" style="color: #38bdf8;">0.00 د.ل</strong></li>
+            <li><span>🔀  الدفع المتعدد (الخدمات المصرفية):</span> <strong id="bankMultiGeneralDetail" style="color: #a855f7;">0.00 د.ل</strong></li>
+        </ul>
+    </div>
+</div>
+
+<!-- النافذة المنبثقة لتفاصيل إجمالي المبيعات (التكلفة والربح) -->
+<div id="totalModal" class="modal" onclick="handleModalClick(event, 'totalModal')">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📊 ملخص التكلفة والأرباح</h3>
+            <button class="close-btn" onclick="toggleTotalModal(false)">&times;</button>
+        </div>
+        <ul class="bank-details-list">
+            <li><span>📦 تكلفة المواد المباعة:</span> <strong id="soldCostDetail" style="color: #fb923c;">0.00 د.ل</strong></li>
+            <li><span>📈 قيمة الربح:</span> <strong id="netProfitDetail" style="color: #22c55e;">0.00 د.ل</strong></li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
+    
+    let currentStoreId = null;
+    let html5QrcodeScanner = null;
+
+    let currentCashBreakdown = { cashSales: 0, multiSpecial: 0 };
+    let currentBankBreakdown = { mobi: 0, card: 0, yesser: 0, edfaq: 0, multiGeneral: 0 };
+    let currentTotalBreakdown = { soldCost: 0, netProfit: 0 };
+
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('startDate').value = today;
+    document.getElementById('endDate').value = today;
+
+    window.onload = function() {
+        const savedSession = localStorage.getItem('admin_session');
+        const loginTime = localStorage.getItem('admin_login_time');
+
+        if (savedSession && loginTime) {
+            const currentTime = new Date().getTime();
+            const hoursElapsed = (currentTime - Number(loginTime)) / (1000 * 60 * 60);
+
+            if (hoursElapsed < 6) {
+                const storeData = JSON.parse(savedSession);
+                currentStoreId = storeData.store_id;
+                
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                document.getElementById('welcomeStore').innerText = `🏪 ${storeData.store_name}`;
+                
+                fetchSalesData();
+            } else {
+                localStorage.removeItem('admin_session');
+                localStorage.removeItem('admin_login_time');
+            }
+        }
+    };
+
+    function toggleCashModal(show) {
+        const modal = document.getElementById('cashModal');
+        modal.style.display = show ? 'block' : 'none';
+        if(show) {
+            document.getElementById('cashSalesDetail').innerText = currentCashBreakdown.cashSales.toFixed(2) + " د.ل";
+            document.getElementById('cashMultiSpecialDetail').innerText = currentCashBreakdown.multiSpecial.toFixed(2) + " د.ل";
+        }
+    }
+
+    function toggleBankModal(show) {
+        const modal = document.getElementById('bankModal');
+        modal.style.display = show ? 'block' : 'none';
+        if(show) {
+            document.getElementById('mobiDetail').innerText = currentBankBreakdown.mobi.toFixed(2) + " د.ل";
+            document.getElementById('cardDetail').innerText = currentBankBreakdown.card.toFixed(2) + " د.ل";
+            document.getElementById('yesserDetail').innerText = currentBankBreakdown.yesser.toFixed(2) + " د.ل";
+            document.getElementById('edfaqDetail').innerText = currentBankBreakdown.edfaq.toFixed(2) + " د.ل";
+            document.getElementById('bankMultiGeneralDetail').innerText = currentBankBreakdown.multiGeneral.toFixed(2) + " د.ل";
+        }
+    }
+
+    function toggleTotalModal(show) {
+        const modal = document.getElementById('totalModal');
+        modal.style.display = show ? 'block' : 'none';
+        if(show) {
+            document.getElementById('soldCostDetail').innerText = currentTotalBreakdown.soldCost.toFixed(2) + " د.ل";
+            document.getElementById('netProfitDetail').innerText = currentTotalBreakdown.netProfit.toFixed(2) + " د.ل";
+        }
+    }
+
+    function handleModalClick(event, modalId) {
+        if (event.target.id === modalId) {
+            if(modalId === 'cashModal') toggleCashModal(false);
+            if(modalId === 'bankModal') toggleBankModal(false);
+            if(modalId === 'totalModal') toggleTotalModal(false);
+        }
+    }
+
+    async function cloudLogin() {
+        const usernameInput = document.getElementById('userInput').value.trim();
+        const passwordInput = document.getElementById('passInput').value.trim();
+        const errorMsg = document.getElementById('loginError');
+        const loadingMsg = document.getElementById('loginLoading');
+
+        if (!usernameInput || !passwordInput) {
+            errorMsg.innerText = "⚠️ الرجاء إدخال اسم المستخدم وكلمة المرور";
+            errorMsg.style.display = 'block';
+            return;
+        }
+
+        errorMsg.style.display = 'none';
+        loadingMsg.style.display = 'block';
+
+        try {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/stores?username=eq.${encodeURIComponent(usernameInput)}&password=eq.${encodeURIComponent(passwordInput)}&select=*`, {
+                method: 'GET',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            loadingMsg.style.display = 'none';
+
+            if (!response.ok) {
+                errorMsg.innerText = "❌ خطأ في الاتصال بقاعدة البيانات";
+                errorMsg.style.display = 'block';
                 return;
             }
 
-            currentBarcode = barcode;
-            const lastRefuel = new Date(car.last_refuel_date);
-            const now = new Date();
-            const diffDays = Math.floor((now - lastRefuel) / (1000 * 60 * 60 * 24));
+            const data = await response.json();
 
-            let html = `<div class="mb-1 text-sm">🚗 <b>اللوحة:</b> ${car.car_plate} | <b>المالك:</b> ${car.owner_name}</div>`;
-            html += `<div class="mb-2 text-sm">⛽ <b>النوع:</b> ${car.fuel_type} | <b>آخر تعبئة:</b> قبل ${diffDays} يوم</div>`;
+            if (data && data.length > 0) {
+                const store = data[0];
+                currentStoreId = String(store.store_id || store.id || "2");
+                const storeName = store.store_name || 'معرض التجارة';
 
-            if (diffDays < waitingDaysLimit) {
-                const remaining = waitingDaysLimit - diffDays;
-                resultBox.className = "mt-4 p-4 rounded bg-yellow-100 text-yellow-800 font-bold text-sm";
-                html += `⚠️ <b>غير مسموح بالتعبئة!</b> متبقي ${remaining} يوم على موعد التعبئة القادم.`;
+                const sessionData = { store_id: currentStoreId, store_name: storeName };
+                localStorage.setItem('admin_session', JSON.stringify(sessionData));
+                localStorage.setItem('admin_login_time', new Date().getTime().toString());
+                
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                document.getElementById('welcomeStore').innerText = `🏪 ${storeName}`;
+                
+                fetchSalesData();
             } else {
-                resultBox.className = "mt-4 p-4 rounded bg-green-100 text-green-800 font-bold text-sm";
-                html += `✅ <b>مسموح بالتعبئة!</b> انقضت فترة الانتظار.<br>`;
-                html += `<button onclick="confirmRefuel('${car.car_plate}', '${car.owner_name}', '${car.fuel_type}')" class="mt-3 w-full bg-blue-600 text-white py-2 rounded font-bold text-sm">تأكيد التعبئة الآن</button>`;
+                errorMsg.innerText = "❌ اسم المستخدم أو كلمة المرور غير صحيحة";
+                errorMsg.style.display = 'block';
             }
-            resultBox.innerHTML = html;
-        };
+        } catch (err) {
+            loadingMsg.style.display = 'none';
+            errorMsg.innerText = "❌ خطأ في النظام: " + err.message;
+            errorMsg.style.display = 'block';
+        }
+    }
 
-        window.confirmRefuel = async function(plate, owner, fuel) {
-            const nowIso = new Date().toISOString();
-            const stationName = document.getElementById('station-name-input').value.trim() || "محطة غير محددة";
-            
-            let cached = JSON.parse(localStorage.getItem('cached_cars') || '[]');
-            cached = cached.map(c => {
-                if (c.barcode_id === currentBarcode) c.last_refuel_date = nowIso;
-                return c;
+    function logout() {
+        localStorage.removeItem('admin_session');
+        localStorage.removeItem('admin_login_time');
+        location.reload();
+    }
+
+    async function fetchSalesData() {
+        if (!currentStoreId) return;
+
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const loadingDiv = document.getElementById('loadingStatus');
+        
+        loadingDiv.style.display = 'block';
+
+        try {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/store_sales?store_id=eq.${currentStoreId}&order=last_update.desc&limit=2000&select=*`, {
+                method: 'GET',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                }
             });
-            localStorage.setItem('cached_cars', JSON.stringify(cached));
 
-            let history = JSON.parse(localStorage.getItem('refuel_history') || '[]');
-            history.unshift({ plate, owner, fuel, station: stationName, date: new Date().toLocaleString() });
-            localStorage.setItem('refuel_history', JSON.stringify(history));
+            loadingDiv.style.display = 'none';
 
-            alert(`🎉 تم تسجيل التعبئة بنجاح في (${stationName})!`);
-            checkCar(currentBarcode);
-        };
+            if (!response.ok) return;
 
-        window.addNewCar = function() {
-            const plate = document.getElementById('car-plate').value.trim();
-            const owner = document.getElementById('owner-name').value.trim();
-            const fuel = document.getElementById('fuel-type').value;
-            const addResult = document.getElementById('add-result');
+            const data = await response.json();
 
-            if(!plate || !owner) { alert("أدخل رقم اللوحة واسم المالك"); return; }
+            let totalCash = 0;
+            let sumCard = 0;
+            let sumMobi = 0;
+            let sumYesser = 0;
+            let sumEdfaq = 0;
+            let sumMultiGeneralRaw = 0;
+            let sumMultiSpecial = 0;
+            let sumNetProfit = 0;
+            
+            let latestFormattedDateTime = "--/--/---- --:--:--";
 
-            const newBarcode = 'BAR-' + Math.random().toString(36).substring(2, 10).toUpperCase();
-            const pastDate = new Date();
-            pastDate.setDate(pastDate.getDate() - (waitingDaysLimit + 1));
+            if (data && data.length > 0) {
+                const dailyRecords = {};
+                
+                data.forEach(item => {
+                    if (!item.last_update) return;
+                    const itemDate = item.last_update.split('T')[0];
+                    
+                    if (itemDate >= startDate && itemDate <= endDate) {
+                        if (!dailyRecords[itemDate]) {
+                            dailyRecords[itemDate] = item;
+                        }
+                    }
+                });
 
-            const newCarObj = {
-                barcode_id: newBarcode,
-                car_plate: plate,
-                owner_name: owner,
-                fuel_type: fuel,
-                last_refuel_date: pastDate.toISOString()
+                if (data[0] && data[0].last_update) {
+                    const rawIsoString = data[0].last_update;
+                    const parsedDate = new Date(rawIsoString);
+                    if (!isNaN(parsedDate)) {
+                        const year = parsedDate.getFullYear();
+                        const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(parsedDate.getDate()).padStart(2, '0');
+                        const timeString = parsedDate.toTimeString().substring(0, 8);
+                        latestFormattedDateTime = `${year}/${month}/${day} - ${timeString}`;
+                    }
+                }
+
+                Object.values(dailyRecords).forEach(item => {
+                    const netCash = Number(item.cash_sales || 0);
+                    
+                    const netCard = Number(item.card_sales || 0) - Number(item.card_returns || 0);
+                    const netMobi = Number(item.mobicash_sales || 0) - Number(item.mobicash_returns || 0);
+                    const netYesser = Number(item.yesserpay_sales || 0) - Number(item.yesserpay_returns || 0);
+                    const netEdfaq = Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0);
+                    const netMultiGeneral = Number(item.multi_cash_sales || 0) - Number(item.multi_cash_returns || 0);
+                    
+                    const netMultiSpecial = Number(item.multi_cash_special_sales || 0);
+                    const dayProfit = Number(item.net_profit || 0);
+
+                    totalCash += netCash;
+                    sumCard += netCard;
+                    sumMobi += netMobi;
+                    sumYesser += netYesser;
+                    sumEdfaq += netEdfaq;
+                    sumMultiGeneralRaw += netMultiGeneral;
+                    sumMultiSpecial += netMultiSpecial;
+                    sumNetProfit += dayProfit;
+                });
+            }
+
+            let netMultiGeneral = sumMultiGeneralRaw - sumMultiSpecial;
+            if (netMultiGeneral < 0) netMultiGeneral = 0;
+
+            const cashTabTotal = totalCash + sumMultiSpecial;
+            const bankTabTotal = sumCard + sumMobi + sumYesser + sumEdfaq + netMultiGeneral;
+            const grandTotal = cashTabTotal + bankTabTotal;
+            const soldItemsCost = Math.max(0, grandTotal - sumNetProfit);
+
+            currentCashBreakdown = {
+                cashSales: totalCash,
+                multiSpecial: sumMultiSpecial
             };
 
-            let cached = JSON.parse(localStorage.getItem('cached_cars') || '[]');
-            cached.push(newCarObj);
-            localStorage.setItem('cached_cars', JSON.stringify(cached));
+            currentBankBreakdown = { 
+                mobi: sumMobi, 
+                card: sumCard, 
+                yesser: sumYesser, 
+                edfaq: sumEdfaq,
+                multiGeneral: netMultiGeneral
+            };
 
-            addResult.className = "mt-2 text-green-600 font-bold text-sm";
-            addResult.innerHTML = `✅ تمت الإضافة بنجاح! كود السيارة: <span class="font-mono">${newBarcode}</span>`;
+            currentTotalBreakdown = {
+                soldCost: soldItemsCost,
+                netProfit: sumNetProfit
+            };
 
-            const qrContainer = document.getElementById('qrcode-container');
-            const qrElement = document.getElementById('qrcode');
-            qrElement.innerHTML = "";
-            qrContainer.classList.remove('hidden');
-            
-            new QRCode(qrElement, {
-                text: newBarcode,
-                width: 128,
-                height: 128,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
+            document.getElementById('cashAmount').innerText = cashTabTotal.toFixed(2) + " د.ل";
+            document.getElementById('bankAmount').innerText = bankTabTotal.toFixed(2) + " د.ل";
+            document.getElementById('totalAmount').innerText = grandTotal.toFixed(2) + " د.ل";
 
-            document.getElementById('car-plate').value = "";
-            document.getElementById('owner-name').value = "";
-        };
+            document.getElementById('lastSyncTime').innerText = `آخر تحديث للبيانات: ${latestFormattedDateTime}`;
 
-        window.loadDailyReport = function() {
-            let history = JSON.parse(localStorage.getItem('refuel_history') || '[]');
-            const countEl = document.getElementById('today-count');
-            if(countEl) countEl.textContent = history.length;
-            
-            let tbody = document.getElementById('report-table-body');
-            if(!tbody) return;
-            tbody.innerHTML = "";
-            if(history.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-gray-400">لا توجد عمليات تعبئة مسجلة</td></tr>`;
-                return;
+            if (document.getElementById('cashModal').style.display === 'block') toggleCashModal(true);
+            if (document.getElementById('bankModal').style.display === 'block') toggleBankModal(true);
+            if (document.getElementById('totalModal').style.display === 'block') toggleTotalModal(true);
+
+        } catch (err) {
+            loadingDiv.style.display = 'none';
+            console.error("خطأ في جلب المبيعات:", err);
+        }
+    }
+
+    async function searchItems(overrideQuery = null) {
+        const rawQuery = overrideQuery !== null ? overrideQuery : document.getElementById('itemSearchInput').value;
+        const query = rawQuery.trim();
+        const resultsContainer = document.getElementById('itemsResultsContainer');
+        const loadingIndicator = document.getElementById('itemsLoading');
+        const selectedMode = document.querySelector('input[name="searchMode"]:checked').value;
+
+        if (query.length < 1) {
+            resultsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px;">ادخل القيمة للبحث...</div>';
+            return;
+        }
+
+        loadingIndicator.style.display = 'block';
+
+        try {
+            let fetchUrl = "";
+            if (selectedMode === "barcode_only") {
+                fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&barcode=eq.${encodeURIComponent(query)}&limit=20&select=*`;
+            } else {
+                fetchUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${currentStoreId}&or=(barcode.eq.${encodeURIComponent(query)},item_name.ilike.*${encodeURIComponent(query)}*)&limit=20&select=*`;
             }
-            history.forEach(item => {
-                tbody.innerHTML += `<tr class="border-b"><td class="p-2">${item.plate}</td><td class="p-2">${item.owner}</td><td class="p-2">${item.fuel}</td><td class="p-2 text-blue-600 font-bold">${item.station || '-'}</td><td class="p-2">${item.date}</td></tr>`;
+
+            const response = await fetch(fetchUrl, {
+                method: 'GET',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                }
             });
-        };
-    </script>
+
+            const items = await response.json();
+            loadingIndicator.style.display = 'none';
+
+            if (items && items.length > 0) {
+                let html = '';
+                items.forEach(item => {
+                    html += `
+                        <div class="item-card">
+                            <div class="item-name">${item.item_name}</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">الباركود: ${item.barcode || 'بدون باركود'}</div>
+                            <div class="item-details">
+                                <div><span>سعر الشراء</span><b>${Number(item.buy_price || 0).toFixed(2)} د.ل</b></div>
+                                <div><span>سعر البيع</span><b style="color: #4ade80;">${Number(item.sale_price || 0).toFixed(2)} د.ل</b></div>
+                                <div><span>الكمية المتوفرة</span><b style="color: #38bdf8;">${item.available_qty} قطعة</b></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                resultsContainer.innerHTML = html;
+            } else {
+                resultsContainer.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 13px; padding: 12px;">❌ لم يتم العثور على أي صنف</div>`;
+            }
+
+        } catch (err) {
+            loadingIndicator.style.display = 'none';
+            console.error("خطأ في البحث:", err);
+        }
+    }
+
+    function toggleCameraScanner() {
+        const readerDiv = document.getElementById('reader');
+        if (readerDiv.style.display === 'block') {
+            stopScanner();
+        } else {
+            readerDiv.style.display = 'block';
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 220, height: 120 } },
+                (decodedText) => {
+                    document.getElementById('itemSearchInput').value = decodedText;
+                    searchItems(decodedText);
+                    stopScanner();
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                alert("⚠️ لا يمكن فتح الكاميرا، يرجى التأكد من إعطاء المتصفح صلاحية الكاميرا.");
+                stopScanner();
+            });
+        }
+    }
+
+    function stopScanner() {
+        const readerDiv = document.getElementById('reader');
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.stop().then(() => {
+                html5QrcodeScanner.clear();
+                readerDiv.style.display = 'none';
+            }).catch(() => {
+                readerDiv.style.display = 'none';
+            });
+        } else {
+            readerDiv.style.display = 'none';
+        }
+    }
+</script>
+
 </body>
 </html>
