@@ -76,46 +76,25 @@
             margin-top: 3px;
         }
 
-        .controls-bar {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
-            gap: 10px;
-            align-items: end;
-        }
-
-        .field-group label {
-            display: block;
+        .today-badge {
             font-size: 12px;
             font-weight: 700;
-            color: var(--text-muted);
-            margin-bottom: 5px;
-        }
-
-        input[type="date"], select {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 20px;
             background: var(--input-bg);
-            color: var(--text-color);
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        input[type="date"]:focus, select:focus {
-            outline: none;
-            border-color: #38bdf8;
-            box-shadow: 0 0 0 3px var(--accent-glow);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
         }
 
         .btn {
-            padding: 10px 16px;
+            padding: 11px 16px;
             border-radius: 10px;
             border: none;
             font-size: 14px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
+            width: 100%;
         }
 
         .btn-primary {
@@ -126,43 +105,6 @@
         .btn-primary:hover {
             filter: brightness(1.08);
             transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: var(--input-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-        }
-
-        .btn-secondary:hover {
-            border-color: #38bdf8;
-            color: #38bdf8;
-        }
-
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-            margin-top: 16px;
-        }
-
-        .summary-box {
-            background: var(--input-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 13px 15px;
-        }
-
-        .summary-box .s-label {
-            font-size: 12px;
-            color: var(--text-muted);
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .summary-box .s-val {
-            font-size: 19px;
-            font-weight: 800;
         }
 
         .status-banner {
@@ -333,55 +275,12 @@
         <div class="header-row">
             <div>
                 <h1>🏢 متابعة حركة جميع الفروع</h1>
-                <div class="subtitle">عرض إجمالي مبيعات وحركة كل فرع في شاشة واحدة للفترة المحددة</div>
+                <div class="subtitle">عرض التحديث اليومي وحركة كل فرع في شاشة واحدة</div>
             </div>
-            <button class="btn btn-secondary" onclick="setTodayRange()">اليوم 📅</button>
+            <div class="today-badge" id="todayDateBadge">التاريخ: --/--/----</div>
         </div>
 
-        <div class="controls-bar">
-            <div class="field-group">
-                <label for="startDate">من تاريخ</label>
-                <input type="date" id="startDate">
-            </div>
-
-            <div class="field-group">
-                <label for="endDate">إلى تاريخ</label>
-                <input type="date" id="endDate">
-            </div>
-
-            <div class="field-group">
-                <label for="filterMode">عرض الفروع</label>
-                <select id="filterMode" onchange="renderBranches()">
-                    <option value="all">كل الفروع</option>
-                    <option value="active">الفروع ذات الحركة فقط</option>
-                    <option value="stale">الفروع المتأخرة في التحديث</option>
-                </select>
-            </div>
-
-            <div class="field-group">
-                <label>&nbsp;</label>
-                <button class="btn btn-primary" style="width: 100%;" onclick="loadAllBranches()">تحديث الكل 🔄</button>
-            </div>
-        </div>
-
-        <div class="summary-grid">
-            <div class="summary-box">
-                <div class="s-label">إجمالي مبيعات كل الفروع</div>
-                <div class="s-val" id="allBranchesTotal" style="color: #eab308;">0.00 د.ل</div>
-            </div>
-            <div class="summary-box">
-                <div class="s-label">إجمالي النقدية</div>
-                <div class="s-val" id="allBranchesCash" style="color: #22c55e;">0.00 د.ل</div>
-            </div>
-            <div class="summary-box">
-                <div class="s-label">إجمالي الخدمات المصرفية</div>
-                <div class="s-val" id="allBranchesBank" style="color: #3b82f6;">0.00 د.ل</div>
-            </div>
-            <div class="summary-box">
-                <div class="s-label">عدد الفروع المعروضة</div>
-                <div class="s-val" id="allBranchesCount" style="color: #38bdf8;">0</div>
-            </div>
-        </div>
+        <button class="btn btn-primary" onclick="loadAllBranches()">تحديث الكل 🔄</button>
     </div>
 
     <div id="statusBanner" class="status-banner"></div>
@@ -405,13 +304,6 @@
         return Number(val || 0).toFixed(2) + " د.ل";
     }
 
-    function setTodayRange() {
-        const today = formatLocalDate(new Date());
-        document.getElementById('startDate').value = today;
-        document.getElementById('endDate').value = today;
-        loadAllBranches();
-    }
-
     function showBanner(type, message) {
         const banner = document.getElementById('statusBanner');
         banner.className = 'status-banner';
@@ -428,10 +320,9 @@
     function getSyncInfo(latestIso) {
         if (!latestIso) {
             return {
-                text: "لا يوجد تحديث",
+                text: "لا يوجد تحديث اليوم",
                 timeLabel: "--/--/---- --:--:--",
-                cssClass: "sync-stale",
-                isStale: true
+                cssClass: "sync-stale"
             };
         }
 
@@ -440,8 +331,7 @@
             return {
                 text: "تحديث غير معروف",
                 timeLabel: String(latestIso),
-                cssClass: "sync-warn",
-                isStale: false
+                cssClass: "sync-warn"
             };
         }
 
@@ -452,39 +342,26 @@
         const diffMin = (Date.now() - parsed.getTime()) / (1000 * 60);
 
         if (diffMin <= 45) {
-            return { text: "محدّث", timeLabel: `${y}/${m}/${d} - ${t}`, cssClass: "sync-fresh", isStale: false };
+            return { text: "محدّث", timeLabel: `${y}/${m}/${d} - ${t}`, cssClass: "sync-fresh" };
         }
         if (diffMin <= 150) {
-            return { text: `متأخر ${Math.round(diffMin)} د`, timeLabel: `${y}/${m}/${d} - ${t}`, cssClass: "sync-warn", isStale: false };
+            return { text: `متأخر ${Math.round(diffMin)} د`, timeLabel: `${y}/${m}/${d} - ${t}`, cssClass: "sync-warn" };
         }
-        return { text: "متوقف / متأخر", timeLabel: `${y}/${m}/${d} - ${t}`, cssClass: "sync-stale", isStale: true };
+        return { text: "متأخر", timeLabel: `${y}/${m}/${d} - ${t}`, cssClass: "sync-stale" };
     }
 
-    function computeBranchMetrics(store, rows, startDate, endDate) {
+    function computeBranchMetrics(store, rows, todayStr) {
         const storeId = String(store.store_id ?? store.id ?? "");
         const storeName = store.store_name || `فرع ${storeId}`;
 
-        const storeRows = rows.filter(r => String(r.store_id) === storeId);
-        let latestUpdate = null;
-
-        storeRows.forEach(r => {
-            if (r.last_update) {
-                if (!latestUpdate || new Date(r.last_update) > new Date(latestUpdate)) {
-                    latestUpdate = r.last_update;
-                }
-            }
+        // أخذ سجلات اليوم المحدد فقط (order=last_update.desc يضمن أن أول سجل لليوم هو الأحدث)
+        const todayRows = rows.filter(r => {
+            if (String(r.store_id) !== storeId || !r.last_update) return false;
+            return String(r.last_update).split('T')[0] === todayStr;
         });
 
-        const dailyRecords = {};
-        storeRows.forEach(item => {
-            if (!item.last_update) return;
-            const itemDate = String(item.last_update).split('T')[0];
-            if (itemDate >= startDate && itemDate <= endDate) {
-                if (!dailyRecords[itemDate]) {
-                    dailyRecords[itemDate] = item;
-                }
-            }
-        });
+        const latestTodayItem = todayRows.length > 0 ? todayRows[0] : null;
+        const latestUpdate = latestTodayItem ? latestTodayItem.last_update : null;
 
         let totalCash = 0;
         let sumCard = 0;
@@ -495,16 +372,16 @@
         let sumMultiSpecial = 0;
         let sumNetProfit = 0;
 
-        Object.values(dailyRecords).forEach(item => {
-            totalCash += Number(item.cash_sales || 0);
-            sumCard += Number(item.card_sales || 0) - Number(item.card_returns || 0);
-            sumMobi += Number(item.mobicash_sales || 0) - Number(item.mobicash_returns || 0);
-            sumYesser += Number(item.yesserpay_sales || 0) - Number(item.yesserpay_returns || 0);
-            sumEdfaq += Number(item.edfaqli_sales || 0) - Number(item.edfaqli_returns || 0);
-            sumMultiGeneralRaw += Number(item.multi_cash_sales || 0) - Number(item.multi_cash_returns || 0);
-            sumMultiSpecial += Number(item.multi_cash_special_sales || 0);
-            sumNetProfit += Number(item.net_profit || 0);
-        });
+        if (latestTodayItem) {
+            totalCash = Number(latestTodayItem.cash_sales || 0);
+            sumCard = Number(latestTodayItem.card_sales || 0) - Number(latestTodayItem.card_returns || 0);
+            sumMobi = Number(latestTodayItem.mobicash_sales || 0) - Number(latestTodayItem.mobicash_returns || 0);
+            sumYesser = Number(latestTodayItem.yesserpay_sales || 0) - Number(latestTodayItem.yesserpay_returns || 0);
+            sumEdfaq = Number(latestTodayItem.edfaqli_sales || 0) - Number(latestTodayItem.edfaqli_returns || 0);
+            sumMultiGeneralRaw = Number(latestTodayItem.multi_cash_sales || 0) - Number(latestTodayItem.multi_cash_returns || 0);
+            sumMultiSpecial = Number(latestTodayItem.multi_cash_special_sales || 0);
+            sumNetProfit = Number(latestTodayItem.net_profit || 0);
+        }
 
         let netMultiGeneral = sumMultiGeneralRaw - sumMultiSpecial;
         if (netMultiGeneral < 0) netMultiGeneral = 0;
@@ -512,7 +389,6 @@
         const cashTotal = totalCash + sumMultiSpecial;
         const bankTotal = sumCard + sumMobi + sumYesser + sumEdfaq + netMultiGeneral;
         const grandTotal = cashTotal + bankTotal;
-        const daysCount = Object.keys(dailyRecords).length;
         const syncInfo = getSyncInfo(latestUpdate);
 
         return {
@@ -523,49 +399,25 @@
             totalCash,
             sumMultiSpecial,
             bankTotal,
-            netMultiGeneral,
             sumNetProfit,
-            daysCount,
             syncInfo
         };
     }
 
     function renderBranches() {
-        const mode = document.getElementById('filterMode').value;
         const grid = document.getElementById('branchesGrid');
 
-        const filtered = branchesComputedList.filter(b => {
-            if (mode === 'active') return b.grandTotal > 0;
-            if (mode === 'stale') return b.syncInfo.isStale;
-            return true;
-        });
-
-        let sumAllTotal = 0;
-        let sumAllCash = 0;
-        let sumAllBank = 0;
-
-        filtered.forEach(b => {
-            sumAllTotal += b.grandTotal;
-            sumAllCash += b.cashTotal;
-            sumAllBank += b.bankTotal;
-        });
-
-        document.getElementById('allBranchesTotal').innerText = formatMoney(sumAllTotal);
-        document.getElementById('allBranchesCash').innerText = formatMoney(sumAllCash);
-        document.getElementById('allBranchesBank').innerText = formatMoney(sumAllBank);
-        document.getElementById('allBranchesCount').innerText = String(filtered.length);
-
-        if (!filtered.length) {
-            grid.innerHTML = `<div class="empty-state">لا توجد فروع مطابقة للفلتر أو الفترة المحددة.</div>`;
+        if (!branchesComputedList.length) {
+            grid.innerHTML = `<div class="empty-state">لا توجد فروع مسجلة.</div>`;
             return;
         }
 
-        grid.innerHTML = filtered.map(b => `
+        grid.innerHTML = branchesComputedList.map(b => `
             <div class="branch-card">
                 <div class="branch-head">
                     <div>
                         <h3 class="branch-name">🏪 ${b.storeName}</h3>
-                        <div class="branch-id">معرّف الفرع: ${b.storeId} • أيام الحركة: ${b.daysCount}</div>
+                        <div class="branch-id">معرّف الفرع: ${b.storeId}</div>
                     </div>
                     <span class="sync-pill ${b.syncInfo.cssClass}">${b.syncInfo.text}</span>
                 </div>
@@ -603,10 +455,10 @@
     }
 
     async function loadAllBranches() {
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
+        const todayStr = formatLocalDate(new Date());
+        document.getElementById('todayDateBadge').innerText = `التاريخ: ${todayStr.replace(/-/g, '/')}`;
 
-        showBanner('loading', '⏳ جاري جلب بيانات جميع الفروع وحركتها...');
+        showBanner('loading', '⏳ جاري جلب التحديث اليومي لجميع الفروع...');
 
         const headers = {
             'apikey': SUPABASE_KEY,
@@ -617,7 +469,7 @@
         try {
             const [storesRes, salesRes] = await Promise.all([
                 fetch(`${SUPABASE_URL}/rest/v1/stores?select=*&order=store_id.asc`, { headers }),
-                fetch(`${SUPABASE_URL}/rest/v1/store_sales?select=*&order=last_update.desc&limit=5000`, { headers })
+                fetch(`${SUPABASE_URL}/rest/v1/store_sales?select=*&last_update=gte.${todayStr}T00:00:00&order=last_update.desc&limit=2000`, { headers })
             ]);
 
             if (!storesRes.ok || !salesRes.ok) {
@@ -628,7 +480,7 @@
             const sales = await salesRes.json();
 
             branchesComputedList = (stores || []).map(store =>
-                computeBranchMetrics(store, sales || [], startDate, endDate)
+                computeBranchMetrics(store, sales || [], todayStr)
             );
 
             showBanner(null, '');
@@ -638,9 +490,6 @@
         }
     }
 
-    const initialToday = formatLocalDate(new Date());
-    document.getElementById('startDate').value = initialToday;
-    document.getElementById('endDate').value = initialToday;
     loadAllBranches();
 </script>
 </body>
