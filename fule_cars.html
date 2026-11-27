@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>متابعة حركة جميع الفروع</title>
+    <title>متابعة حركة الفروع النشطة</title>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -76,6 +76,13 @@
             margin-top: 3px;
         }
 
+        .meta-badges {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
         .today-badge {
             font-size: 12px;
             font-weight: 700;
@@ -84,6 +91,16 @@
             background: var(--input-bg);
             border: 1px solid var(--border-color);
             color: var(--text-muted);
+        }
+
+        .auto-badge {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            color: #22c55e;
         }
 
         .btn {
@@ -188,7 +205,6 @@
 
         .sync-fresh { color: #22c55e; border-color: rgba(34, 197, 94, 0.35); }
         .sync-warn { color: #eab308; border-color: rgba(234, 179, 8, 0.35); }
-        .sync-stale { color: #f87171; border-color: rgba(248, 113, 113, 0.35); }
 
         .total-highlight {
             background: var(--input-bg);
@@ -274,10 +290,13 @@
     <div class="top-panel">
         <div class="header-row">
             <div>
-                <h1>🏢 متابعة حركة جميع الفروع</h1>
-                <div class="subtitle">عرض التحديث اليومي وحركة كل فرع في شاشة واحدة</div>
+                <h1>🏢 متابعة حركة الفروع النشطة</h1>
+                <div class="subtitle">عرض الفروع المحدّثة خلال آخر 24 ساعة فقط مع تحديث تلقائي مستمر</div>
             </div>
-            <div class="today-badge" id="todayDateBadge">التاريخ: --/--/----</div>
+            <div class="meta-badges">
+                <div class="auto-badge" id="autoSyncBadge">تحديث تلقائي كل 2 د</div>
+                <div class="today-badge" id="todayDateBadge">التاريخ: --/--/----</div>
+            </div>
         </div>
 
         <button class="btn btn-primary" onclick="loadAllBranches()">تحديث الكل 🔄</button>
@@ -291,7 +310,11 @@
     const SUPABASE_URL = "https://romlgjbchyrwlwpcgffi.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbWxnamJjaHlyd2x3cGNnZmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDMxNDUsImV4cCI6MjEwMjE3OTE0NX0.wg90ZMVaVMV1UAriGXNEhYqnWlCDzqFjZY87UqSTxbw";
 
+    const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+    const AUTO_REFRESH_INTERVAL_MS = 2 * 60 * 1000;
+
     let branchesComputedList = [];
+    let isFetching = false;
 
     function formatLocalDate(d) {
         const y = d.getFullYear();
@@ -318,70 +341,62 @@
     }
 
     function getSyncInfo(latestIso) {
-        if (!latestIso) {
-            return {
-                text: "لا يوجد تحديث اليوم",
-                timeLabel: "--/--/---- --:--:--",
-                cssClass: "sync-stale"
-            };
-        }
+        if (!latestIso) return null;
 
         const parsed = new Date(latestIso);
-        if (isNaN(parsed.getTime())) {
-            return {
-                text: "تحديث غير معروف",
-                timeLabel: String(latestIso),
-                cssClass: "sync-warn"
-            };
+        if (isNaN(parsed.getTime())) return null;
+
+        const ageMs = Date.now() - parsed.getTime();
+        // إخفاء أي فرع لا يملك بيانات محدثة خلال آخر 24 ساعة أو تاريخه في المستقبل البعيد غير المنطقي
+        if (ageMs > TWENTY_FOUR_HOURS_MS || ageMs < -5 * 60 * 1000) {
+            return null;
         }
 
         const y = parsed.getFullYear();
         const m = String(parsed.getMonth() + 1).padStart(2, '0');
         const d = String(parsed.getDate()).padStart(2, '0');
         const t = parsed.toTimeString().substring(0, 8);
-        const diffMin = (Date.now() - parsed.getTime()) / (1000 * 60);
+        const diffMin = Math.max(0, Math.floor(ageMs / (1000 * 60)));
 
         if (diffMin <= 45) {
-            return { text: "محدّث", timeLabel: `${y}/${m}/${d} - ${t}`, cssClass: "sync-fresh" };
+            return {
+                text: "محدّث",
+                timeLabel: `${y}/${m}/${d} - ${t}`,
+                cssClass: "sync-fresh"
+            };
         }
-        if (diffMin <= 150) {
-            return { text: `متأخر ${Math.round(diffMin)} د`, timeLabel: `${y}/${m}/${d} - ${t}`, cssClass: "sync-warn" };
-        }
-        return { text: "متأخر", timeLabel: `${y}/${m}/${d} - ${t}`, cssClass: "sync-stale" };
+
+        return {
+            text: `منذ ${diffMin} د`,
+            timeLabel: `${y}/${m}/${d} - ${t}`,
+            cssClass: "sync-warn"
+        };
     }
 
     function computeBranchMetrics(store, rows, todayStr) {
         const storeId = String(store.store_id ?? store.id ?? "");
         const storeName = store.store_name || `فرع ${storeId}`;
 
-        // أخذ سجلات اليوم المحدد فقط (order=last_update.desc يضمن أن أول سجل لليوم هو الأحدث)
-        const todayRows = rows.filter(r => {
-            if (String(r.store_id) !== storeId || !r.last_update) return false;
-            return String(r.last_update).split('T')[0] === todayStr;
-        });
+        // أحدث سجل للفرع عبر كامل البيانات المتاحة (لقياس 24 ساعة بدقة)
+        const storeRows = rows.filter(r => String(r.store_id) === storeId && r.last_update);
+        if (!storeRows.length) return null;
 
-        const latestTodayItem = todayRows.length > 0 ? todayRows[0] : null;
-        const latestUpdate = latestTodayItem ? latestTodayItem.last_update : null;
+        const latestRecord = storeRows[0];
+        const syncInfo = getSyncInfo(latestRecord.last_update);
+        if (!syncInfo) return null;
 
-        let totalCash = 0;
-        let sumCard = 0;
-        let sumMobi = 0;
-        let sumYesser = 0;
-        let sumEdfaq = 0;
-        let sumMultiGeneralRaw = 0;
-        let sumMultiSpecial = 0;
-        let sumNetProfit = 0;
+        // إعطاء الأولوية لآخر تحديث اليوم إن وُجد، وإلا أحدث تحديث ضمن 24 ساعة
+        const todayRows = storeRows.filter(r => String(r.last_update).split('T')[0] === todayStr);
+        const targetItem = todayRows.length > 0 ? todayRows[0] : latestRecord;
 
-        if (latestTodayItem) {
-            totalCash = Number(latestTodayItem.cash_sales || 0);
-            sumCard = Number(latestTodayItem.card_sales || 0) - Number(latestTodayItem.card_returns || 0);
-            sumMobi = Number(latestTodayItem.mobicash_sales || 0) - Number(latestTodayItem.mobicash_returns || 0);
-            sumYesser = Number(latestTodayItem.yesserpay_sales || 0) - Number(latestTodayItem.yesserpay_returns || 0);
-            sumEdfaq = Number(latestTodayItem.edfaqli_sales || 0) - Number(latestTodayItem.edfaqli_returns || 0);
-            sumMultiGeneralRaw = Number(latestTodayItem.multi_cash_sales || 0) - Number(latestTodayItem.multi_cash_returns || 0);
-            sumMultiSpecial = Number(latestTodayItem.multi_cash_special_sales || 0);
-            sumNetProfit = Number(latestTodayItem.net_profit || 0);
-        }
+        const totalCash = Number(targetItem.cash_sales || 0);
+        const sumCard = Number(targetItem.card_sales || 0) - Number(targetItem.card_returns || 0);
+        const sumMobi = Number(targetItem.mobicash_sales || 0) - Number(targetItem.mobicash_returns || 0);
+        const sumYesser = Number(targetItem.yesserpay_sales || 0) - Number(targetItem.yesserpay_returns || 0);
+        const sumEdfaq = Number(targetItem.edfaqli_sales || 0) - Number(targetItem.edfaqli_returns || 0);
+        const sumMultiGeneralRaw = Number(targetItem.multi_cash_sales || 0) - Number(targetItem.multi_cash_returns || 0);
+        const sumMultiSpecial = Number(targetItem.multi_cash_special_sales || 0);
+        const sumNetProfit = Number(targetItem.net_profit || 0);
 
         let netMultiGeneral = sumMultiGeneralRaw - sumMultiSpecial;
         if (netMultiGeneral < 0) netMultiGeneral = 0;
@@ -389,7 +404,6 @@
         const cashTotal = totalCash + sumMultiSpecial;
         const bankTotal = sumCard + sumMobi + sumYesser + sumEdfaq + netMultiGeneral;
         const grandTotal = cashTotal + bankTotal;
-        const syncInfo = getSyncInfo(latestUpdate);
 
         return {
             storeId,
@@ -408,7 +422,7 @@
         const grid = document.getElementById('branchesGrid');
 
         if (!branchesComputedList.length) {
-            grid.innerHTML = `<div class="empty-state">لا توجد فروع مسجلة.</div>`;
+            grid.innerHTML = `<div class="empty-state">لا توجد فروع محدثة خلال آخر 24 ساعة حالياً.</div>`;
             return;
         }
 
@@ -454,11 +468,19 @@
         `).join('');
     }
 
-    async function loadAllBranches() {
-        const todayStr = formatLocalDate(new Date());
+    async function loadAllBranches(silent = false) {
+        if (isFetching) return;
+        isFetching = true;
+
+        const now = new Date();
+        const todayStr = formatLocalDate(now);
+        const cutoffIso = new Date(now.getTime() - TWENTY_FOUR_HOURS_MS).toISOString();
+
         document.getElementById('todayDateBadge').innerText = `التاريخ: ${todayStr.replace(/-/g, '/')}`;
 
-        showBanner('loading', '⏳ جاري جلب التحديث اليومي لجميع الفروع...');
+        if (!silent) {
+            showBanner('loading', '⏳ جاري جلب بيانات الفروع المحدّثة خلال آخر 24 ساعة...');
+        }
 
         const headers = {
             'apikey': SUPABASE_KEY,
@@ -469,7 +491,7 @@
         try {
             const [storesRes, salesRes] = await Promise.all([
                 fetch(`${SUPABASE_URL}/rest/v1/stores?select=*&order=store_id.asc`, { headers }),
-                fetch(`${SUPABASE_URL}/rest/v1/store_sales?select=*&last_update=gte.${todayStr}T00:00:00&order=last_update.desc&limit=2000`, { headers })
+                fetch(`${SUPABASE_URL}/rest/v1/store_sales?select=*&last_update=gte.${encodeURIComponent(cutoffIso)}&order=last_update.desc&limit=3000`, { headers })
             ]);
 
             if (!storesRes.ok || !salesRes.ok) {
@@ -479,18 +501,31 @@
             const stores = await storesRes.json();
             const sales = await salesRes.json();
 
-            branchesComputedList = (stores || []).map(store =>
-                computeBranchMetrics(store, sales || [], todayStr)
-            );
+            branchesComputedList = (stores || [])
+                .map(store => computeBranchMetrics(store, sales || [], todayStr))
+                .filter(Boolean);
 
             showBanner(null, '');
             renderBranches();
         } catch (err) {
-            showBanner('error', '❌ ' + err.message);
+            if (!silent) {
+                showBanner('error', '❌ ' + err.message);
+            }
+        } finally {
+            isFetching = false;
         }
     }
 
-    loadAllBranches();
+    // التشغيل الأولي الفوري
+    loadAllBranches(false);
+
+    // تحديث تلقائي مستمر كل دقيقتين وعند عودة التبويب للواجهة
+    setInterval(() => loadAllBranches(true), AUTO_REFRESH_INTERVAL_MS);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            loadAllBranches(true);
+        }
+    });
 </script>
 </body>
 </html>
