@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>استعلام الأسعار - سنتر العائلة السعيدة</title>
-    <!-- مكتبة قراءة الباركود بالكاميرا -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
@@ -24,7 +23,7 @@
             --danger-text: #dc2626;
         }
 
-        * {
+        *, *::before, *::after {
             box-sizing: border-box;
         }
 
@@ -65,7 +64,6 @@
             gap: 8px;
         }
 
-        /* شارة وأيقونة اسم المحل مكبرة وواضحة */
         .store-badge {
             display: inline-flex;
             align-items: center;
@@ -133,7 +131,6 @@
             background-color: #ffffff;
             border-color: var(--primary-blue);
             box-shadow: 0 0 0 4px rgba(27, 108, 168, 0.15);
-            transform: translateY(-1px);
         }
 
         .clear-btn {
@@ -151,7 +148,6 @@
             display: none;
             align-items: center;
             justify-content: center;
-            transition: all 0.18s ease;
         }
 
         .clear-btn:hover {
@@ -170,16 +166,6 @@
             font-weight: bold;
             white-space: nowrap;
             box-shadow: 0 4px 12px rgba(27, 108, 168, 0.25);
-            transition: all 0.2s ease;
-        }
-
-        .btn-cam:hover {
-            background: linear-gradient(135deg, #145382, #0284c7);
-            transform: translateY(-1px);
-        }
-
-        .btn-cam:active {
-            transform: scale(0.98);
         }
 
         .btn-search-inline {
@@ -193,16 +179,6 @@
             font-weight: bold;
             white-space: nowrap;
             box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
-            transition: all 0.2s ease;
-        }
-
-        .btn-search-inline:hover {
-            background: linear-gradient(135deg, #15803d, #16a34a);
-            transform: translateY(-1px);
-        }
-
-        .btn-search-inline:active {
-            transform: scale(0.98);
         }
 
         #reader {
@@ -213,7 +189,6 @@
             overflow: hidden;
             display: none;
             border: 2px solid var(--primary-blue);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
         }
 
         .status-msg {
@@ -223,7 +198,6 @@
             text-align: center;
             font-weight: bold;
             font-size: 16px;
-            animation: modalPop 0.22s ease-out;
         }
 
         .status-loading {
@@ -238,7 +212,6 @@
             border: 1px solid #fecaca;
         }
 
-        /* النافذة المنبثقة (Modal) لعرض نتيجة البحث */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -264,19 +237,7 @@
             border-radius: 22px;
             box-shadow: 0 24px 55px rgba(15, 23, 42, 0.35);
             border: 2px solid #e2e8f0;
-            animation: modalPop 0.24s cubic-bezier(0.16, 1, 0.3, 1);
             overflow-x: hidden;
-        }
-
-        @keyframes modalPop {
-            from {
-                opacity: 0;
-                transform: scale(0.92) translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
         }
 
         .modal-top-bar {
@@ -311,16 +272,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.18s ease;
-        }
-
-        .modal-close-icon:hover {
-            background: rgba(239, 68, 68, 0.85);
-            border-color: transparent;
         }
 
         .modal-body {
             padding: 20px 18px;
+        }
+
+        .modal-count-hint {
+            text-align: center;
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--text-muted);
+            margin-bottom: 12px;
         }
 
         .modal-result-card {
@@ -385,13 +348,6 @@
             font-weight: bold;
             border-radius: 13px;
             cursor: pointer;
-            box-shadow: 0 6px 16px rgba(22, 36, 71, 0.24);
-            transition: all 0.2s ease;
-        }
-
-        .btn-modal-close:hover {
-            filter: brightness(1.08);
-            transform: translateY(-1px);
         }
 
         @media (max-width: 480px) {
@@ -428,7 +384,6 @@
     </div>
 
     <div class="content-body">
-        <!-- المربع الأول: البحث باسم المادة أو رقم الصنف + زر البحث بجانبه -->
         <div class="form-group">
             <label for="nameOrIdInput">1. البحث باسم المادة أو رقم الصنف</label>
             <div class="search-row">
@@ -440,7 +395,6 @@
             </div>
         </div>
 
-        <!-- المربع الثاني: كتابة الباركود أو قراءته بالكاميرا + زر الكاميرا وزر البحث بجانبه -->
         <div class="form-group">
             <label for="barcodeInput">2. البحث بالباركود أو الكاميرا</label>
             <div class="search-row">
@@ -459,7 +413,6 @@
     </div>
 </div>
 
-<!-- النافذة المنبثقة لعرض الصنف والسعر -->
 <div id="resultModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalStoreTitle">
     <div class="modal-box" onclick="event.stopPropagation()">
         <div class="modal-top-bar">
@@ -484,15 +437,51 @@
     let html5QrCode = null;
     let cameraIsRunning = false;
 
+    function normalizeArabic(text) {
+        return String(text || '')
+            .trim()
+            .toLowerCase()
+            .replace(/[إأآا]/g, 'ا')
+            .replace(/ى/g, 'ي')
+            .replace(/ة/g, 'ه')
+            .replace(/[\u064B-\u065F]/g, '')
+            .replace(/\s+/g, ' ');
+    }
+
+    function rankItems(items, rawQuery) {
+        const normQuery = normalizeArabic(rawQuery);
+        const qLower = String(rawQuery || '').trim().toLowerCase();
+
+        return [...items].sort((a, b) => {
+            const getScore = (item) => {
+                const nameNorm = normalizeArabic(item.item_name);
+                const barcodeStr = String(item.barcode || '').trim().toLowerCase();
+                if (barcodeStr === qLower) return 100;
+                if (nameNorm === normQuery) return 90;
+                if (nameNorm.startsWith(normQuery)) return 75;
+                if (nameNorm.includes(normQuery)) return 50;
+                return 25;
+            };
+            return getScore(b) - getScore(a);
+        });
+    }
+
     function openResultModal(items) {
         const modal = document.getElementById('resultModal');
         const modalBody = document.getElementById('modalBody');
         if (!modal || !modalBody) return;
 
-        let html = "";
+        const countHint = items.length > 1
+            ? `<div class="modal-count-hint">تم العثور على ${items.length} أصناف مطابقة</div>`
+            : "";
+
+        let html = countHint;
         items.forEach(item => {
             const itemName = item.item_name || 'بدون اسم';
-            const salePrice = (item.sale_price !== undefined && item.sale_price !== null) ? item.sale_price : 0;
+            const salePrice = (item.sale_price !== undefined && item.sale_price !== null)
+                ? Number(item.sale_price).toFixed(2)
+                : "0.00";
+
             html += `
                 <div class="modal-result-card">
                     <div class="modal-item-name">📦 ${itemName}</div>
@@ -646,39 +635,67 @@
 
         resultsDiv.innerHTML = "<div class='status-msg status-loading'>⏳ جاري البحث في قائمة الأسعار...</div>";
 
+        const headers = {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+        };
+
         try {
-            let apiUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&select=*`;
+            let matchedItems = [];
 
             if (searchMode === "barcode") {
-                apiUrl += `&barcode=eq.${encodeURIComponent(activeQuery)}`;
+                const apiUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&barcode=eq.${encodeURIComponent(activeQuery)}&select=item_name,sale_price,barcode`;
+                const response = await fetch(apiUrl, { method: 'GET', headers });
+                if (!response.ok) {
+                    resultsDiv.innerHTML = `<div class='status-msg status-error'>❌ خطأ في الاتصال بالسحابة (${response.status})</div>`;
+                    return;
+                }
+                matchedItems = await response.json();
             } else {
-                if (!isNaN(activeQuery)) {
-                    apiUrl += `&or=(item_id.eq.${encodeURIComponent(activeQuery)},barcode.eq.${encodeURIComponent(activeQuery)})`;
-                } else {
-                    const safeName = activeQuery.replace(/[%_*]/g, "");
-                    apiUrl += `&item_name=ilike.*${encodeURIComponent(safeName)}*`;
+                const normQuery = normalizeArabic(activeQuery);
+                const words = normQuery.split(' ').filter(Boolean);
+                const firstWord = (words[0] || normQuery).replace(/[%_*,()]/g, "");
+
+                // جلب أصناف الفرع بشكل آمن ومباشر ثم التصفية والترتيب محلياً بدقة
+                const namePattern = encodeURIComponent(`*${firstWord}*`);
+                const requests = [
+                    fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&item_name=ilike.${namePattern}&limit=100&select=item_name,sale_price,barcode`, { method: 'GET', headers })
+                ];
+
+                if (/^\d+$/.test(activeQuery)) {
+                    requests.push(
+                        fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&barcode=eq.${encodeURIComponent(activeQuery)}&select=item_name,sale_price,barcode`, { method: 'GET', headers }),
+                        fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&item_id=eq.${encodeURIComponent(activeQuery)}&select=item_name,sale_price,barcode`, { method: 'GET', headers })
+                    );
                 }
+
+                const responses = await Promise.all(requests);
+                const lists = await Promise.all(
+                    responses.map(async (r) => r.ok ? await r.json() : [])
+                );
+
+                const mergedMap = new Map();
+                lists.flat().forEach(item => {
+                    const key = `${item.barcode || ''}__${item.item_name || ''}`;
+                    if (!mergedMap.has(key)) {
+                        mergedMap.set(key, item);
+                    }
+                });
+
+                matchedItems = Array.from(mergedMap.values()).filter(item => {
+                    const barcodeMatch = String(item.barcode || '').trim() === activeQuery;
+                    const normName = normalizeArabic(item.item_name);
+                    const wordsMatch = words.every(w => normName.includes(w));
+                    return barcodeMatch || wordsMatch;
+                });
+
+                matchedItems = rankItems(matchedItems, activeQuery).slice(0, 30);
             }
 
-            const response = await fetch(apiUrl, {
-                method: 'GET',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                resultsDiv.innerHTML = `<div class='status-msg status-error'>❌ خطأ في الاتصال بالسحابة: ${response.statusText}</div>`;
-                return;
-            }
-
-            const data = await response.json();
-
-            if (data && data.length > 0) {
+            if (matchedItems && matchedItems.length > 0) {
                 resultsDiv.innerHTML = "";
-                openResultModal(data);
+                openResultModal(matchedItems);
             } else {
                 resultsDiv.innerHTML = `<div class='status-msg status-error'>⚠️ لم يتم العثور على أي صنف مطابق في سنتر العائلة السعيدة.</div>`;
             }
@@ -687,7 +704,7 @@
         }
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
+    function initPageEvents() {
         const nameInput = document.getElementById('nameOrIdInput');
         const barcodeInput = document.getElementById('barcodeInput');
         const clearNameBtn = document.getElementById('clearNameBtn');
@@ -701,7 +718,7 @@
 
         if (nameInput) {
             nameInput.addEventListener('input', () => toggleClearButton('nameOrIdInput', 'clearNameBtn'));
-            nameInput.addEventListener('keypress', (e) => {
+            nameInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') searchItem('nameOrId');
             });
             toggleClearButton('nameOrIdInput', 'clearNameBtn');
@@ -709,7 +726,7 @@
 
         if (barcodeInput) {
             barcodeInput.addEventListener('input', () => toggleClearButton('barcodeInput', 'clearBarcodeBtn'));
-            barcodeInput.addEventListener('keypress', (e) => {
+            barcodeInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') searchItem('barcode');
             });
             toggleClearButton('barcodeInput', 'clearBarcodeBtn');
@@ -752,7 +769,13 @@
                 closeResultModal();
             }
         });
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPageEvents);
+    } else {
+        initPageEvents();
+    }
 </script>
 
 </body>
