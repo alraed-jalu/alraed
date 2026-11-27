@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>استعلام الأسعار - سنتر العائلة السعيدة</title>
-    <!-- مكتبة قراءة الباركود بالكاميرا -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
@@ -132,7 +131,6 @@
             background-color: #ffffff;
             border-color: var(--primary-blue);
             box-shadow: 0 0 0 4px rgba(27, 108, 168, 0.15);
-            transform: translateY(-1px);
         }
 
         .clear-btn {
@@ -150,7 +148,6 @@
             display: none;
             align-items: center;
             justify-content: center;
-            transition: all 0.18s ease;
         }
 
         .clear-btn:hover {
@@ -169,16 +166,6 @@
             font-weight: bold;
             white-space: nowrap;
             box-shadow: 0 4px 12px rgba(27, 108, 168, 0.25);
-            transition: all 0.2s ease;
-        }
-
-        .btn-cam:hover {
-            background: linear-gradient(135deg, #145382, #0284c7);
-            transform: translateY(-1px);
-        }
-
-        .btn-cam:active {
-            transform: scale(0.98);
         }
 
         .btn-search-inline {
@@ -192,16 +179,6 @@
             font-weight: bold;
             white-space: nowrap;
             box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
-            transition: all 0.2s ease;
-        }
-
-        .btn-search-inline:hover {
-            background: linear-gradient(135deg, #15803d, #16a34a);
-            transform: translateY(-1px);
-        }
-
-        .btn-search-inline:active {
-            transform: scale(0.98);
         }
 
         #reader {
@@ -212,7 +189,6 @@
             overflow: hidden;
             display: none;
             border: 2px solid var(--primary-blue);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
         }
 
         .status-msg {
@@ -222,7 +198,6 @@
             text-align: center;
             font-weight: bold;
             font-size: 16px;
-            animation: modalPop 0.22s ease-out;
         }
 
         .status-loading {
@@ -262,19 +237,7 @@
             border-radius: 22px;
             box-shadow: 0 24px 55px rgba(15, 23, 42, 0.35);
             border: 2px solid #e2e8f0;
-            animation: modalPop 0.24s cubic-bezier(0.16, 1, 0.3, 1);
             overflow-x: hidden;
-        }
-
-        @keyframes modalPop {
-            from {
-                opacity: 0;
-                transform: scale(0.92) translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
         }
 
         .modal-top-bar {
@@ -309,12 +272,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.18s ease;
-        }
-
-        .modal-close-icon:hover {
-            background: rgba(239, 68, 68, 0.85);
-            border-color: transparent;
         }
 
         .modal-body {
@@ -391,13 +348,6 @@
             font-weight: bold;
             border-radius: 13px;
             cursor: pointer;
-            box-shadow: 0 6px 16px rgba(22, 36, 71, 0.24);
-            transition: all 0.2s ease;
-        }
-
-        .btn-modal-close:hover {
-            filter: brightness(1.08);
-            transform: translateY(-1px);
         }
 
         @media (max-width: 480px) {
@@ -698,35 +648,34 @@
                 const apiUrl = `${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&barcode=eq.${encodeURIComponent(activeQuery)}&select=item_name,sale_price,barcode`;
                 const response = await fetch(apiUrl, { method: 'GET', headers });
                 if (!response.ok) {
-                    resultsDiv.innerHTML = `<div class='status-msg status-error'>❌ خطأ في الاتصال بالسحابة: ${response.statusText}</div>`;
+                    resultsDiv.innerHTML = `<div class='status-msg status-error'>❌ خطأ في الاتصال بالسحابة (${response.status})</div>`;
                     return;
                 }
                 matchedItems = await response.json();
             } else {
                 const normQuery = normalizeArabic(activeQuery);
                 const words = normQuery.split(' ').filter(Boolean);
-                const firstWord = (words[0] || normQuery).replace(/[%_*]/g, "");
+                const firstWord = (words[0] || normQuery).replace(/[%_*,()]/g, "");
 
+                // جلب أصناف الفرع بشكل آمن ومباشر ثم التصفية والترتيب محلياً بدقة
+                const namePattern = encodeURIComponent(`*${firstWord}*`);
                 const requests = [
-                    fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&item_name=ilike.*${encodeURIComponent(firstWord)}*&limit=100&select=item_name,sale_price,barcode`, { method: 'GET', headers })
+                    fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&item_name=ilike.${namePattern}&limit=100&select=item_name,sale_price,barcode`, { method: 'GET', headers })
                 ];
 
-                if (!isNaN(activeQuery)) {
+                if (/^\d+$/.test(activeQuery)) {
                     requests.push(
-                        fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&or=(item_id.eq.${encodeURIComponent(activeQuery)},barcode.eq.${encodeURIComponent(activeQuery)})&select=item_name,sale_price,barcode`, { method: 'GET', headers })
+                        fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&barcode=eq.${encodeURIComponent(activeQuery)}&select=item_name,sale_price,barcode`, { method: 'GET', headers }),
+                        fetch(`${SUPABASE_URL}/rest/v1/store_items?store_id=eq.${FIXED_STORE_ID}&item_id=eq.${encodeURIComponent(activeQuery)}&select=item_name,sale_price,barcode`, { method: 'GET', headers })
                     );
                 }
 
                 const responses = await Promise.all(requests);
-                const failed = responses.find(r => !r.ok);
-                if (failed) {
-                    resultsDiv.innerHTML = `<div class='status-msg status-error'>❌ خطأ في الاتصال بالسحابة: ${failed.statusText}</div>`;
-                    return;
-                }
+                const lists = await Promise.all(
+                    responses.map(async (r) => r.ok ? await r.json() : [])
+                );
 
-                const lists = await Promise.all(responses.map(r => r.json()));
                 const mergedMap = new Map();
-
                 lists.flat().forEach(item => {
                     const key = `${item.barcode || ''}__${item.item_name || ''}`;
                     if (!mergedMap.has(key)) {
@@ -755,7 +704,7 @@
         }
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
+    function initPageEvents() {
         const nameInput = document.getElementById('nameOrIdInput');
         const barcodeInput = document.getElementById('barcodeInput');
         const clearNameBtn = document.getElementById('clearNameBtn');
@@ -769,7 +718,7 @@
 
         if (nameInput) {
             nameInput.addEventListener('input', () => toggleClearButton('nameOrIdInput', 'clearNameBtn'));
-            nameInput.addEventListener('keypress', (e) => {
+            nameInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') searchItem('nameOrId');
             });
             toggleClearButton('nameOrIdInput', 'clearNameBtn');
@@ -777,7 +726,7 @@
 
         if (barcodeInput) {
             barcodeInput.addEventListener('input', () => toggleClearButton('barcodeInput', 'clearBarcodeBtn'));
-            barcodeInput.addEventListener('keypress', (e) => {
+            barcodeInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') searchItem('barcode');
             });
             toggleClearButton('barcodeInput', 'clearBarcodeBtn');
@@ -804,4 +753,30 @@
         }
 
         if (closeModalTopBtn) {
-            closeModalTopBtn.addEventListener('click',
+            closeModalTopBtn.addEventListener('click', closeResultModal);
+        }
+
+        if (closeModalBottomBtn) {
+            closeModalBottomBtn.addEventListener('click', closeResultModal);
+        }
+
+        if (resultModal) {
+            resultModal.addEventListener('click', closeResultModal);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeResultModal();
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPageEvents);
+    } else {
+        initPageEvents();
+    }
+</script>
+
+</body>
+</html>
