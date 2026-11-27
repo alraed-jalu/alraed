@@ -90,14 +90,6 @@
         .sync-warn { color: #eab308; border-color: rgba(234, 179, 8, 0.35); }
         .sync-stale { color: #f87171; border-color: rgba(248, 113, 113, 0.35); }
 
-        .toolbar-actions {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 14px;
-        }
-
         .chip-btn {
             background: var(--input-bg);
             color: var(--text-color);
@@ -110,11 +102,6 @@
             transition: all 0.2s ease;
         }
         .chip-btn:hover { border-color: #38bdf8; color: #38bdf8; }
-        .chip-btn.active {
-            background: rgba(56, 189, 248, 0.14);
-            border-color: #38bdf8;
-            color: #38bdf8;
-        }
         
         #loginSection { text-align: center; padding: 20px 0; }
         label { font-weight: 600; font-size: 13px; color: var(--text-muted); }
@@ -160,13 +147,6 @@
             background: linear-gradient(135deg, #0369a1 100%, #075985 100%); 
             transform: translateY(-1px);
             box-shadow: 0 6px 15px rgba(2, 132, 199, 0.35);
-        }
-
-        .quick-dates {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 6px;
-            margin-bottom: 10px;
         }
         
         .date-range-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
@@ -406,29 +386,14 @@
 
     <!-- لوحة البيانات الرئيسية والبحث -->
     <div id="dashboardSection" class="hidden">
-        <!-- شريط التحكم السريع -->
-        <div class="toolbar-actions">
-            <button class="chip-btn" id="privacyBtn" onclick="togglePrivacyMode()">👁️ إخفاء الأرقام</button>
-            <button class="chip-btn" id="autoRefreshBtn" onclick="toggleAutoRefresh()">🔄 تحديث تلقائي: متوقف</button>
-            <button class="chip-btn" onclick="exportSalesCSV()">📥 تصدير المبيعات CSV</button>
-        </div>
-
-        <!-- أزرار الفترات السريعة -->
-        <div class="quick-dates">
-            <button class="chip-btn active" id="qToday" onclick="setQuickRange('today', this)">اليوم</button>
-            <button class="chip-btn" id="qYesterday" onclick="setQuickRange('yesterday', this)">أمس</button>
-            <button class="chip-btn" id="qWeek" onclick="setQuickRange('week', this)">آخر 7 أيام</button>
-            <button class="chip-btn" id="qMonth" onclick="setQuickRange('month', this)">هذا الشهر</button>
-        </div>
-
         <div class="date-range-grid">
             <div class="date-group">
                 <label>من تاريخ:</label>
-                <input type="date" id="startDate" onchange="clearQuickActive()">
+                <input type="date" id="startDate">
             </div>
             <div class="date-group">
                 <label>إلى تاريخ:</label>
-                <input type="date" id="endDate" onchange="clearQuickActive()">
+                <input type="date" id="endDate">
             </div>
         </div>
         <button class="btn btn-primary" style="margin-bottom: 14px; padding: 11px;" onclick="fetchSalesData()">عرض الفترة 🔍</button>
@@ -460,10 +425,7 @@
         <div class="search-section">
             <div class="search-header-row">
                 <h3 style="color: #38bdf8; text-align: right; font-size: 16px; margin: 0; font-weight: 700;">📦 الاستعلام عن المواد </h3>
-                <div style="display:flex; gap:6px;">
-                    <button class="chip-btn" onclick="fetchLowStockItems()">⚠️ النواقص</button>
-                    <button class="chip-btn" onclick="exportItemsCSV()">📥 تصدير المواد</button>
-                </div>
+                <button class="chip-btn" onclick="fetchLowStockItems()">⚠️ النواقص</button>
             </div>
             
             <div class="search-mode-selector">
@@ -558,9 +520,6 @@
     
     let currentStoreId = null;
     let html5QrcodeScanner = null;
-    let isPrivacyMode = false;
-    let autoRefreshTimer = null;
-    let lastSearchedItems = [];
 
     let currentCashBreakdown = { cashSales: 0, multiSpecial: 0 };
     let currentBankBreakdown = { mobi: 0, card: 0, yesser: 0, edfaq: 0, multiGeneral: 0 };
@@ -579,58 +538,7 @@
     document.getElementById('endDate').value = todayStr;
 
     function formatMoney(val) {
-        if (isPrivacyMode) return "••••••";
         return Number(val || 0).toFixed(2) + " د.ل";
-    }
-
-    function togglePrivacyMode() {
-        isPrivacyMode = !isPrivacyMode;
-        const btn = document.getElementById('privacyBtn');
-        btn.innerText = isPrivacyMode ? "🙈 إظهار الأرقام" : "👁️ إخفاء الأرقام";
-        btn.classList.toggle('active', isPrivacyMode);
-        refreshDisplayedNumbers();
-    }
-
-    function toggleAutoRefresh() {
-        const btn = document.getElementById('autoRefreshBtn');
-        if (autoRefreshTimer) {
-            clearInterval(autoRefreshTimer);
-            autoRefreshTimer = null;
-            btn.innerText = "🔄 تحديث تلقائي: متوقف";
-            btn.classList.remove('active');
-        } else {
-            autoRefreshTimer = setInterval(() => {
-                fetchSalesData();
-            }, 120000);
-            btn.innerText = "🔄 تحديث تلقائي: كل دقيقتين";
-            btn.classList.add('active');
-        }
-    }
-
-    function clearQuickActive() {
-        document.querySelectorAll('.quick-dates .chip-btn').forEach(b => b.classList.remove('active'));
-    }
-
-    function setQuickRange(type, btnEl) {
-        clearQuickActive();
-        if (btnEl) btnEl.classList.add('active');
-
-        const now = new Date();
-        let start = new Date(now);
-        let end = new Date(now);
-
-        if (type === 'yesterday') {
-            start.setDate(now.getDate() - 1);
-            end.setDate(now.getDate() - 1);
-        } else if (type === 'week') {
-            start.setDate(now.getDate() - 6);
-        } else if (type === 'month') {
-            start = new Date(now.getFullYear(), now.getMonth(), 1);
-        }
-
-        document.getElementById('startDate').value = formatLocalDate(start);
-        document.getElementById('endDate').value = formatLocalDate(end);
-        fetchSalesData();
     }
 
     window.onload = function() {
@@ -702,7 +610,7 @@
         if(show) {
             document.getElementById('soldCostDetail').innerText = formatMoney(currentTotalBreakdown.soldCost);
             document.getElementById('netProfitDetail').innerText = formatMoney(currentTotalBreakdown.netProfit);
-            document.getElementById('profitMarginDetail').innerText = isPrivacyMode ? "••••" : currentTotalBreakdown.margin.toFixed(1) + "%";
+            document.getElementById('profitMarginDetail').innerText = currentTotalBreakdown.margin.toFixed(1) + "%";
         }
     }
 
@@ -775,7 +683,6 @@
     }
 
     function logout() {
-        if (autoRefreshTimer) clearInterval(autoRefreshTimer);
         localStorage.removeItem('admin_session');
         localStorage.removeItem('admin_login_time');
         location.reload();
@@ -932,7 +839,6 @@
     function renderItemsList(items) {
         const resultsContainer = document.getElementById('itemsResultsContainer');
         const summaryBar = document.getElementById('inventorySummaryBar');
-        lastSearchedItems = items || [];
 
         if (items && items.length > 0) {
             let totalBuyVal = 0;
@@ -1053,54 +959,6 @@
         }
     }
 
-    function downloadCSV(filename, rows) {
-        const csvContent = "\uFEFF" + rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(",")).join("\n");
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        link.click();
-    }
-
-    function exportSalesCSV() {
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        const cashTotal = currentCashBreakdown.cashSales + currentCashBreakdown.multiSpecial;
-        const bankTotal = currentBankBreakdown.mobi + currentBankBreakdown.card + currentBankBreakdown.yesser + currentBankBreakdown.edfaq + currentBankBreakdown.multiGeneral;
-
-        const rows = [
-            ["البند", "القيمة"],
-            ["من تاريخ", startDate],
-            ["إلى تاريخ", endDate],
-            ["المبيعات النقدية", currentCashBreakdown.cashSales.toFixed(2)],
-            ["كاش دفع متعدد (625)", currentCashBreakdown.multiSpecial.toFixed(2)],
-            ["إجمالي النقدية", cashTotal.toFixed(2)],
-            ["موبي كاش", currentBankBreakdown.mobi.toFixed(2)],
-            ["البطاقة المصرفية", currentBankBreakdown.card.toFixed(2)],
-            ["يسر باي", currentBankBreakdown.yesser.toFixed(2)],
-            ["ادفع لي", currentBankBreakdown.edfaq.toFixed(2)],
-            ["الدفع المتعدد المصرفي", currentBankBreakdown.multiGeneral.toFixed(2)],
-            ["إجمالي الخدمات المصرفية", bankTotal.toFixed(2)],
-            ["إجمالي المبيعات", currentTotalBreakdown.grandTotal.toFixed(2)],
-            ["تكلفة المواد المباعة", currentTotalBreakdown.soldCost.toFixed(2)],
-            ["صافي الربح", currentTotalBreakdown.netProfit.toFixed(2)],
-            ["هامش الربح %", currentTotalBreakdown.margin.toFixed(2) + "%"]
-        ];
-        downloadCSV(`sales_${startDate}_to_${endDate}.csv`, rows);
-    }
-
-    function exportItemsCSV() {
-        if (!lastSearchedItems || lastSearchedItems.length === 0) {
-            alert("⚠️ ابحث عن مواد أو اعرض النواقص أولاً لتصديرها.");
-            return;
-        }
-        const rows = [["اسم المادة", "الباركود", "سعر الشراء", "سعر البيع", "الكمية المتوفرة"]];
-        lastSearchedItems.forEach(i => {
-            rows.push([i.item_name, i.barcode, i.buy_price, i.sale_price, i.available_qty]);
-        });
-        downloadCSV(`items_export_${todayStr}.csv`, rows);
-    }
-
     function toggleCameraScanner() {
         const readerDiv = document.getElementById('reader');
         if (readerDiv.style.display === 'block') {
@@ -1134,10 +992,4 @@
                 readerDiv.style.display = 'none';
             });
         } else {
-            readerDiv.style.display = 'none';
-        }
-    }
-</script>
-
-</body>
-</html>
+            readerDiv.style.display = '
